@@ -1,15 +1,585 @@
+import math
+from typing import Dict, List, Tuple
+
 import streamlit as st
 
-st.set_page_config(
-    page_title="TMK Structural Planner",
-    page_icon="✳️",
-    layout="wide"
-)
+Route = Tuple[int, int]
+
+st.set_page_config(page_title="TMK Structural Planner", page_icon="✳️", layout="wide")
+
+STAGE_ORDER = ["0", "A", "B", "C", "D", "E", "F", "G"]
+
+STAGE_META = {
+    "0": {"label": "Stage 0 · Foundation", "products": [4, 6, 8, 9, 10], "color": "#475569"},
+    "A": {"label": "Stage A · Identity Anchors", "products": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "color": "#94a3b8"},
+    "B": {"label": "Stage B · Ten Scaling", "products": [20, 30, 40, 50, 60, 70, 80, 90, 100], "color": "#2563eb"},
+    "C": {"label": "Stage C · Five Midpoints", "products": [15, 25, 35, 45], "color": "#0ea5e9"},
+    "D": {"label": "Stage D · Nine Structure", "products": [18, 27, 36, 54, 63, 72, 81], "color": "#0284c7"},
+    "E": {"label": "Stage E · Doubling Chain", "products": [12, 14, 16, 24, 28, 32, 48, 56, 64], "color": "#0f766e"},
+    "F": {"label": "Stage F · Interleaving", "products": [21, 42], "color": "#7c3aed"},
+    "G": {"label": "Stage G · Closure", "products": [49], "color": "#ca8a04"},
+}
+
+INTRO_ROUTES = {
+    1: (1, 1),
+    2: (1, 2),
+    3: (1, 3),
+    4: (1, 4),
+    5: (1, 5),
+    6: (1, 6),
+    7: (1, 7),
+    8: (1, 8),
+    9: (1, 9),
+    10: (1, 10),
+    12: (2, 6),
+    14: (2, 7),
+    15: (3, 5),
+    16: (2, 8),
+    18: (2, 9),
+    20: (2, 10),
+    21: (3, 7),
+    24: (4, 6),
+    25: (5, 5),
+    27: (3, 9),
+    28: (4, 7),
+    30: (3, 10),
+    32: (4, 8),
+    35: (5, 7),
+    36: (4, 9),
+    40: (4, 10),
+    42: (6, 7),
+    45: (5, 9),
+    48: (6, 8),
+    49: (7, 7),
+    50: (5, 10),
+    54: (6, 9),
+    56: (7, 8),
+    60: (6, 10),
+    63: (7, 9),
+    64: (8, 8),
+    70: (7, 10),
+    72: (8, 9),
+    80: (8, 10),
+    81: (9, 9),
+    90: (9, 10),
+    100: (10, 10),
+}
+
+WORLD_LABELS = {
+    "0": "Foundation",
+    "A": "Identity",
+    "B": "Ten Scaling",
+    "C": "Five Midpoints",
+    "D": "Nine Structure",
+    "E": "Doubling Chain",
+    "F": "Interleaving",
+    "G": "Closure",
+}
+
+BAND_COLOR = {
+    "0": "#f8fafc",
+    "A": "#f8fafc",
+    "B": "#eff6ff",
+    "C": "#ecfeff",
+    "D": "#f0f9ff",
+    "E": "#f0fdfa",
+    "F": "#f5f3ff",
+    "G": "#fffbeb",
+}
+
+PRODUCT_STAGE: Dict[int, str] = {
+    product: stage for stage, meta in STAGE_META.items() for product in meta["products"]
+}
+
+
+def stage_rank(stage: str) -> int:
+    return STAGE_ORDER.index(stage)
+
+
+def visible_products(stage: str) -> List[int]:
+    visible = set()
+    for s in STAGE_ORDER:
+        if stage_rank(s) <= stage_rank(stage):
+            visible.update(STAGE_META[s]["products"])
+    return sorted(visible)
+
+
+def routes(product: int) -> List[Route]:
+    return [(a, b) for a in range(1, 11) for b in range(1, 11) if a * b == product]
+
+
+def exits(product: int) -> List[Route]:
+    return [(d, product // d) for d in range(1, 11) if product % d == 0 and 1 <= product // d <= 10]
+
+
+def factor_families(product: int) -> List[Route]:
+    return sorted({tuple(sorted((a, b))) for a, b in routes(product)})
+
+
+def related_products(product: int, stage: str) -> List[int]:
+    visible = set(visible_products(stage))
+    factors = {n for route in routes(product) for n in route}
+    return sorted(p for p in visible if p != product and factors.intersection(routes_flat(p)))
+
+
+def routes_flat(product: int) -> List[int]:
+    return [n for route in routes(product) for n in route]
+
+
+def structural_role(product: int) -> str:
+    family_count = len(factor_families(product))
+    if product == 49:
+        return "closure_hub"
+    if product in {21, 42}:
+        return "bridge_hub"
+    if family_count >= 3:
+        return "compression_hub"
+    if family_count == 1:
+        return "single_route_hub"
+    return "anchor_hub"
+
+
+def product_summary(product: int) -> Dict[str, str]:
+    intro = INTRO_ROUTES.get(product)
+    return {
+        "stage": STAGE_META[PRODUCT_STAGE[product]]["label"],
+        "intro": f"{intro[0]} × {intro[1]}" if intro else "—",
+        "entry_routes": str(len(routes(product))),
+        "exit_routes": str(len(exits(product))),
+        "families": str(len(factor_families(product))),
+        "role": structural_role(product),
+    }
+
+
+def distribute(left: float, right: float, count: int) -> List[float]:
+    if count <= 0:
+        return []
+    if count == 1:
+        return [(left + right) / 2]
+    step = (right - left) / (count - 1)
+    return [left + i * step for i in range(count)]
+
+
+def build_world_positions(stage: str) -> Dict[int, Tuple[float, float]]:
+    width = 1120
+    y_map = {"0": 90, "A": 200, "B": 335, "C": 470, "D": 620, "E": 800, "F": 1010, "G": 1150}
+    visible = visible_products(stage)
+    positions: Dict[int, Tuple[float, float]] = {}
+
+    for s in STAGE_ORDER:
+        if stage_rank(s) > stage_rank(stage):
+            continue
+        stage_products = [p for p in STAGE_META[s]["products"] if p in visible]
+        xs = distribute(130, width - 130, len(stage_products))
+        y = y_map[s]
+        for product, x in zip(stage_products, xs):
+            positions[product] = (x, y)
+
+    return positions
+
+
+def hub_radius(product: int, selected: int) -> int:
+    if product == selected:
+        return 35
+    family_count = len(factor_families(product))
+    if family_count >= 3:
+        return 28
+    if family_count == 2:
+        return 25
+    return 23
+
+
+def build_world_svg(stage: str, selected: int) -> str:
+    width = 1120
+    height = 1220
+    positions = build_world_positions(stage)
+    visible = visible_products(stage)
+
+    svg: List[str] = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" xmlns="http://www.w3.org/2000/svg">',
+        '<rect width="100%" height="100%" fill="#ffffff"/>',
+        """
+        <defs>
+          <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.14"/>
+          </filter>
+        </defs>
+        """,
+    ]
+
+    y_map = {"0": 90, "A": 200, "B": 335, "C": 470, "D": 620, "E": 800, "F": 1010, "G": 1150}
+    heights = {"0": 70, "A": 78, "B": 95, "C": 76, "D": 95, "E": 118, "F": 78, "G": 68}
+
+    for s in STAGE_ORDER:
+        if stage_rank(s) > stage_rank(stage):
+            continue
+        y = y_map[s]
+        h = heights[s]
+        top = y - (h / 2)
+        svg.append(
+            f'<rect x="24" y="{top:.1f}" width="{width - 48}" height="{h}" rx="18" '
+            f'fill="{BAND_COLOR[s]}" stroke="#e2e8f0" stroke-width="1.5"/>'
+        )
+        svg.append(
+            f'<text x="42" y="{top + 27:.1f}" font-size="15" font-weight="800" fill="#334155">'
+            f'{STAGE_META[s]["label"]}</text>'
+        )
+
+    for product in visible:
+        intro = INTRO_ROUTES.get(product)
+        if not intro or product not in positions:
+            continue
+        px, py = positions[product]
+        for src in intro:
+            if src not in positions:
+                continue
+            sx, sy = positions[src]
+            stroke = "#fb923c" if selected in {product, src} else "#94a3b8"
+            opacity = "0.85" if selected in {product, src} else "0.28"
+            svg.append(
+                f'<line x1="{sx:.1f}" y1="{sy:.1f}" x2="{px:.1f}" y2="{py:.1f}" '
+                f'stroke="{stroke}" stroke-width="2.8" opacity="{opacity}"/>'
+            )
+
+    if selected in positions:
+        px, py = positions[selected]
+        for route in routes(selected):
+            if route == INTRO_ROUTES.get(selected):
+                continue
+            for src in route:
+                if src not in positions:
+                    continue
+                sx, sy = positions[src]
+                svg.append(
+                    f'<line x1="{sx:.1f}" y1="{sy:.1f}" x2="{px:.1f}" y2="{py:.1f}" '
+                    f'stroke="#8b5cf6" stroke-width="2.8" opacity="0.65" stroke-dasharray="5 5"/>'
+                )
+
+    for product in visible:
+        x, y = positions[product]
+        color = STAGE_META[PRODUCT_STAGE[product]]["color"]
+        radius = hub_radius(product, selected)
+        role = structural_role(product)
+        selected_state = product == selected
+
+        if role == "compression_hub":
+            svg.append(
+                f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius + 8}" fill="#8b5cf6" opacity="0.12"/>'
+            )
+        if role == "bridge_hub":
+            svg.append(
+                f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius + 7}" fill="#22c55e" opacity="0.10"/>'
+            )
+        if role == "closure_hub":
+            svg.append(
+                f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius + 8}" fill="#f59e0b" opacity="0.16"/>'
+            )
+
+        stroke = "#fb923c" if selected_state else "#ffffff"
+        stroke_width = 5 if selected_state else 3
+        svg.append(
+            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius}" fill="{color}" '
+            f'stroke="{stroke}" stroke-width="{stroke_width}" filter="url(#softShadow)"/>'
+        )
+        svg.append(
+            f'<text x="{x:.1f}" y="{y + 7:.1f}" text-anchor="middle" font-size="19" '
+            f'font-weight="800" fill="#ffffff">{product}</text>'
+        )
+
+    svg.append("</svg>")
+    return "".join(svg)
+
+
+def radial_angles(count: int, start_deg: float, end_deg: float) -> List[float]:
+    if count <= 0:
+        return []
+    if count == 1:
+        return [(start_deg + end_deg) / 2]
+    step = (end_deg - start_deg) / (count - 1)
+    return [start_deg + i * step for i in range(count)]
+
+
+def arrowhead_polygon(x: float, y: float, angle_deg: float, size: float = 10.0) -> str:
+    left = math.radians(angle_deg + 145)
+    right = math.radians(angle_deg - 145)
+    x1 = x + size * math.cos(left)
+    y1 = y + size * math.sin(left)
+    x2 = x + size * math.cos(right)
+    y2 = y + size * math.sin(right)
+    return f"{x:.1f},{y:.1f} {x1:.1f},{y1:.1f} {x2:.1f},{y2:.1f}"
+
+
+def anchor_for_angle(angle_deg: float) -> str:
+    c = math.cos(math.radians(angle_deg))
+    if c > 0.30:
+        return "start"
+    if c < -0.30:
+        return "end"
+    return "middle"
+
+
+def text_shift(anchor: str) -> int:
+    if anchor == "start":
+        return 7
+    if anchor == "end":
+        return -7
+    return 0
+
+
+def build_radial_svg(product: int) -> str:
+    routes_list = routes(product)
+    exits_list = exits(product)
+    color = STAGE_META[PRODUCT_STAGE[product]]["color"]
+
+    width = 760
+    height = 540
+    cx = width / 2
+    cy = 275
+    hub_r = 78
+
+    entry_count = len(routes_list)
+    exit_count = len(exits_list)
+    max_count = max(entry_count, exit_count)
+
+    if max_count <= 3:
+        entry_outer = 152
+        exit_outer = 164
+        label_push = 16
+        entry_angles = [-150, -90, -30][:entry_count]
+        exit_angles = [150, 90, 30][:exit_count]
+    elif max_count == 4:
+        entry_outer = 162
+        exit_outer = 174
+        label_push = 16
+        entry_angles = [-155, -110, -70, -25]
+        exit_angles = [155, 110, 70, 25]
+    else:
+        entry_outer = 175
+        exit_outer = 188
+        label_push = 16
+        entry_angles = radial_angles(entry_count, -155, -25)
+        exit_angles = radial_angles(exit_count, 155, 25)
+
+    entry_inner = hub_r + 10
+    exit_inner = hub_r + 12
+
+    svg: List[str] = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" xmlns="http://www.w3.org/2000/svg">',
+        '<rect width="100%" height="100%" rx="18" fill="#020617"/>',
+        '<text x="22" y="34" font-size="27" font-weight="800" fill="#e2e8f0">Radial Hub View</text>',
+        '<text x="22" y="60" font-size="15" fill="#cbd5e1">Multiplication enters · Division exits</text>',
+    ]
+
+    for angle_deg, route in zip(entry_angles, routes_list):
+        angle = math.radians(angle_deg)
+        ox = cx + entry_outer * math.cos(angle)
+        oy = cy + entry_outer * math.sin(angle)
+        ix = cx + entry_inner * math.cos(angle)
+        iy = cy + entry_inner * math.sin(angle)
+        tx = cx + (entry_outer + label_push) * math.cos(angle)
+        ty = cy + (entry_outer + label_push) * math.sin(angle)
+        anchor = anchor_for_angle(angle_deg)
+
+        svg.append(
+            f'<line x1="{ox:.1f}" y1="{oy:.1f}" x2="{ix:.1f}" y2="{iy:.1f}" stroke="#e2e8f0" stroke-width="3.5"/>'
+        )
+        svg.append(f'<polygon points="{arrowhead_polygon(ix, iy, angle_deg)}" fill="#e2e8f0"/>')
+        svg.append(
+            f'<text x="{tx + text_shift(anchor):.1f}" y="{ty:.1f}" text-anchor="{anchor}" '
+            f'font-size="22" font-weight="700" fill="#ffffff">{route[0]}×{route[1]}</text>'
+        )
+
+    for angle_deg, route in zip(exit_angles, exits_list):
+        angle = math.radians(angle_deg)
+        ix = cx + exit_inner * math.cos(angle)
+        iy = cy + exit_inner * math.sin(angle)
+        ox = cx + exit_outer * math.cos(angle)
+        oy = cy + exit_outer * math.sin(angle)
+        tx = cx + (exit_outer + label_push) * math.cos(angle)
+        ty = cy + (exit_outer + label_push) * math.sin(angle)
+        anchor = anchor_for_angle(angle_deg)
+
+        svg.append(
+            f'<line x1="{ix:.1f}" y1="{iy:.1f}" x2="{ox:.1f}" y2="{oy:.1f}" stroke="#a78bfa" stroke-width="3.5"/>'
+        )
+        svg.append(f'<polygon points="{arrowhead_polygon(ox, oy, angle_deg)}" fill="#a78bfa"/>')
+        svg.append(
+            f'<text x="{tx + text_shift(anchor):.1f}" y="{ty + 4:.1f}" text-anchor="{anchor}" '
+            f'font-size="22" font-weight="700" fill="#ddd6fe">{product}÷{route[0]}</text>'
+        )
+
+    if structural_role(product) == "compression_hub":
+        svg.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{hub_r + 16}" fill="#8b5cf6" opacity="0.18"/>')
+
+    svg.append(
+        f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{hub_r}" fill="{color}" stroke="#ffffff" stroke-width="4.5"/>'
+    )
+    svg.append(
+        f'<text x="{cx:.1f}" y="{cy + 16:.1f}" text-anchor="middle" font-size="46" font-weight="800" fill="#ffffff">{product}</text>'
+    )
+    svg.append("</svg>")
+    return "".join(svg)
+
+
+def card_html(title: str, value: str, accent: str) -> str:
+    return f"""
+    <div style="
+        background:#ffffff;
+        border:1px solid #e2e8f0;
+        border-radius:16px;
+        padding:14px 16px;
+        min-height:92px;
+    ">
+        <div style="font-size:13px;color:#64748b;font-weight:700;margin-bottom:8px;">{title}</div>
+        <div style="font-size:28px;line-height:1.1;font-weight:800;color:{accent};">{value}</div>
+    </div>
+    """
+
+
+def render_world_map(stage: str, selected: int) -> None:
+    svg = build_world_svg(stage, selected)
+    st.markdown(svg, unsafe_allow_html=True)
+
+
+def render_radial_map(product: int) -> None:
+    svg = build_radial_svg(product)
+    st.markdown(svg, unsafe_allow_html=True)
+
+
+def product_button_label(product: int) -> str:
+    intro = INTRO_ROUTES.get(product)
+    if not intro:
+        return str(product)
+    return f"{product} · {intro[0]}×{intro[1]}"
+
+
+def set_selected_product(stage: str) -> int:
+    visible = visible_products(stage)
+    current = st.session_state.get("selected_product", visible[0])
+    if current not in visible:
+        current = visible[0]
+    return current
+
 
 st.title("TMK Structural Planner")
-st.write("Deployment test successful.")
+st.caption("A deploy-safe teacher surface for product hubs, stage growth, routes in, and routes out.")
 
-st.markdown("---")
+with st.sidebar:
+    st.header("Teacher Controls")
+    stage = st.radio(
+        "Unlock stage",
+        STAGE_ORDER,
+        index=STAGE_ORDER.index(st.session_state.get("selected_stage", "0")),
+        format_func=lambda s: STAGE_META[s]["label"],
+    )
+    st.session_state.selected_stage = stage
 
-st.subheader("Next step")
-st.write("Once this deploys, we will reconnect the full TMK engine.")
+    st.markdown("---")
+    st.markdown("**World rules**")
+    st.caption("Product first")
+    st.caption("Multiplication = way in")
+    st.caption("Division = way out")
+    st.caption("Belonging = both factors at or below 10")
+
+selected_stage = st.session_state.selected_stage
+visible = visible_products(selected_stage)
+selected_product = set_selected_product(selected_stage)
+
+chosen_product = st.selectbox(
+    "Choose product",
+    visible,
+    index=visible.index(selected_product),
+    format_func=product_button_label,
+)
+st.session_state.selected_product = chosen_product
+selected_product = chosen_product
+
+summary = product_summary(selected_product)
+accent = STAGE_META[PRODUCT_STAGE[selected_product]]["color"]
+
+card_1, card_2, card_3, card_4 = st.columns(4)
+with card_1:
+    st.markdown(card_html("Selected hub", str(selected_product), accent), unsafe_allow_html=True)
+with card_2:
+    st.markdown(card_html("Stage", PRODUCT_STAGE[selected_product], accent), unsafe_allow_html=True)
+with card_3:
+    st.markdown(card_html("Intro route", summary["intro"], accent), unsafe_allow_html=True)
+with card_4:
+    st.markdown(card_html("Structural role", summary["role"], accent), unsafe_allow_html=True)
+
+st.subheader("Product World Map")
+render_world_map(selected_stage, selected_product)
+
+st.subheader("Visible products")
+product_columns = st.columns(min(6, len(visible)))
+for index, product in enumerate(visible):
+    with product_columns[index % len(product_columns)]:
+        button_type = "primary" if product == selected_product else "secondary"
+        if st.button(str(product), use_container_width=True, type=button_type, key=f"product-{product}"):
+            st.session_state.selected_product = product
+            st.rerun()
+
+left, right = st.columns([0.95, 1.25])
+
+with left:
+    st.subheader("Hub Detail")
+
+    st.markdown(
+        card_html(
+            "Hub summary",
+            f"{summary['entry_routes']} ways in · {summary['exit_routes']} ways out · {summary['families']} factor families",
+            accent,
+        ),
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(f"**Stage label:** {summary['stage']}")
+    st.markdown(f"**Pedagogical intro route:** `{summary['intro']} = {selected_product}`")
+
+    st.markdown("**Ways in**")
+    for a, b in routes(selected_product):
+        intro_marker = " ← intro" if INTRO_ROUTES.get(selected_product) == (a, b) else ""
+        st.write(f"{a} × {b} = {selected_product}{intro_marker}")
+
+    st.markdown("**Ways out**")
+    for d, q in exits(selected_product):
+        st.write(f"{selected_product} ÷ {d} = {q}")
+
+    st.markdown("**Factor families**")
+    for a, b in factor_families(selected_product):
+        st.write(f"({a}, {b})")
+
+with right:
+    st.subheader("Selected Product Map")
+    render_radial_map(selected_product)
+
+st.subheader("Stage Overview")
+overview_columns = st.columns(len(STAGE_ORDER))
+for idx, stage_key in enumerate(STAGE_ORDER):
+    with overview_columns[idx]:
+        unlocked = stage_rank(stage_key) <= stage_rank(selected_stage)
+        products = STAGE_META[stage_key]["products"]
+        fill = STAGE_META[stage_key]["color"] if unlocked else "#e5e7eb"
+        label_color = "#ffffff" if unlocked else "#6b7280"
+        st.markdown(
+            f"""
+            <div style="
+                background:{fill};
+                border-radius:16px;
+                padding:12px 10px;
+                min-height:148px;
+                border:1px solid #e5e7eb;
+            ">
+                <div style="font-size:14px;font-weight:800;color:{label_color};margin-bottom:8px;">
+                    {stage_key}
+                </div>
+                <div style="font-size:12px;font-weight:700;color:{label_color};margin-bottom:8px;">
+                    {WORLD_LABELS[stage_key]}
+                </div>
+                <div style="font-size:12px;line-height:1.5;color:{label_color};">
+                    {", ".join(str(p) for p in products)}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
