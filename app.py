@@ -504,14 +504,6 @@ def product_button_label(product: int) -> str:
     return f"{product} · {intro[0]}×{intro[1]}"
 
 
-def set_selected_product(stage: str) -> int:
-    unlocked = visible_products(stage)
-    current = st.session_state.get("selected_product", unlocked[0])
-    if current not in unlocked:
-        current = unlocked[0]
-    return current
-
-
 def visible_products_for_pattern(stage: str, pattern_id: str) -> List[int]:
     matches: List[int] = []
     for product in visible_products(stage):
@@ -547,21 +539,18 @@ with st.sidebar:
 selected_stage = st.session_state.selected_stage
 visible = visible_products(selected_stage)
 
-if "selected_product" not in st.session_state:
+if "selected_product" not in st.session_state or st.session_state.selected_product not in visible:
     st.session_state.selected_product = visible[0]
 
-if "product-select" not in st.session_state or st.session_state["product-select"] not in visible:
-    st.session_state["product-select"] = st.session_state.selected_product if st.session_state.selected_product in visible else visible[0]
-
-selected_product = st.selectbox(
+chosen_product = st.selectbox(
     "Choose product",
     visible,
-    index=visible.index(st.session_state["product-select"]),
+    index=visible.index(st.session_state.selected_product),
     format_func=product_button_label,
-    key="product-select",
 )
 
-st.session_state.selected_product = selected_product
+st.session_state.selected_product = chosen_product
+selected_product = chosen_product
 
 summary = product_summary(selected_product)
 accent = STAGE_META[PRODUCT_STAGE[selected_product]]["color"]
@@ -602,7 +591,6 @@ for index, product in enumerate(visible):
         button_type = "primary" if product == selected_product else "secondary"
         if st.button(str(product), use_container_width=True, type=button_type, key=f"product-{product}"):
             st.session_state.selected_product = product
-            st.session_state["product-select"] = product
             st.rerun()
 
 left, right = st.columns([0.95, 1.25])
@@ -667,7 +655,6 @@ else:
         with cols[i % len(cols)]:
             if st.button(f"Explore {p}", use_container_width=True, key=f"rel-{p}"):
                 st.session_state.selected_product = p
-                st.session_state["product-select"] = p
                 st.rerun()
 
 st.subheader("Pattern Lens")
@@ -696,7 +683,6 @@ else:
                     key=f"pattern-open-{selected_pattern_id}-{product}",
                 ):
                     st.session_state.selected_product = product
-                    st.session_state["product-select"] = product
                     st.rerun()
 
 st.subheader("Stage Overview")
