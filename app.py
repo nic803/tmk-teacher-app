@@ -597,7 +597,7 @@ product_columns = st.columns(min(6, len(visible)))
 for index, product in enumerate(visible):
     with product_columns[index % len(product_columns)]:
         button_type = "primary" if product == selected_product else "secondary"
-        if st.button(str(product), use_container_width=True, type=button_type, key=f"product-{product}"):
+if st.button(str(product), use_container_width=True, type=button_type, key=f"product-{product}"):
     st.session_state.selected_product = product
     st.session_state["product-select"] = product
     st.rerun()
