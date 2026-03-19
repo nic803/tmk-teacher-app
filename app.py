@@ -216,12 +216,24 @@ def build_world_svg(stage: str, selected: int) -> str:
         y = y_map[s]
         h = heights[s]
         top = y - (h / 2)
+
         svg.append(
             f'<rect x="24" y="{top:.1f}" width="{width - 48}" height="{h}" rx="18" '
             f'fill="{BAND_COLOR[s]}" stroke="#e2e8f0" stroke-width="1.5"/>'
         )
+
+        label_x = 36
+        label_y = top + 11
+        label_width = 178
+        label_height = 24
+        label_text_y = label_y + 16
+
         svg.append(
-            f'<text x="42" y="{top + 27:.1f}" font-size="15" font-weight="800" fill="#334155">'
+            f'<rect x="{label_x}" y="{label_y:.1f}" width="{label_width}" height="{label_height}" rx="12" '
+            f'fill="#ffffff" fill-opacity="0.92" stroke="#cbd5e1" stroke-width="1"/>'
+        )
+        svg.append(
+            f'<text x="{label_x + 10}" y="{label_text_y:.1f}" font-size="13" font-weight="800" fill="#334155">'
             f'{STAGE_META[s]["label"]}</text>'
         )
 
