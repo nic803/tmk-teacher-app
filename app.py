@@ -563,6 +563,19 @@ selected_product = chosen_product
 summary = product_summary(selected_product)
 accent = STAGE_META[PRODUCT_STAGE[selected_product]]["color"]
 
+pattern_options = sorted(PATTERNS.keys(), key=lambda pid: PATTERNS[pid].name)
+default_pattern_id = pattern_options[0]
+
+selected_pattern_id = st.selectbox(
+    "Choose a pattern to inspect",
+    pattern_options,
+    index=pattern_options.index(default_pattern_id),
+    format_func=lambda pid: PATTERNS[pid].name,
+)
+
+selected_pattern = PATTERNS[selected_pattern_id]
+matching_products = visible_products_for_pattern(selected_stage, selected_pattern_id)
+
 card_1, card_2, card_3, card_4 = st.columns(4)
 with card_1:
     st.markdown(card_html("Selected hub", str(selected_product), accent), unsafe_allow_html=True)
@@ -618,7 +631,6 @@ with left:
 with right:
     st.subheader("Selected Product Map")
     render_radial_map(selected_product)
-
 st.subheader("Pattern Panel")
 patterns = product_patterns(selected_product)
 
