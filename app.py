@@ -3,7 +3,16 @@ from typing import Dict, List, Tuple
 
 import streamlit as st
 
-from patterns import product_patterns
+try:
+    from patterns import product_patterns
+    PATTERNS_AVAILABLE = True
+    PATTERN_IMPORT_ERROR = ""
+except Exception as exc:
+    PATTERNS_AVAILABLE = False
+    PATTERN_IMPORT_ERROR = str(exc)
+
+    def product_patterns(product: int):
+        return tuple()
 
 Route = Tuple[int, int]
 
@@ -504,6 +513,9 @@ def set_selected_product(stage: str) -> int:
 
 st.title("TMK Structural Planner")
 st.caption("A deploy-safe teacher surface for product hubs, stage growth, routes in, and routes out.")
+
+if not PATTERNS_AVAILABLE:
+    st.warning(f"Pattern panel unavailable. Check patterns.py. Import error: {PATTERN_IMPORT_ERROR}")
 
 with st.sidebar:
     st.header("Teacher Controls")
