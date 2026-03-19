@@ -598,8 +598,9 @@ for index, product in enumerate(visible):
     with product_columns[index % len(product_columns)]:
         button_type = "primary" if product == selected_product else "secondary"
         if st.button(str(product), use_container_width=True, type=button_type, key=f"product-{product}"):
-            st.session_state.selected_product = product
-            st.rerun()
+    st.session_state.selected_product = product
+    st.session_state["product-select"] = product
+    st.rerun()
 
 left, right = st.columns([0.95, 1.25])
 
@@ -662,8 +663,9 @@ else:
     for i, p in enumerate(neighbours):
         with cols[i % len(cols)]:
             if st.button(f"Explore {p}", use_container_width=True, key=f"rel-{p}"):
-                st.session_state.selected_product = p
-                st.rerun()
+    st.session_state.selected_product = p
+    st.session_state["product-select"] = p
+    st.rerun()
 
 st.subheader("Pattern Lens")
 
@@ -686,13 +688,13 @@ else:
         for i, product in enumerate(matching_products):
             with pattern_cols[i % len(pattern_cols)]:
                 if st.button(
-                    f"Open {product}",
-                    use_container_width=True,
-                    key=f"pattern-open-{selected_pattern_id}-{product}",
-                ):
-                    st.session_state.selected_product = product
-                    st.rerun()
-
+    f"Open {product}",
+    use_container_width=True,
+    key=f"pattern-open-{selected_pattern_id}-{product}",
+):
+    st.session_state.selected_product = product
+    st.session_state["product-select"] = product
+    st.rerun()
 st.subheader("Stage Overview")
 overview_columns = st.columns(len(STAGE_ORDER))
 for idx, stage_key in enumerate(STAGE_ORDER):
