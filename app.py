@@ -223,7 +223,6 @@ def build_world_svg(stage: str, selected: int, highlighted: List[int] | None = N
 
     y_map = {"0": 90, "A": 230, "B": 370, "C": 510, "D": 650, "E": 790, "F": 930, "G": 1070}
     heights = {stage_key: 118 for stage_key in STAGE_ORDER}
-
     stage_label_svg: List[str] = []
 
     for s in STAGE_ORDER:
@@ -547,17 +546,22 @@ with st.sidebar:
 
 selected_stage = st.session_state.selected_stage
 visible = visible_products(selected_stage)
-selected_product = set_selected_product(selected_stage)
 
-chosen_product = st.selectbox(
+if "selected_product" not in st.session_state:
+    st.session_state.selected_product = visible[0]
+
+if "product-select" not in st.session_state or st.session_state["product-select"] not in visible:
+    st.session_state["product-select"] = st.session_state.selected_product if st.session_state.selected_product in visible else visible[0]
+
+selected_product = st.selectbox(
     "Choose product",
     visible,
-    index=visible.index(selected_product),
+    index=visible.index(st.session_state["product-select"]),
     format_func=product_button_label,
     key="product-select",
 )
-st.session_state.selected_product = chosen_product
-selected_product = chosen_product
+
+st.session_state.selected_product = selected_product
 
 summary = product_summary(selected_product)
 accent = STAGE_META[PRODUCT_STAGE[selected_product]]["color"]
@@ -568,11 +572,10 @@ selected_pattern = None
 matching_products: List[int] = []
 
 if PATTERNS_AVAILABLE and pattern_options:
-    default_pattern_id = pattern_options[0]
     selected_pattern_id = st.selectbox(
         "Choose a pattern to inspect",
         pattern_options,
-        index=pattern_options.index(default_pattern_id),
+        index=0,
         format_func=lambda pid: PATTERNS[pid].name,
         key="pattern-lens-select",
     )
@@ -597,10 +600,10 @@ product_columns = st.columns(min(6, len(visible)))
 for index, product in enumerate(visible):
     with product_columns[index % len(product_columns)]:
         button_type = "primary" if product == selected_product else "secondary"
-if st.button(str(product), use_container_width=True, type=button_type, key=f"product-{product}"):
-    st.session_state.selected_product = product
-    st.session_state["product-select"] = product
-    st.rerun()
+        if st.button(str(product), use_container_width=True, type=button_type, key=f"product-{product}"):
+            st.session_state.selected_product = product
+            st.session_state["product-select"] = product
+            st.rerun()
 
 left, right = st.columns([0.95, 1.25])
 
@@ -662,15 +665,10 @@ else:
     cols = st.columns(min(6, len(neighbours)))
     for i, p in enumerate(neighbours):
         with cols[i % len(cols)]:
-            
-if st.button(
-    f"Open {product}",
-    use_container_width=True,
-    key=f"pattern-open-{selected_pattern_id}-{product}",
-):
-    st.session_state.selected_product = product
-    st.session_state["product-select"] = product
-    st.rerun()
+            if st.button(f"Explore {p}", use_container_width=True, key=f"rel-{p}"):
+                st.session_state.selected_product = p
+                st.session_state["product-select"] = p
+                st.rerun()
 
 st.subheader("Pattern Lens")
 
@@ -693,13 +691,14 @@ else:
         for i, product in enumerate(matching_products):
             with pattern_cols[i % len(pattern_cols)]:
                 if st.button(
-    f"Open {product}",
-    use_container_width=True,
-    key=f"pattern-open-{selected_pattern_id}-{product}",
-):
-    st.session_state.selected_product = product
-    st.session_state["product-select"] = product
-    st.rerun()
+                    f"Open {product}",
+                    use_container_width=True,
+                    key=f"pattern-open-{selected_pattern_id}-{product}",
+                ):
+                    st.session_state.selected_product = product
+                    st.session_state["product-select"] = product
+                    st.rerun()
+
 st.subheader("Stage Overview")
 overview_columns = st.columns(len(STAGE_ORDER))
 for idx, stage_key in enumerate(STAGE_ORDER):
