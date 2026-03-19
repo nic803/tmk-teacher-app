@@ -3,6 +3,8 @@ from typing import Dict, List, Tuple
 
 import streamlit as st
 
+from patterns import product_patterns
+
 Route = Tuple[int, int]
 
 st.set_page_config(page_title="TMK Structural Planner", page_icon="✳️", layout="wide")
@@ -460,6 +462,21 @@ def card_html(title: str, value: str, accent: str) -> str:
     """
 
 
+def pattern_badge_html(title: str, body: str) -> str:
+    return f"""
+    <div style="
+        background:#ffffff;
+        border:1px solid #e2e8f0;
+        border-radius:14px;
+        padding:12px 14px;
+        margin-bottom:10px;
+    ">
+        <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:6px;">{title}</div>
+        <div style="font-size:13px;line-height:1.5;color:#475569;">{body}</div>
+    </div>
+    """
+
+
 def render_world_map(stage: str, selected: int) -> None:
     svg = build_world_svg(stage, selected)
     st.markdown(svg, unsafe_allow_html=True)
@@ -576,6 +593,23 @@ with left:
 with right:
     st.subheader("Selected Product Map")
     render_radial_map(selected_product)
+
+st.subheader("Pattern Panel")
+patterns = product_patterns(selected_product)
+
+if not patterns:
+    st.info("No active patterns found for this product.")
+else:
+    pattern_columns = st.columns(2)
+    for index, pattern in enumerate(patterns):
+        with pattern_columns[index % 2]:
+            st.markdown(
+                pattern_badge_html(
+                    pattern.name,
+                    pattern.teacher_note,
+                ),
+                unsafe_allow_html=True,
+            )
 
 st.subheader("Stage Overview")
 overview_columns = st.columns(len(STAGE_ORDER))
