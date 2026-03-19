@@ -622,8 +622,20 @@ else:
                 ),
                 unsafe_allow_html=True,
             )
+st.subheader("Structural neighbours")
 
-st.subheader("Stage Overview")
+neighbours = related_products(selected_product, selected_stage)
+
+if not neighbours:
+    st.caption("No related products visible at this stage.")
+else:
+    cols = st.columns(min(6, len(neighbours)))
+
+    for i, p in enumerate(neighbours):
+        with cols[i % len(cols)]:
+            if st.button(f"Explore {p}", use_container_width=True, key=f"rel-{p}"):
+                st.session_state.selected_product = p
+                st.rerun()st.subheader("Stage Overview")
 overview_columns = st.columns(len(STAGE_ORDER))
 for idx, stage_key in enumerate(STAGE_ORDER):
     with overview_columns[idx]:
