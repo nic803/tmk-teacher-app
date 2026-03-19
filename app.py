@@ -635,7 +635,9 @@ else:
         with cols[i % len(cols)]:
             if st.button(f"Explore {p}", use_container_width=True, key=f"rel-{p}"):
                 st.session_state.selected_product = p
-                st.rerun()st.subheader("Stage Overview")
+                st.rerun()
+                
+st.subheader("Stage Overview")
 overview_columns = st.columns(len(STAGE_ORDER))
 for idx, stage_key in enumerate(STAGE_ORDER):
     with overview_columns[idx]:
