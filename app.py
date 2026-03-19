@@ -200,12 +200,13 @@ def hub_radius(product: int, selected: int) -> int:
     return 23
 
 
-def build_world_svg(stage: str, selected: int) -> str:
+def build_world_svg(stage: str, selected: int, highlighted: List[int] | None = None) -> str:
     width = 1120
     height = 1160
     positions = build_world_positions(stage)
     visible = visible_products(stage)
-
+    highlighted_set = set(highlighted or [])
+    
     svg: List[str] = [
         f'<svg viewBox="0 0 {width} {height}" width="100%" xmlns="http://www.w3.org/2000/svg">',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
@@ -296,6 +297,11 @@ def build_world_svg(stage: str, selected: int) -> str:
         role = structural_role(product)
         selected_state = product == selected
 
+        if product in highlighted_set and product != selected:
+            svg.append(
+                f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius + 11}" fill="#f59e0b" opacity="0.18"/>'
+            )
+                    
         if role == "compression_hub":
             svg.append(
                 f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius + 8}" fill="#8b5cf6" opacity="0.12"/>'
@@ -486,8 +492,8 @@ def pattern_badge_html(title: str, body: str) -> str:
     """
 
 
-def render_world_map(stage: str, selected: int) -> None:
-    svg = build_world_svg(stage, selected)
+def render_world_map(stage: str, selected: int, highlighted: List[int] | None = None) -> None:
+    svg = build_world_svg(stage, selected, highlighted)
     st.markdown(svg, unsafe_allow_html=True)
 
 
@@ -568,7 +574,7 @@ with card_4:
     st.markdown(card_html("Structural role", summary["role"], accent), unsafe_allow_html=True)
 
 st.subheader("Product World Map")
-render_world_map(selected_stage, selected_product)
+render_world_map(selected_stage, selected_product, matching_products)
 
 st.subheader("Visible products")
 product_columns = st.columns(min(6, len(visible)))
