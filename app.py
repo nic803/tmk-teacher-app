@@ -516,8 +516,9 @@ def visible_products_for_pattern(stage: str, pattern_id: str) -> List[int]:
         pattern_ids = {pattern.id for pattern in product_patterns(product)}
         if pattern_id in pattern_ids:
             matches.append(product)
-            
-    return matchesst.title("TMK Structural Planner")
+    return matches
+    
+st.title("TMK Structural Planner")
 st.caption("A deploy-safe teacher surface for product hubs, stage growth, routes in, and routes out.")
 
 if not PATTERNS_AVAILABLE:
