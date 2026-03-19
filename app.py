@@ -162,7 +162,7 @@ def distribute(left: float, right: float, count: int) -> List[float]:
 
 def build_world_positions(stage: str) -> Dict[int, Tuple[float, float]]:
     width = 1120
-    y_map = {"0": 90, "A": 200, "B": 335, "C": 470, "D": 620, "E": 800, "F": 1010, "G": 1150}
+    y_map = {"0": 90, "A": 230, "B": 370, "C": 510, "D": 650, "E": 790, "F": 930, "G": 1070}
     visible = visible_products(stage)
     positions: Dict[int, Tuple[float, float]] = {}
 
@@ -191,7 +191,7 @@ def hub_radius(product: int, selected: int) -> int:
 
 def build_world_svg(stage: str, selected: int) -> str:
     width = 1120
-    height = 1220
+    height = 1160
     positions = build_world_positions(stage)
     visible = visible_products(stage)
 
@@ -207,8 +207,17 @@ def build_world_svg(stage: str, selected: int) -> str:
         """,
     ]
 
-    y_map = {"0": 90, "A": 200, "B": 335, "C": 470, "D": 620, "E": 800, "F": 1010, "G": 1150}
-    heights = {"0": 70, "A": 78, "B": 95, "C": 76, "D": 95, "E": 118, "F": 78, "G": 68}
+    y_map = {"0": 90, "A": 230, "B": 370, "C": 510, "D": 650, "E": 790, "F": 930, "G": 1070}
+    heights = {
+        "0": 118,
+        "A": 118,
+        "B": 118,
+        "C": 118,
+        "D": 118,
+        "E": 118,
+        "F": 118,
+        "G": 118,
+    }
 
     stage_label_svg: List[str] = []
 
@@ -225,9 +234,9 @@ def build_world_svg(stage: str, selected: int) -> str:
         )
 
         label_x = 34
-        label_y = top + 8
         label_width = 205
         label_height = 24
+        label_y = top + 10
         label_text_y = label_y + 16
 
         stage_label_svg.append(
@@ -301,7 +310,6 @@ def build_world_svg(stage: str, selected: int) -> str:
         )
 
     svg.extend(stage_label_svg)
-
     svg.append("</svg>")
     return "".join(svg)
 
