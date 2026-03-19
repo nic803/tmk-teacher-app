@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 import streamlit as st
 
 try:
-    from patterns import product_patterns
+    from patterns import PATTERNS, product_patterns
     PATTERNS_AVAILABLE = True
     PATTERN_IMPORT_ERROR = ""
 except Exception as exc:
@@ -510,8 +510,14 @@ def set_selected_product(stage: str) -> int:
         current = visible[0]
     return current
 
-
-st.title("TMK Structural Planner")
+def visible_products_for_pattern(stage: str, pattern_id: str) -> List[int]:
+    matches: List[int] = []
+    for product in visible_products(stage):
+        pattern_ids = {pattern.id for pattern in product_patterns(product)}
+        if pattern_id in pattern_ids:
+            matches.append(product)
+            
+    return matchesst.title("TMK Structural Planner")
 st.caption("A deploy-safe teacher surface for product hubs, stage growth, routes in, and routes out.")
 
 if not PATTERNS_AVAILABLE:
@@ -635,6 +641,46 @@ else:
         with cols[i % len(cols)]:
             if st.button(f"Explore {p}", use_container_width=True, key=f"rel-{p}"):
                 st.session_state.selected_product = p
+                st.rerun()
+
+st.subheader("Pattern Lens")
+
+pattern_options = sorted(PATTERNS.keys(), key=lambda pid: PATTERNS[pid].name)
+default_pattern_id = pattern_options[0]
+
+selected_pattern_id = st.selectbox(
+    "Choose a pattern to inspect",
+    pattern_options,
+    index=pattern_options.index(default_pattern_id),
+    format_func=lambda pid: PATTERNS[pid].name,
+)
+
+selected_pattern = PATTERNS[selected_pattern_id]
+
+st.markdown(
+    pattern_badge_html(
+        selected_pattern.name,
+        selected_pattern.teacher_note,
+    ),
+    unsafe_allow_html=True,
+)
+
+matching_products = visible_products_for_pattern(selected_stage, selected_pattern_id)
+
+if not matching_products:
+    st.caption("No visible products match this pattern at the current stage.")
+else:
+    st.markdown("**Products showing this pattern**")
+    pattern_cols = st.columns(min(6, len(matching_products)))
+
+    for i, product in enumerate(matching_products):
+        with pattern_cols[i % len(pattern_cols)]:
+            if st.button(
+                f"Open {product}",
+                use_container_width=True,
+                key=f"pattern-open-{selected_pattern_id}-{product}",
+            ):
+                st.session_state.selected_product = product
                 st.rerun()
                 
 st.subheader("Stage Overview")
