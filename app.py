@@ -662,9 +662,14 @@ else:
     cols = st.columns(min(6, len(neighbours)))
     for i, p in enumerate(neighbours):
         with cols[i % len(cols)]:
-if st.button(f"Explore {p}", use_container_width=True, key=f"rel-{p}"):
-    st.session_state.selected_product = p
-    st.session_state["product-select"] = p
+            
+if st.button(
+    f"Open {product}",
+    use_container_width=True,
+    key=f"pattern-open-{selected_pattern_id}-{product}",
+):
+    st.session_state.selected_product = product
+    st.session_state["product-select"] = product
     st.rerun()
 
 st.subheader("Pattern Lens")
