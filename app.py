@@ -10,9 +10,11 @@ try:
 except Exception as exc:
     PATTERNS_AVAILABLE = False
     PATTERN_IMPORT_ERROR = str(exc)
+    PATTERNS = {}
 
     def product_patterns(product: int):
         return tuple()
+
 
 Route = Tuple[int, int]
 
@@ -127,14 +129,14 @@ def factor_families(product: int) -> List[Route]:
     return sorted({tuple(sorted((a, b))) for a, b in routes(product)})
 
 
+def routes_flat(product: int) -> List[int]:
+    return [n for route in routes(product) for n in route]
+
+
 def related_products(product: int, stage: str) -> List[int]:
     visible = set(visible_products(stage))
     factors = {n for route in routes(product) for n in route}
     return sorted(p for p in visible if p != product and factors.intersection(routes_flat(p)))
-
-
-def routes_flat(product: int) -> List[int]:
-    return [n for route in routes(product) for n in route]
 
 
 def structural_role(product: int) -> str:
@@ -206,7 +208,7 @@ def build_world_svg(stage: str, selected: int, highlighted: List[int] | None = N
     positions = build_world_positions(stage)
     visible = visible_products(stage)
     highlighted_set = set(highlighted or [])
-    
+
     svg: List[str] = [
         f'<svg viewBox="0 0 {width} {height}" width="100%" xmlns="http://www.w3.org/2000/svg">',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
@@ -220,22 +222,14 @@ def build_world_svg(stage: str, selected: int, highlighted: List[int] | None = N
     ]
 
     y_map = {"0": 90, "A": 230, "B": 370, "C": 510, "D": 650, "E": 790, "F": 930, "G": 1070}
-    heights = {
-        "0": 118,
-        "A": 118,
-        "B": 118,
-        "C": 118,
-        "D": 118,
-        "E": 118,
-        "F": 118,
-        "G": 118,
-    }
+    heights = {stage_key: 118 for stage_key in STAGE_ORDER}
 
     stage_label_svg: List[str] = []
 
     for s in STAGE_ORDER:
         if stage_rank(s) > stage_rank(stage):
             continue
+
         y = y_map[s]
         h = heights[s]
         top = y - (h / 2)
@@ -264,6 +258,7 @@ def build_world_svg(stage: str, selected: int, highlighted: List[int] | None = N
         intro = INTRO_ROUTES.get(product)
         if not intro or product not in positions:
             continue
+
         px, py = positions[product]
         for src in intro:
             if src not in positions:
@@ -301,7 +296,7 @@ def build_world_svg(stage: str, selected: int, highlighted: List[int] | None = N
             svg.append(
                 f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius + 11}" fill="#f59e0b" opacity="0.18"/>'
             )
-                    
+
         if role == "compression_hub":
             svg.append(
                 f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius + 8}" fill="#8b5cf6" opacity="0.12"/>'
@@ -317,6 +312,7 @@ def build_world_svg(stage: str, selected: int, highlighted: List[int] | None = N
 
         stroke = "#fb923c" if selected_state else "#ffffff"
         stroke_width = 5 if selected_state else 3
+
         svg.append(
             f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius}" fill="{color}" '
             f'stroke="{stroke}" stroke-width="{stroke_width}" filter="url(#softShadow)"/>'
@@ -510,11 +506,12 @@ def product_button_label(product: int) -> str:
 
 
 def set_selected_product(stage: str) -> int:
-    visible = visible_products(stage)
-    current = st.session_state.get("selected_product", visible[0])
-    if current not in visible:
-        current = visible[0]
+    unlocked = visible_products(stage)
+    current = st.session_state.get("selected_product", unlocked[0])
+    if current not in unlocked:
+        current = unlocked[0]
     return current
+
 
 def visible_products_for_pattern(stage: str, pattern_id: str) -> List[int]:
     matches: List[int] = []
@@ -523,7 +520,8 @@ def visible_products_for_pattern(stage: str, pattern_id: str) -> List[int]:
         if pattern_id in pattern_ids:
             matches.append(product)
     return matches
-    
+
+
 st.title("TMK Structural Planner")
 st.caption("A deploy-safe teacher surface for product hubs, stage growth, routes in, and routes out.")
 
@@ -556,6 +554,7 @@ chosen_product = st.selectbox(
     visible,
     index=visible.index(selected_product),
     format_func=product_button_label,
+    key="product-select",
 )
 st.session_state.selected_product = chosen_product
 selected_product = chosen_product
@@ -563,18 +562,22 @@ selected_product = chosen_product
 summary = product_summary(selected_product)
 accent = STAGE_META[PRODUCT_STAGE[selected_product]]["color"]
 
-pattern_options = sorted(PATTERNS.keys(), key=lambda pid: PATTERNS[pid].name)
-default_pattern_id = pattern_options[0]
+pattern_options = sorted(PATTERNS.keys(), key=lambda pid: PATTERNS[pid].name) if PATTERNS_AVAILABLE else []
+selected_pattern_id = None
+selected_pattern = None
+matching_products: List[int] = []
 
-selected_pattern_id = st.selectbox(
-    "Choose a pattern to inspect",
-    pattern_options,
-    index=pattern_options.index(default_pattern_id),
-    format_func=lambda pid: PATTERNS[pid].name,
-)
-
-selected_pattern = PATTERNS[selected_pattern_id]
-matching_products = visible_products_for_pattern(selected_stage, selected_pattern_id)
+if PATTERNS_AVAILABLE and pattern_options:
+    default_pattern_id = pattern_options[0]
+    selected_pattern_id = st.selectbox(
+        "Choose a pattern to inspect",
+        pattern_options,
+        index=pattern_options.index(default_pattern_id),
+        format_func=lambda pid: PATTERNS[pid].name,
+        key="pattern-lens-select",
+    )
+    selected_pattern = PATTERNS[selected_pattern_id]
+    matching_products = visible_products_for_pattern(selected_stage, selected_pattern_id)
 
 card_1, card_2, card_3, card_4 = st.columns(4)
 with card_1:
@@ -631,6 +634,7 @@ with left:
 with right:
     st.subheader("Selected Product Map")
     render_radial_map(selected_product)
+
 st.subheader("Pattern Panel")
 patterns = product_patterns(selected_product)
 
@@ -647,15 +651,14 @@ else:
                 ),
                 unsafe_allow_html=True,
             )
-st.subheader("Structural neighbours")
 
+st.subheader("Structural neighbours")
 neighbours = related_products(selected_product, selected_stage)
 
 if not neighbours:
     st.caption("No related products visible at this stage.")
 else:
     cols = st.columns(min(6, len(neighbours)))
-
     for i, p in enumerate(neighbours):
         with cols[i % len(cols)]:
             if st.button(f"Explore {p}", use_container_width=True, key=f"rel-{p}"):
@@ -664,44 +667,32 @@ else:
 
 st.subheader("Pattern Lens")
 
-pattern_options = sorted(PATTERNS.keys(), key=lambda pid: PATTERNS[pid].name)
-default_pattern_id = pattern_options[0]
-
-selected_pattern_id = st.selectbox(
-    "Choose a pattern to inspect",
-    pattern_options,
-    index=pattern_options.index(default_pattern_id),
-    format_func=lambda pid: PATTERNS[pid].name,
-)
-
-selected_pattern = PATTERNS[selected_pattern_id]
-
-st.markdown(
-    pattern_badge_html(
-        selected_pattern.name,
-        selected_pattern.teacher_note,
-    ),
-    unsafe_allow_html=True,
-)
-
-matching_products = visible_products_for_pattern(selected_stage, selected_pattern_id)
-
-if not matching_products:
-    st.caption("No visible products match this pattern at the current stage.")
+if not PATTERNS_AVAILABLE or not pattern_options or selected_pattern is None:
+    st.caption("Pattern lens unavailable.")
 else:
-    st.markdown("**Products showing this pattern**")
-    pattern_cols = st.columns(min(6, len(matching_products)))
+    st.markdown(
+        pattern_badge_html(
+            selected_pattern.name,
+            selected_pattern.teacher_note,
+        ),
+        unsafe_allow_html=True,
+    )
 
-    for i, product in enumerate(matching_products):
-        with pattern_cols[i % len(pattern_cols)]:
-            if st.button(
-                f"Open {product}",
-                use_container_width=True,
-                key=f"pattern-open-{selected_pattern_id}-{product}",
-            ):
-                st.session_state.selected_product = product
-                st.rerun()
-                
+    if not matching_products:
+        st.caption("No visible products match this pattern at the current stage.")
+    else:
+        st.markdown("**Products showing this pattern**")
+        pattern_cols = st.columns(min(6, len(matching_products)))
+        for i, product in enumerate(matching_products):
+            with pattern_cols[i % len(pattern_cols)]:
+                if st.button(
+                    f"Open {product}",
+                    use_container_width=True,
+                    key=f"pattern-open-{selected_pattern_id}-{product}",
+                ):
+                    st.session_state.selected_product = product
+                    st.rerun()
+
 st.subheader("Stage Overview")
 overview_columns = st.columns(len(STAGE_ORDER))
 for idx, stage_key in enumerate(STAGE_ORDER):
