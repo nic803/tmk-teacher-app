@@ -210,6 +210,8 @@ def build_world_svg(stage: str, selected: int) -> str:
     y_map = {"0": 90, "A": 200, "B": 335, "C": 470, "D": 620, "E": 800, "F": 1010, "G": 1150}
     heights = {"0": 70, "A": 78, "B": 95, "C": 76, "D": 95, "E": 118, "F": 78, "G": 68}
 
+    stage_label_svg: List[str] = []
+
     for s in STAGE_ORDER:
         if stage_rank(s) > stage_rank(stage):
             continue
@@ -222,17 +224,17 @@ def build_world_svg(stage: str, selected: int) -> str:
             f'fill="{BAND_COLOR[s]}" stroke="#e2e8f0" stroke-width="1.5"/>'
         )
 
-        label_x = 36
-        label_y = top + 11
-        label_width = 178
+        label_x = 34
+        label_y = top + 8
+        label_width = 205
         label_height = 24
         label_text_y = label_y + 16
 
-        svg.append(
+        stage_label_svg.append(
             f'<rect x="{label_x}" y="{label_y:.1f}" width="{label_width}" height="{label_height}" rx="12" '
-            f'fill="#ffffff" fill-opacity="0.92" stroke="#cbd5e1" stroke-width="1"/>'
+            f'fill="#ffffff" fill-opacity="0.96" stroke="#cbd5e1" stroke-width="1.2"/>'
         )
-        svg.append(
+        stage_label_svg.append(
             f'<text x="{label_x + 10}" y="{label_text_y:.1f}" font-size="13" font-weight="800" fill="#334155">'
             f'{STAGE_META[s]["label"]}</text>'
         )
@@ -297,6 +299,8 @@ def build_world_svg(stage: str, selected: int) -> str:
             f'<text x="{x:.1f}" y="{y + 7:.1f}" text-anchor="middle" font-size="19" '
             f'font-weight="800" fill="#ffffff">{product}</text>'
         )
+
+    svg.extend(stage_label_svg)
 
     svg.append("</svg>")
     return "".join(svg)
