@@ -557,7 +557,8 @@ with st.sidebar:
         "Language mode",
         ["Teacher", "Child"],
         key="language_mode",
-    )    stage = st.radio(
+    )    
+    stage = st.radio(
         "Unlock stage",
         STAGE_ORDER,
         index=STAGE_ORDER.index(st.session_state.get("selected_stage", "0")),
