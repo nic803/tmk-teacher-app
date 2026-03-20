@@ -213,6 +213,17 @@ def hub_radius(product: int, selected: int) -> int:
     return 23
 
 
+def pattern_glow_color(product: int) -> str | None:
+    role = structural_role(product)
+    if role == "compression_hub":
+        return "#8b5cf6"
+    if role == "bridge_hub":
+        return "#22c55e"
+    if any(a == b for a, b in factor_families(product)):
+        return "#f59e0b"
+    return None
+
+
 def build_world_svg(stage: str, selected: int, highlighted: List[int] | None = None) -> str:
     width = 1120
     height = 1160
@@ -301,23 +312,29 @@ def build_world_svg(stage: str, selected: int, highlighted: List[int] | None = N
         radius = hub_radius(product, selected)
         role = structural_role(product)
         selected_state = product == selected
+        glow = pattern_glow_color(product)
 
         if product in highlighted_set and product != selected:
             svg.append(
                 f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius + 11}" fill="#f59e0b" opacity="0.18"/>'
             )
 
+        if glow is not None:
+            svg.append(
+                f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius + 8}" fill="{glow}" opacity="0.16"/>'
+            )
+
         if role == "compression_hub":
             svg.append(
-                f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius + 8}" fill="#8b5cf6" opacity="0.12"/>'
+                f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius + 8}" fill="#8b5cf6" opacity="0.08"/>'
             )
         if role == "bridge_hub":
             svg.append(
-                f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius + 7}" fill="#22c55e" opacity="0.10"/>'
+                f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius + 7}" fill="#22c55e" opacity="0.08"/>'
             )
         if role == "closure_hub":
             svg.append(
-                f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius + 8}" fill="#f59e0b" opacity="0.16"/>'
+                f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius + 8}" fill="#f59e0b" opacity="0.14"/>'
             )
 
         stroke = "#fb923c" if selected_state else "#ffffff"
@@ -499,6 +516,7 @@ def pattern_badge_html(title: str, body: str) -> str:
 
 
 def cue_badge_html(title: str, cue_text: str, cue_type: str, note: str) -> str:
+    note_block = f'<div style="font-size:13px;line-height:1.5;color:#7c2d12;">{note}</div>' if note else ""
     return f"""
     <div style="
         background:#fff7ed;
@@ -510,7 +528,7 @@ def cue_badge_html(title: str, cue_text: str, cue_type: str, note: str) -> str:
         <div style="font-size:13px;font-weight:800;color:#9a3412;margin-bottom:6px;">{title}</div>
         <div style="font-size:18px;line-height:1.35;font-weight:800;color:#7c2d12;margin-bottom:8px;">{cue_text}</div>
         <div style="font-size:12px;font-weight:700;color:#c2410c;margin-bottom:6px;">Type: {cue_type}</div>
-        <div style="font-size:13px;line-height:1.5;color:#7c2d12;">{note}</div>
+        {note_block}
     </div>
     """
 
@@ -552,12 +570,7 @@ if not MEMORY_CUES_AVAILABLE:
 
 with st.sidebar:
     st.header("Teacher Controls")
-    st.markdown("---")
-    language_mode = st.radio(
-        "Language mode",
-        ["Teacher", "Child"],
-        key="language_mode",
-    )    
+
     stage = st.radio(
         "Unlock stage",
         STAGE_ORDER,
@@ -565,6 +578,13 @@ with st.sidebar:
         format_func=lambda s: STAGE_META[s]["label"],
     )
     st.session_state.selected_stage = stage
+
+    st.markdown("---")
+    language_mode = st.radio(
+        "Language mode",
+        ["Teacher", "Child"],
+        key="language_mode",
+    )
 
     st.markdown("---")
     st.markdown("**World rules**")
@@ -673,10 +693,11 @@ else:
     pattern_columns = st.columns(2)
     for index, pattern in enumerate(patterns):
         with pattern_columns[index % 2]:
+            body = pattern.child_text if st.session_state.get("language_mode", "Teacher") == "Child" else pattern.teacher_note
             st.markdown(
                 pattern_badge_html(
                     pattern.name,
-                    pattern.teacher_note,
+                    body,
                 ),
                 unsafe_allow_html=True,
             )
@@ -688,7 +709,6 @@ if not cues:
     st.caption("No memory cues attached to this product.")
 else:
     for cue in cues:
-
         if st.session_state.get("language_mode", "Teacher") == "Child":
             text = cue.child_text
             note = ""
@@ -724,10 +744,11 @@ st.subheader("Pattern Lens")
 if not PATTERNS_AVAILABLE or not pattern_options or selected_pattern is None:
     st.caption("Pattern lens unavailable.")
 else:
+    lens_body = selected_pattern.child_text if st.session_state.get("language_mode", "Teacher") == "Child" else selected_pattern.teacher_note
     st.markdown(
         pattern_badge_html(
             selected_pattern.name,
-            selected_pattern.teacher_note,
+            lens_body,
         ),
         unsafe_allow_html=True,
     )
