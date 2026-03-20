@@ -27,6 +27,7 @@ except Exception:
 APP_TITLE = "TMK Teacher App"
 SURFACES = ("Structural Planner", "Product Lab", "Worksheet Studio")
 TIERS = ("Support", "Core", "Extension")
+PLANNER_LINK_MODES = ("Selected links", "All links", "No links")
 
 
 st.set_page_config(
@@ -80,6 +81,12 @@ def _ensure_state() -> None:
         st.session_state.selected_tier = "Core"
     if "compare_product" not in st.session_state:
         st.session_state.compare_product = 24 if 24 in ALL_PRODUCTS else ALL_PRODUCTS[0]
+    if "planner_link_mode" not in st.session_state:
+        st.session_state.planner_link_mode = "Selected links"
+    if "planner_show_route_labels" not in st.session_state:
+        st.session_state.planner_show_route_labels = True
+    if "planner_focus_stage_only" not in st.session_state:
+        st.session_state.planner_focus_stage_only = False
 
 
 def _apply_styles() -> None:
@@ -138,7 +145,7 @@ def _apply_styles() -> None:
                 background: rgba(255, 255, 255, 0.74);
                 border: 1px solid #eadfd0;
                 border-radius: 24px;
-                padding: 1rem 1rem;
+                padding: 1rem;
                 box-shadow: 0 10px 30px rgba(34, 46, 75, 0.05);
                 margin-bottom: 1rem;
             }
@@ -246,11 +253,20 @@ def _apply_styles() -> None:
                 margin-bottom: 0.55rem;
             }
 
-            .tmk-mobile-map-note {
-                font-size: 0.95rem;
-                line-height: 1.5;
-                color: #59667f;
-                margin-bottom: 0.75rem;
+            .tmk-map-wrap {
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                border-radius: 20px;
+                margin-top: 0.8rem;
+            }
+
+            .tmk-radial-text-list {
+                margin-top: 0.75rem;
+            }
+
+            .tmk-radial-text-list .tmk-note {
+                margin-bottom: 0.28rem;
             }
 
             .tmk-worksheet-frame {
@@ -269,8 +285,11 @@ def _apply_styles() -> None:
                 margin-bottom: 0.7rem;
             }
 
-            .tmk-answer-box strong {
+            .tmk-control-caption {
+                font-size: 0.92rem;
+                color: #5f6a80;
                 line-height: 1.45;
+                margin-top: 0.25rem;
             }
 
             .stButton > button {
@@ -296,25 +315,6 @@ def _apply_styles() -> None:
                 border-left: 1px solid #eadfd0;
             }
 
-            [data-testid="stMetric"] {
-                background: transparent;
-            }
-
-            .tmk-map-wrap {
-                overflow-x: auto;
-                overflow-y: hidden;
-                -webkit-overflow-scrolling: touch;
-                border-radius: 20px;
-            }
-
-            .tmk-radial-text-list {
-                margin-top: 0.75rem;
-            }
-
-            .tmk-radial-text-list .tmk-note {
-                margin-bottom: 0.28rem;
-            }
-
             @media (max-width: 900px) {
                 .tmk-shell {
                     max-width: 100%;
@@ -329,10 +329,6 @@ def _apply_styles() -> None:
                     font-size: 1.6rem;
                 }
 
-                .tmk-header p {
-                    font-size: 0.98rem;
-                }
-
                 .tmk-panel {
                     border-radius: 18px;
                     padding: 0.85rem;
@@ -342,24 +338,8 @@ def _apply_styles() -> None:
                     font-size: 1.55rem;
                 }
 
-                .tmk-section-subtitle {
-                    font-size: 0.97rem;
-                }
-
-                .tmk-card,
-                .tmk-card-dark,
-                .tmk-worksheet-frame,
-                .tmk-answer-box {
-                    border-radius: 16px;
-                }
-
                 .tmk-value {
                     font-size: 1.18rem;
-                }
-
-                .tmk-pill {
-                    font-size: 0.92rem;
-                    padding: 0.42rem 0.66rem;
                 }
             }
 
@@ -397,7 +377,8 @@ def _apply_styles() -> None:
                 }
 
                 .tmk-section-subtitle,
-                .tmk-note {
+                .tmk-note,
+                .tmk-control-caption {
                     font-size: 0.92rem;
                     line-height: 1.5;
                 }
@@ -470,6 +451,23 @@ def _render_sidebar() -> None:
         )
         st.session_state.compare_product = compare_product
 
+        st.markdown("---")
+        st.markdown("### Planner display")
+        link_mode = st.radio(
+            "Link mode",
+            options=PLANNER_LINK_MODES,
+            index=PLANNER_LINK_MODES.index(st.session_state.planner_link_mode),
+        )
+        st.session_state.planner_link_mode = link_mode
+        st.session_state.planner_show_route_labels = st.checkbox(
+            "Show selected-route labels",
+            value=st.session_state.planner_show_route_labels,
+        )
+        st.session_state.planner_focus_stage_only = st.checkbox(
+            "Focus selected stage only",
+            value=st.session_state.planner_focus_stage_only,
+        )
+
         record = product_record(st.session_state.selected_product)
 
         st.markdown("---")
@@ -487,25 +485,141 @@ def _render_structural_planner(product: int) -> None:
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Structural Planner</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="tmk-section-subtitle">World map, stage unlock view, visible products, and product-first navigation.</div>',
+        '<div class="tmk-section-subtitle">See how the selected product is linked to the world through its intro route.</div>',
         unsafe_allow_html=True,
     )
 
+    st.markdown("### Planner controls")
+    control_col1, control_col2, control_col3 = st.columns(3)
+
+    with control_col1:
+        st.selectbox(
+            "Selected product",
+            options=ALL_PRODUCTS,
+            index=ALL_PRODUCTS.index(st.session_state.selected_product),
+            key="planner_product_select",
+            format_func=_product_option_label,
+        )
+    if st.session_state.planner_product_select != st.session_state.selected_product:
+        st.session_state.selected_product = st.session_state.planner_product_select
+        st.rerun()
+
+    with control_col2:
+        st.selectbox(
+            "Link mode",
+            options=PLANNER_LINK_MODES,
+            index=PLANNER_LINK_MODES.index(st.session_state.planner_link_mode),
+            key="planner_link_mode_select",
+        )
+    st.session_state.planner_link_mode = st.session_state.planner_link_mode_select
+
+    with control_col3:
+        st.selectbox(
+            "Stage focus",
+            options=("Whole world", "Selected stage only"),
+            index=1 if st.session_state.planner_focus_stage_only else 0,
+            key="planner_stage_focus_select",
+        )
+    st.session_state.planner_focus_stage_only = (
+        st.session_state.planner_stage_focus_select == "Selected stage only"
+    )
+
+    st.checkbox(
+        "Show selected-route labels on the map",
+        key="planner_route_labels_checkbox",
+        value=st.session_state.planner_show_route_labels,
+    )
+    st.session_state.planner_show_route_labels = st.session_state.planner_route_labels_checkbox
+
     st.markdown(
         """
-        <div class="tmk-mobile-map-note">
-            On smaller screens, use the stage cards first. The large network map is still available below in a scrollable frame.
+        <div class="tmk-control-caption">
+            Selected links = only the selected product’s entry links are shown strongly. 
+            All links = the wider network is shown faintly behind the selected product. 
+            No links = stage layout only.
         </div>
         """,
         unsafe_allow_html=True,
     )
 
+    st.markdown("---")
+
+    explainer_left, explainer_right = st.columns([1.1, 1])
+
+    with explainer_left:
+        st.markdown("### What is happening")
+        st.markdown(
+            f"""
+            <div class="tmk-note">
+                <strong>{record.product}</strong> is selected.<br>
+                It belongs to <strong>{stage_label(record.stage)}</strong>.<br>
+                Its intro route is <strong>{_format_route(record.intro_route)}</strong>.<br>
+                That means the planner highlights the links from <strong>{record.intro_route[0]}</strong> and <strong>{record.intro_route[1]}</strong> into <strong>{record.product}</strong>.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with explainer_right:
+        st.markdown("### Link key")
+        st.markdown(
+            """
+            <div class="tmk-note">
+                <strong>Orange + purple highlighted lines</strong> = the selected product’s intro route.<br>
+                <strong>Faint grey lines</strong> = the wider world network.<br>
+                <strong>Large node with orange ring</strong> = the selected product.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
     _render_stage_cards(product)
 
     st.markdown('<div class="tmk-map-wrap">', unsafe_allow_html=True)
-    components.html(_world_map_html(product), height=820, scrolling=True)
+    components.html(
+        _world_map_html(
+            selected_product=product,
+            link_mode=st.session_state.planner_link_mode,
+            show_route_labels=st.session_state.planner_show_route_labels,
+            focus_stage_only=st.session_state.planner_focus_stage_only,
+        ),
+        height=860,
+        scrolling=True,
+    )
     st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
+
+    info_col1, info_col2 = st.columns(2)
+
+    with info_col1:
+        st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-subhead">Selected link explanation</div>', unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div class="tmk-note">
+                <strong>{record.intro_route[0]}</strong> links into <strong>{record.product}</strong> because it is one factor in the intro route.<br>
+                <strong>{record.intro_route[1]}</strong> links into <strong>{record.product}</strong> because it is the other factor in the intro route.<br>
+                The selected product is therefore read as <strong>{_format_route(record.intro_route)} = {record.product}</strong>.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with info_col2:
+        st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-subhead">Selected product summary</div>', unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div class="tmk-note"><strong>Product:</strong> {record.product}</div>
+            <div class="tmk-note"><strong>Stage:</strong> {stage_label(record.stage)}</div>
+            <div class="tmk-note"><strong>Intro route:</strong> {_format_route(record.intro_route)}</div>
+            <div class="tmk-note"><strong>Routes:</strong> {len(record.factor_families)}</div>
+            <div class="tmk-note"><strong>Role:</strong> {record.structural_role}</div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Visible products</div>', unsafe_allow_html=True)
@@ -515,14 +629,6 @@ def _render_structural_planner(product: int) -> None:
     )
     _render_visible_products_grid(product)
     st.markdown("</div>", unsafe_allow_html=True)
-
-    col1, col2 = st.columns(2)
-    with col1:
-        _metric_card("Selected product", str(record.product))
-        _metric_card("Intro route", _format_route(record.intro_route))
-    with col2:
-        _metric_card("Stage", stage_label(record.stage))
-        _metric_card("Structural role", record.structural_role)
 
 
 def _render_stage_cards(selected_product: int) -> None:
@@ -553,7 +659,7 @@ def _render_product_lab(product: int) -> None:
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Product Lab</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="tmk-section-subtitle">Hub overview, truth set, inverse field, pattern links, stage relations, compare products, and differentiation.</div>',
+        '<div class="tmk-section-subtitle">Hub overview, readable radial map, route lists, inverse field, pattern links, and comparisons.</div>',
         unsafe_allow_html=True,
     )
     st.markdown("</div>", unsafe_allow_html=True)
@@ -567,23 +673,47 @@ def _render_product_lab(product: int) -> None:
         ]
     )
 
+    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-subhead">Radial hub view</div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="tmk-note">
+            Entry routes point inward to the product. Exit routes show the division routes back out from the product.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     st.markdown('<div class="tmk-card-dark">', unsafe_allow_html=True)
-    components.html(_radial_hub_html(product), height=520, scrolling=True)
+    components.html(_radial_hub_html(product), height=620, scrolling=True)
+    st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-subhead">Radial route list</div>', unsafe_allow_html=True)
-    _render_radial_text_fallback(record)
-    st.markdown("</div>", unsafe_allow_html=True)
+    radial_col1, radial_col2 = st.columns(2)
+
+    with radial_col1:
+        st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-subhead">Entry routes</div>', unsafe_allow_html=True)
+        for route in _entry_routes_for_radial(record):
+            st.markdown(f'<div class="tmk-note">{escape(_format_route(route))}</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with radial_col2:
+        st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-subhead">Exit routes</div>', unsafe_allow_html=True)
+        for label in _exit_routes_for_radial(record):
+            st.markdown(f'<div class="tmk-note">{escape(label)}</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-subhead">Hub overview</div>', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-subhead">Hub explanation</div>', unsafe_allow_html=True)
     st.markdown(
         f"""
-        <div class="tmk-note"><strong>Product:</strong> {record.product}</div>
-        <div class="tmk-note"><strong>Intro route:</strong> {_format_route(record.intro_route)}</div>
-        <div class="tmk-note"><strong>Ways in:</strong> {len(record.ways_in)} ordered routes</div>
-        <div class="tmk-note"><strong>Ways out:</strong> {len(record.ways_out)} ordered exits</div>
+        <div class="tmk-note">
+            The centre circle is <strong>{record.product}</strong>.<br>
+            The inward routes are multiplication routes that make the product.<br>
+            The outward routes are division routes that recover factors from the product.<br>
+            The intro route stays fixed as <strong>{_format_route(record.intro_route)}</strong>.
+        </div>
         """,
         unsafe_allow_html=True,
     )
@@ -625,20 +755,6 @@ def _render_product_lab(product: int) -> None:
         <div class="tmk-note"><strong>{compare.product}</strong> · {stage_label(compare.stage)} · {_format_route(compare.intro_route)}</div>
         <div class="tmk-note">Shared factors: {_shared_factors(record.product, compare.product)}</div>
         <div class="tmk-note">Route counts: {len(record.factor_families)} vs {len(compare.factor_families)}</div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-subhead">Differentiation</div>', unsafe_allow_html=True)
-    st.markdown(
-        """
-        <div class="tmk-note">
-            Support keeps the same structure with lower working-memory load.<br>
-            Core keeps the full product-centred route structure.<br>
-            Extension keeps the same product but asks for comparison, justification, and explanation.
-        </div>
         """,
         unsafe_allow_html=True,
     )
@@ -736,8 +852,12 @@ def _render_visible_products_grid(product: int) -> None:
         cols = st.columns(cols_per_row)
         for offset, visible_product in enumerate(products[row_start: row_start + cols_per_row]):
             button_type = "primary" if visible_product == product else "secondary"
-            label = str(visible_product)
-            if cols[offset].button(label, key=f"visible_{visible_product}", use_container_width=True, type=button_type):
+            if cols[offset].button(
+                str(visible_product),
+                key=f"visible_{visible_product}",
+                use_container_width=True,
+                type=button_type,
+            ):
                 st.session_state.selected_product = visible_product
                 st.rerun()
 
@@ -765,23 +885,12 @@ def _render_pattern_links(product: int) -> None:
     )
 
 
-def _render_radial_text_fallback(record) -> None:
-    entry_lines = _entry_routes_for_radial(record)
-    exit_lines = _exit_routes_for_radial(record)
-
-    st.markdown('<div class="tmk-radial-text-list">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-note"><strong>Entry routes</strong></div>', unsafe_allow_html=True)
-    for route in entry_lines:
-        st.markdown(f'<div class="tmk-note">{escape(_format_route(route))}</div>', unsafe_allow_html=True)
-
-    st.markdown('<div style="height:0.5rem;"></div>', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-note"><strong>Exit routes</strong></div>', unsafe_allow_html=True)
-    for label in exit_lines:
-        st.markdown(f'<div class="tmk-note">{escape(label)}</div>', unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
-def _world_map_html(selected_product: int) -> str:
+def _world_map_html(
+    selected_product: int,
+    link_mode: str,
+    show_route_labels: bool,
+    focus_stage_only: bool,
+) -> str:
     width = 1320
     lane_x = 26
     lane_w = 1268
@@ -791,26 +900,44 @@ def _world_map_html(selected_product: int) -> str:
     stages = [stage for stage in STAGE_ORDER if stage in STAGES]
     y_positions = {stage: top + index * (lane_h + lane_gap) for index, stage in enumerate(stages)}
     positions = _world_positions(lane_x, lane_w, lane_h, lane_gap, top)
+    selected_record = product_record(selected_product)
 
     lines: list[str] = []
-    for product in ALL_PRODUCTS:
-        record = product_record(product)
-        start = positions.get(record.intro_route[0])
-        end = positions.get(product)
-        if start and end:
-            lines.append(_svg_line(start[0], start[1], end[0], end[1], "#aab5c5", 2.4, 0.34, ""))
-        alt = positions.get(record.intro_route[1])
-        if alt and end:
-            lines.append(_svg_line(alt[0], alt[1], end[0], end[1], "#aab5c5", 2.4, 0.34, ""))
+    route_labels: list[str] = []
 
-    selected_record = product_record(selected_product)
-    selected_end = positions[selected_product]
-    for factor in selected_record.intro_route:
-        if factor in positions:
-            sx, sy = positions[factor]
-            ex, ey = selected_end
-            lines.append(_svg_line(sx, sy, ex, ey, "#ff9f43", 4.0, 0.96, "8 6"))
-            lines.append(_svg_line(sx, sy, ex, ey, "#7c3aed", 1.8, 0.96, "2 8"))
+    if link_mode == "All links":
+        for product in ALL_PRODUCTS:
+            record = product_record(product)
+
+            if focus_stage_only and record.stage != selected_record.stage:
+                continue
+
+            start = positions.get(record.intro_route[0])
+            end = positions.get(product)
+            if start and end:
+                lines.append(_svg_line(start[0], start[1], end[0], end[1], "#aab5c5", 2.4, 0.34, ""))
+            alt = positions.get(record.intro_route[1])
+            if alt and end:
+                lines.append(_svg_line(alt[0], alt[1], end[0], end[1], "#aab5c5", 2.4, 0.34, ""))
+
+    if link_mode in ("Selected links", "All links"):
+        selected_end = positions[selected_product]
+        for factor in selected_record.intro_route:
+            if factor in positions:
+                sx, sy = positions[factor]
+                ex, ey = selected_end
+                lines.append(_svg_line(sx, sy, ex, ey, "#ff9f43", 4.0, 0.96, "8 6"))
+                lines.append(_svg_line(sx, sy, ex, ey, "#7c3aed", 1.8, 0.96, "2 8"))
+
+        if show_route_labels:
+            a, b = selected_record.intro_route
+            mx1 = (positions[a][0] + selected_end[0]) / 2
+            my1 = (positions[a][1] + selected_end[1]) / 2
+            mx2 = (positions[b][0] + selected_end[0]) / 2
+            my2 = (positions[b][1] + selected_end[1]) / 2
+            route_labels.append(_svg_label_box(mx1, my1 - 18, str(a)))
+            route_labels.append(_svg_label_box(mx2, my2 + 18, str(b)))
+            route_labels.append(_svg_label_box(selected_end[0], selected_end[1] + 54, f"{a}×{b}={selected_product}"))
 
     lane_rects: list[str] = []
     lane_labels: list[str] = []
@@ -828,8 +955,11 @@ def _world_map_html(selected_product: int) -> str:
 
     nodes: list[str] = []
     for product in ALL_PRODUCTS:
-        x, y = positions[product]
         record = product_record(product)
+        if focus_stage_only and record.stage != selected_record.stage:
+            continue
+
+        x, y = positions[product]
         fill = stage_color(record.stage)
         is_selected = product == selected_product
         radius = 36 if is_selected else 24
@@ -843,9 +973,11 @@ def _world_map_html(selected_product: int) -> str:
             f'<text x="{x}" y="{y + 7}" text-anchor="middle" font-size="{22 if is_selected else 16}" font-weight="900" fill="#ffffff">{product}</text>'
         )
 
-    legend = """
+    legend = f"""
         <rect x="26" y="708" width="1268" height="48" rx="16" fill="rgba(255,255,255,0.6)" stroke="#eadfd0" stroke-width="1.2"></rect>
-        <text x="48" y="738" font-size="17" font-weight="700" fill="#4a5873">Highlighted lines show the selected product’s intro route. Faint lines show the wider route network.</text>
+        <text x="48" y="738" font-size="17" font-weight="700" fill="#4a5873">
+            Selected product: {selected_product}. Intro route: {_format_route(selected_record.intro_route)}. Link mode: {escape(link_mode)}.
+        </text>
     """
 
     svg = f"""
@@ -854,6 +986,7 @@ def _world_map_html(selected_product: int) -> str:
         {''.join(lane_rects)}
         {''.join(lines)}
         {''.join(lane_labels)}
+        {''.join(route_labels)}
         {''.join(nodes)}
         {legend}
     </svg>
@@ -893,35 +1026,41 @@ def _world_positions(
 
 def _radial_hub_html(product: int) -> str:
     record = product_record(product)
-    cx = 380
-    cy = 245
-    r = 76
-    entry_routes = _entry_routes_for_radial(record)
-    exit_routes = _exit_routes_for_radial(record)
-    entry_angles = [-90, -152, -28, -210][: len(entry_routes)]
-    exit_angles = [90, 152, 28, 210][: len(exit_routes)]
+    cx = 420
+    cy = 260
+    r = 84
+
+    entry_routes = _entry_routes_for_radial(record)[:4]
+    exit_routes = _exit_routes_for_radial(record)[:4]
+
+    entry_positions = [
+        (210, 70),
+        (420, 32),
+        (630, 70),
+        (140, 170),
+    ]
+    exit_positions = [
+        (140, 400),
+        (420, 455),
+        (700, 400),
+        (630, 170),
+    ]
 
     lines: list[str] = []
-    labels: list[str] = []
+    boxes: list[str] = []
 
-    for angle, route in zip(entry_angles, entry_routes):
-        x2, y2 = _point(cx, cy, 190, angle)
-        x1, y1 = _point(cx, cy, r + 10, angle)
-        lines.append(_svg_arrow(x2, y2, x1, y1, "#dbe4f4", 4))
-        labels.append(
-            f'<text x="{x2}" y="{y2 - 14}" text-anchor="middle" font-size="22" font-weight="800" fill="#ffffff">{escape(_format_route(route))}</text>'
-        )
+    for route, (bx, by) in zip(entry_routes, entry_positions):
+        x2, y2 = _edge_point_toward(cx, cy, bx, by, r + 8)
+        lines.append(_svg_arrow(bx, by + 26, x2, y2, "#dbe4f4", 4))
+        boxes.append(_svg_info_box(bx - 58, by, 116, 42, _format_route(route), "#0e223f", "#dbe4f4"))
 
-    for angle, label in zip(exit_angles, exit_routes):
-        x1, y1 = _point(cx, cy, r + 12, angle)
-        x2, y2 = _point(cx, cy, 190, angle)
-        lines.append(_svg_arrow(x1, y1, x2, y2, "#9c7cff", 4))
-        labels.append(
-            f'<text x="{x2}" y="{y2 + 22}" text-anchor="middle" font-size="20" font-weight="800" fill="#ffffff">{escape(label)}</text>'
-        )
+    for label, (bx, by) in zip(exit_routes, exit_positions):
+        x1, y1 = _edge_point_toward(cx, cy, bx, by, r + 8)
+        lines.append(_svg_arrow(x1, y1, bx, by + 20, "#9c7cff", 4))
+        boxes.append(_svg_info_box(bx - 70, by, 140, 42, label, "#241448", "#d9c4ff"))
 
     svg = f"""
-    <svg viewBox="0 0 760 490" width="760" height="490" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 840 520" width="840" height="520" xmlns="http://www.w3.org/2000/svg">
         <defs>
             <marker id="arrow-end-light" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="#dbe4f4"></path>
@@ -930,15 +1069,15 @@ def _radial_hub_html(product: int) -> str:
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="#9c7cff"></path>
             </marker>
         </defs>
-        <rect x="0" y="0" width="760" height="490" rx="28" fill="#031026"></rect>
+        <rect x="0" y="0" width="840" height="520" rx="28" fill="#031026"></rect>
         <text x="18" y="28" font-size="18" font-weight="800" fill="#ffffff">Radial Hub View</text>
-        <text x="18" y="52" font-size="15" font-weight="500" fill="#d4def1">Multiplication routes point inward · Division routes point outward</text>
+        <text x="18" y="52" font-size="15" font-weight="500" fill="#d4def1">Entry routes point inward. Exit routes point outward.</text>
         {''.join(lines)}
         <circle cx="{cx}" cy="{cy}" r="{r}" fill="#9ba4b5" stroke="#f5f7fb" stroke-width="5"></circle>
-        <text x="{cx}" y="{cy + 13}" text-anchor="middle" font-size="42" font-weight="900" fill="#ffffff">{product}</text>
-        <text x="{cx}" y="{cy - 100}" text-anchor="middle" font-size="22" font-weight="800" fill="#ffffff">Entry routes</text>
-        <text x="{cx}" y="{cy + 126}" text-anchor="middle" font-size="22" font-weight="800" fill="#ffffff">Exit routes</text>
-        {''.join(labels)}
+        <text x="{cx}" y="{cy + 14}" text-anchor="middle" font-size="44" font-weight="900" fill="#ffffff">{product}</text>
+        <text x="{cx}" y="98" text-anchor="middle" font-size="20" font-weight="800" fill="#ffffff">Entry routes</text>
+        <text x="{cx}" y="430" text-anchor="middle" font-size="20" font-weight="800" fill="#ffffff">Exit routes</text>
+        {''.join(boxes)}
     </svg>
     """
     return svg.replace('marker-end="LIGHT"', 'marker-end="url(#arrow-end-light)"').replace(
@@ -952,10 +1091,13 @@ def _entry_routes_for_radial(record) -> list[tuple[int, int]]:
     routes.append(intro)
     if intro[0] != intro[1]:
         routes.append((intro[1], intro[0]))
-    for route in record.ways_in:
+    for route in record.factor_families:
         if route not in routes:
             routes.append(route)
-        if len(routes) == 4:
+        reversed_route = (route[1], route[0])
+        if reversed_route not in routes and reversed_route != route:
+            routes.append(reversed_route)
+        if len(routes) >= 4:
             break
     return routes[:4]
 
@@ -990,11 +1132,6 @@ def _pill_cloud(items: Iterable[object], accent: bool) -> str:
     return f'<div class="tmk-soft-list">{"".join(pills)}</div>'
 
 
-def _point(cx: float, cy: float, radius: float, angle_degrees: float) -> tuple[float, float]:
-    radians = angle_degrees * pi / 180.0
-    return cx + radius * cos(radians), cy + radius * sin(radians)
-
-
 def _svg_line(
     x1: float,
     y1: float,
@@ -1025,6 +1162,36 @@ def _svg_arrow(
         f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{color}" '
         f'stroke-width="{width}" stroke-linecap="round" marker-end="{marker}"></line>'
     )
+
+
+def _svg_label_box(x: float, y: float, text: str) -> str:
+    safe = escape(text)
+    return f"""
+        <g>
+            <rect x="{x - 18}" y="{y - 12}" width="{max(36, len(text) * 10)}" height="24" rx="10" fill="rgba(255,255,255,0.92)" stroke="#eadfd0" stroke-width="1.2"></rect>
+            <text x="{x}" y="{y + 5}" font-size="14" font-weight="800" fill="#22304f">{safe}</text>
+        </g>
+    """
+
+
+def _svg_info_box(x: float, y: float, w: float, h: float, text: str, fill: str, stroke: str) -> str:
+    safe = escape(text)
+    return f"""
+        <g>
+            <rect x="{x}" y="{y}" width="{w}" height="{h}" rx="14" fill="{fill}" stroke="{stroke}" stroke-width="2"></rect>
+            <text x="{x + w / 2}" y="{y + 26}" text-anchor="middle" font-size="18" font-weight="800" fill="#ffffff">{safe}</text>
+        </g>
+    """
+
+
+def _edge_point_toward(cx: float, cy: float, tx: float, ty: float, radius: float) -> tuple[float, float]:
+    dx = tx - cx
+    dy = ty - cy
+    length = (dx * dx + dy * dy) ** 0.5
+    if length == 0:
+        return cx, cy
+    scale = radius / length
+    return cx + dx * scale, cy + dy * scale
 
 
 def _hex_to_rgba(hex_color: str, alpha: float) -> str:
