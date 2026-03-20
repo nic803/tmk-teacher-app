@@ -99,135 +99,50 @@ def _render_teacher_key(teacher_key: Dict[str, object]) -> None:
         for note in notes:
             st.write(f"- {note}")
 
-
 def _render_pupil_prompt(question: Dict[str, object]) -> str:
+
     prompt_key = str(question["prompt_key"])
-    prompt_data = question["prompt_data"]
+    data = question["prompt_data"]
 
-    if prompt_key == "notice_product":
-        return f"Find {prompt_data['product']}."
-
-    if prompt_key == "find_product":
-        return f"Find {prompt_data['product']}."
-
-    if prompt_key == "notice_product_structure":
-        return f"What do you notice about {prompt_data['product']}?"
+    if prompt_key == "identify_product":
+        return f"Find {data['product']}."
 
     if prompt_key == "complete_way_in":
-        return f"Complete: {prompt_data['left']} × __ = {prompt_data['product']}"
+        return f"Complete: {data['left']} × __ = {data['product']}"
 
-    if prompt_key == "find_way_in":
-        return f"Find a way in to {prompt_data['product']} using {prompt_data['left']}."
+    if prompt_key == "missing_factor":
+        return f"__ × {data['right']} = {data['product']}"
 
-    if prompt_key == "show_way_in":
-        return f"Show a way in to {prompt_data['product']} using {prompt_data['left']}."
+    if prompt_key == "division_way_out":
+        return f"{data['product']} ÷ {data['divisor']} = __"
 
-    if prompt_key == "complete_another_way_in":
-        return f"Complete: {prompt_data['left']} × __ = {prompt_data['product']}"
+    if prompt_key == "check_equation":
+        return f"Check: {data['left']} × {data['right']} = {data['product']}. True or false?"
 
-    if prompt_key == "find_another_way_in":
-        return f"Find another way in to {prompt_data['product']} using {prompt_data['left']}."
-
-    if prompt_key == "show_another_way_in":
-        return f"Show another way in to {prompt_data['product']} using {prompt_data['left']}."
-
-    if prompt_key == "single_way_in_notice":
-        route = prompt_data["route"]
-        return f"This product has one way in: {route['left']} × {route['right']}."
-
-    if prompt_key == "single_way_in_explain":
-        route = prompt_data["route"]
-        return f"This product has one way in: {route['left']} × {route['right']}. Explain."
-
-    if prompt_key == "complete_way_out":
-        return f"{prompt_data['product']} ÷ {prompt_data['divisor']} = __"
-
-    if prompt_key == "show_way_out":
-        return f"Show the way out from {prompt_data['product']} using {prompt_data['divisor']}."
-
-    if prompt_key == "complete_another_way_out":
-        return f"{prompt_data['product']} ÷ {prompt_data['divisor']} = __"
-
-    if prompt_key == "show_another_way_out":
-        return f"Show another way out from {prompt_data['product']} using {prompt_data['divisor']}."
-
-    if prompt_key == "single_way_out_notice":
-        division = prompt_data["division"]
+    if prompt_key == "compare_routes":
+        r1 = data["route_a"]
+        r2 = data["route_b"]
         return (
-            f"This product has one way out here: "
-            f"{division['product']} ÷ {division['divisor']} = {division['quotient']}."
+            f"Compare these ways in to {data['product']}: "
+            f"{r1['left']} × {r1['right']} and {r2['left']} × {r2['right']}."
         )
 
-    if prompt_key == "single_way_out_explain":
-        division = prompt_data["division"]
-        return (
-            f"This product has one way out here: "
-            f"{division['product']} ÷ {division['divisor']} = {division['quotient']}. Explain."
-        )
+    if prompt_key == "belongs_question":
+        return f"Does {data['candidate']} belong in the TMK World?"
 
-    if prompt_key == "find_another_way":
-        intro = prompt_data["intro_route"]
-        return (
-            f"One way in is {intro['left']} × {intro['right']}. "
-            f"Find another way in to {prompt_data['product']}."
-        )
+    if prompt_key == "repair_equation":
+        return f"Fix this: {data['left']} × {data['right']} = {data['product']}"
 
-    if prompt_key == "compare_two_ways":
-        intro = prompt_data["intro_route"]
-        other = prompt_data["other_route"]
-        return (
-            f"Compare these two ways in to {prompt_data['product']}: "
-            f"{intro['left']} × {intro['right']} and {other['left']} × {other['right']}."
-        )
+    if prompt_key == "sort_equations":
+        routes = []
+        for r in data["routes"]:
+            routes.append(f"{r[0]} × {r[1]}")
+        return f"Which of these make {data['product']}? " + ", ".join(routes)
 
-    if prompt_key == "one_way_in_only":
-        route = prompt_data["route"]
-        return f"{prompt_data['product']} has one way in: {route['left']} × {route['right']}."
+    if prompt_key == "explain_product":
+        return f"Explain something true about {data['product']}."
 
-    if prompt_key == "explain_one_way_in_only":
-        route = prompt_data["route"]
-        return (
-            f"{prompt_data['product']} has one way in: "
-            f"{route['left']} × {route['right']}. Explain why there is not another way in."
-        )
-
-    if prompt_key == "belongs_yes_no":
-        return f"Does {prompt_data['candidate']} belong in the TMK World?"
-
-    if prompt_key == "belongs_explain_outside":
-        return f"Does {prompt_data['candidate']} belong in the TMK World? Explain."
-
-    if prompt_key == "repair_broken_output":
-        return f"Check: {prompt_data['left']} × {prompt_data['right']} = {prompt_data['product']}. Fix it."
-
-    if prompt_key == "check_true_but_outside_world":
-        return (
-            f"Check: {prompt_data['left']} × {prompt_data['right']} = {prompt_data['product']}. "
-            "Is this a TMK way in? Fix or explain."
-        )
-
-    if prompt_key == "repair_broken_route":
-        return f"Check: {prompt_data['left']} × {prompt_data['right']} = {prompt_data['product']}. Fix it."
-
-    if prompt_key == "complete_rebuild":
-        return f"Complete: I can rebuild {prompt_data['product']} by using __ × __."
-
-    if prompt_key == "explain_rebuild":
-        return f"If you forgot {prompt_data['product']}, how could you rebuild it?"
-
-    if prompt_key == "justify_rebuild":
-        return f"Explain how you could rebuild {prompt_data['product']} using a known route."
-
-    if prompt_key == "complete_belongs_reason":
-        return f"Complete: {prompt_data['product']} belongs in the TMK World because __."
-
-    if prompt_key == "tell_one_true_thing":
-        return f"Tell one true thing about {prompt_data['product']}."
-
-    if prompt_key == "explain_structure":
-        return f"Explain the structure of {prompt_data['product']}."
-
-    return f"{prompt_key}: {prompt_data}"
+    return str(prompt_key)
 
 
 def _format_answer(answer: Dict[str, object]) -> str:
