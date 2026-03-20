@@ -1,57 +1,39 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
-from typing import Dict, Final, Literal, Tuple
+from typing import Dict, Tuple, Literal, Final
 
-from memory_cues import memory_cues_for_product
+from products import product_record, ALL_PRODUCTS
 from patterns import product_pattern_ids
-from products import ALL_PRODUCTS, ProductRecord, belongs_to_p10, product_record
-
+from memory_cues import memory_cues_for_product
 
 Tier = Literal["Support", "Core", "Extension"]
 
-QuestionSection = Literal[
-    "product_first",
-    "ways_in",
-    "ways_out",
-    "structure",
-    "belongs",
-    "error_repair",
-    "sorting",
-    "final_explanation",
-]
-
 QuestionForm = Literal[
-    "identify",
+    "circle",
     "fill_blank",
-    "missing_value",
-    "division",
+    "match",
+    "yes_no",
+    "complete",
+    "find",
     "true_false",
+    "compare",
+    "simple_sort",
     "compare_routes",
-    "belongs_check",
-    "error_repair",
-    "sort_routes",
-    "explanation",
+    "odd_one_out",
+    "true_outside_false",
+    "sort_and_justify",
+    "rebuild_and_explain",
 ]
 
-AnswerKind = Literal[
-    "number",
-    "boolean",
-    "route",
-    "structured",
-]
-
-WORKSHEET_QUESTION_COUNT: Final[int] = 10
 VALID_TIERS: Final[Tuple[Tier, ...]] = ("Support", "Core", "Extension")
 
 
 @dataclass(frozen=True)
 class WorksheetQuestion:
     id: int
-    section: QuestionSection
     question_form: QuestionForm
     prompt_key: str
-    answer_kind: AnswerKind
     prompt_data: Dict[str, object]
     answer_data: Dict[str, object]
 
@@ -60,7 +42,7 @@ class WorksheetQuestion:
 class WorksheetTeacherKey:
     answers: Tuple[Dict[str, object], ...]
     pattern_ids: Tuple[str, ...]
-    notes: Tuple[str, ...]
+    memory_cues: Tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -75,7 +57,7 @@ class Worksheet:
 def generate_worksheet(product: int, tier: Tier) -> Worksheet:
 
     if product not in ALL_PRODUCTS:
-        raise ValueError("Invalid TMK product")
+        raise ValueError("Invalid product")
 
     if tier not in VALID_TIERS:
         raise ValueError("Invalid tier")
@@ -87,11 +69,7 @@ def generate_worksheet(product: int, tier: Tier) -> Worksheet:
     teacher_key = WorksheetTeacherKey(
         answers=tuple(q.answer_data for q in questions),
         pattern_ids=product_pattern_ids(product),
-        notes=(
-            f"Product {record.product}",
-            f"Stage {record.stage}",
-            f"Intro route {record.intro_route[0]}×{record.intro_route[1]}",
-        ),
+        memory_cues=tuple(c.id for c in memory_cues_for_product(product)),
     )
 
     return Worksheet(
@@ -103,145 +81,262 @@ def generate_worksheet(product: int, tier: Tier) -> Worksheet:
     )
 
 
-def generate_worksheet_dict(product: int, tier: Tier) -> Dict[str, object]:
+def generate_worksheet_dict(product: int, tier: Tier):
     return asdict(generate_worksheet(product, tier))
 
 
-def _build_questions(record: ProductRecord, tier: Tier) -> Tuple[WorksheetQuestion, ...]:
+def _build_questions(record, tier):
+
+    if tier == "Support":
+        return _support_questions(record)
+
+    if tier == "Core":
+        return _core_questions(record)
+
+    return _extension_questions(record)
+
+
+# ---------------- SUPPORT ----------------
+
+
+def _support_questions(record):
 
     p = record.product
     a, b = record.intro_route
 
-    other = _other_route(record)
-
-    questions = [
-
+    return (
         WorksheetQuestion(
             1,
-            "product_first",
-            "identify",
-            "identify_product",
-            "number",
+            "circle",
+            "circle_product",
             {"product": p},
             {"value": p},
         ),
-
         WorksheetQuestion(
             2,
-            "ways_in",
             "fill_blank",
             "complete_way_in",
-            "number",
             {"left": a, "product": p},
             {"value": b},
         ),
-
         WorksheetQuestion(
             3,
-            "ways_in",
-            "missing_value",
-            "missing_factor",
-            "number",
-            {"right": b, "product": p},
-            {"value": a},
+            "match",
+            "match_route",
+            {"product": p, "route": (a, b)},
+            {"route": (a, b)},
         ),
-
         WorksheetQuestion(
             4,
-            "ways_out",
+            "fill_blank",
             "division",
-            "division_way_out",
-            "number",
             {"product": p, "divisor": a},
             {"value": b},
         ),
-
         WorksheetQuestion(
             5,
-            "structure",
-            "true_false",
-            "check_equation",
-            "boolean",
-            {"left": a, "right": b, "product": p},
-            {"value": True},
-        ),
-
-        WorksheetQuestion(
-            6,
-            "structure",
-            "compare_routes",
-            "compare_routes",
-            "structured",
-            {
-                "product": p,
-                "route_a": {"left": a, "right": b},
-                "route_b": other,
-            },
-            {"comparison": "same_product"},
-        ),
-
-        WorksheetQuestion(
-            7,
-            "belongs",
-            "belongs_check",
-            "belongs_question",
-            "boolean",
+            "yes_no",
+            "belongs_yes_no",
             {"candidate": p},
             {"value": True},
         ),
-
+        WorksheetQuestion(
+            6,
+            "match",
+            "match_way_in_out",
+            {"product": p},
+            {"route": (a, b)},
+        ),
+        WorksheetQuestion(
+            7,
+            "yes_no",
+            "is_route",
+            {"left": a, "right": b},
+            {"value": True},
+        ),
         WorksheetQuestion(
             8,
-            "error_repair",
-            "error_repair",
+            "fill_blank",
             "repair_equation",
-            "structured",
-            {"left": a, "right": b + 1, "product": p},
-            {"correct": {"left": a, "right": b, "product": p}},
+            {"left": a, "product": p},
+            {"value": b},
         ),
-
         WorksheetQuestion(
             9,
-            "sorting",
-            "sort_routes",
-            "sort_equations",
-            "structured",
-            {
-                "product": p,
-                "routes": _route_examples(record),
-            },
-            {"valid_routes": record.ways_in},
+            "match",
+            "choose_route",
+            {"product": p},
+            {"route": (a, b)},
         ),
-
         WorksheetQuestion(
             10,
-            "final_explanation",
-            "explanation",
-            "explain_product",
-            "structured",
+            "fill_blank",
+            "belongs_reason",
             {"product": p},
-            {"accepted_routes": record.ways_in},
+            {"route": (a, b)},
         ),
-
-    ]
-
-    return tuple(questions)
+    )
 
 
-def _other_route(record: ProductRecord):
-
-    for r in record.ways_in:
-        if r != record.intro_route:
-            return {"left": r[0], "right": r[1]}
-
-    return {"left": record.intro_route[1], "right": record.intro_route[0]}
+# ---------------- CORE ----------------
 
 
-def _route_examples(record: ProductRecord):
+def _core_questions(record):
 
-    examples = list(record.ways_in)
+    p = record.product
+    a, b = record.intro_route
 
-    if len(examples) < 3:
-        examples.append((record.intro_route[0], record.intro_route[1] + 1))
+    return (
+        WorksheetQuestion(
+            1,
+            "find",
+            "find_product",
+            {"product": p},
+            {"value": p},
+        ),
+        WorksheetQuestion(
+            2,
+            "complete",
+            "complete_way_in",
+            {"left": a, "product": p},
+            {"value": b},
+        ),
+        WorksheetQuestion(
+            3,
+            "find",
+            "find_other_way",
+            {"product": p},
+            {"route": record.ways_in[0]},
+        ),
+        WorksheetQuestion(
+            4,
+            "complete",
+            "division",
+            {"product": p, "divisor": a},
+            {"value": b},
+        ),
+        WorksheetQuestion(
+            5,
+            "true_false",
+            "check_equation",
+            {"left": a, "right": b, "product": p},
+            {"value": True},
+        ),
+        WorksheetQuestion(
+            6,
+            "compare",
+            "compare_routes",
+            {"product": p},
+            {"routes": record.ways_in},
+        ),
+        WorksheetQuestion(
+            7,
+            "find",
+            "belongs_check",
+            {"candidate": p},
+            {"value": True},
+        ),
+        WorksheetQuestion(
+            8,
+            "complete",
+            "repair_equation",
+            {"left": a, "product": p},
+            {"value": b},
+        ),
+        WorksheetQuestion(
+            9,
+            "simple_sort",
+            "sort_routes",
+            {"routes": record.ways_in},
+            {"routes": record.ways_in},
+        ),
+        WorksheetQuestion(
+            10,
+            "compare",
+            "rebuild_product",
+            {"product": p},
+            {"routes": record.ways_in},
+        ),
+    )
 
-    return examples
+
+# ---------------- EXTENSION ----------------
+
+
+def _extension_questions(record):
+
+    p = record.product
+    routes = record.ways_in
+
+    return (
+        WorksheetQuestion(
+            1,
+            "compare_routes",
+            "compare_routes",
+            {"product": p, "routes": routes},
+            {"routes": routes},
+        ),
+        WorksheetQuestion(
+            2,
+            "true_outside_false",
+            "true_outside_false",
+            {"product": p},
+            {"value": True},
+        ),
+        WorksheetQuestion(
+            3,
+            "odd_one_out",
+            "odd_one_out",
+            {"routes": routes},
+            {"route": routes[0]},
+        ),
+        WorksheetQuestion(
+            4,
+            "compare_routes",
+            "compare_routes",
+            {"product": p},
+            {"routes": routes},
+        ),
+        WorksheetQuestion(
+            5,
+            "sort_and_justify",
+            "sort_routes",
+            {"routes": routes},
+            {"routes": routes},
+        ),
+        WorksheetQuestion(
+            6,
+            "compare_routes",
+            "compare_routes",
+            {"product": p},
+            {"routes": routes},
+        ),
+        WorksheetQuestion(
+            7,
+            "true_outside_false",
+            "boundary_check",
+            {"product": p},
+            {"value": True},
+        ),
+        WorksheetQuestion(
+            8,
+            "rebuild_and_explain",
+            "rebuild_product",
+            {"product": p},
+            {"routes": routes},
+        ),
+        WorksheetQuestion(
+            9,
+            "sort_and_justify",
+            "sort_routes",
+            {"routes": routes},
+            {"routes": routes},
+        ),
+        WorksheetQuestion(
+            10,
+            "rebuild_and_explain",
+            "explain_product",
+            {"product": p},
+            {"routes": routes},
+        ),
+    )
