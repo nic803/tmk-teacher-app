@@ -44,19 +44,22 @@ def generate_worksheet(product: int, tier: Tier) -> WorksheetPackage:
     _validate_tier(tier)
 
     record = product_record(product)
+    families = record.factor_families
+    intro = record.intro_route
+    alternate = _alternate_family(record)
     pattern_ids = product_pattern_ids(product)
 
     questions = (
-        _question_intro_route(record, tier),
-        _question_commutative(record, tier),
-        _question_route_count(record, tier),
-        _question_factor_families(record, tier),
-        _question_missing_factor(record, tier),
-        _question_division_from_intro(record, tier),
-        _question_related_product(record, tier),
-        _question_pattern_focus(record, tier, pattern_ids, slot_index=0),
-        _question_pattern_focus(record, tier, pattern_ids, slot_index=1),
-        _question_structural_role(record, tier),
+        _question_intro_route(record),
+        _question_switch(record),
+        _question_route_count(record),
+        _question_route_listing(record),
+        _question_missing_factor_from_intro(record, tier),
+        _question_missing_factor_from_alternate(record, tier, alternate),
+        _question_division_from_intro_left(record),
+        _question_division_from_intro_right(record),
+        _question_same_product_another_route(record, alternate),
+        _question_square_or_route_focus(record, families, intro, alternate, pattern_ids),
     )
 
     worksheet = WorksheetPackage(
@@ -91,7 +94,6 @@ def build_teacher_key(product: int, questions: tuple[QuestionSpec, ...]) -> Teac
     )
 
     answers = tuple(question.answer for question in questions)
-
     notes = tuple(_teacher_notes(product, questions, pattern_ids))
 
     return TeacherKey(
@@ -106,162 +108,198 @@ def _teacher_notes(
     product: int,
     questions: tuple[QuestionSpec, ...],
     pattern_ids: tuple[str, ...],
-) -> list[str]:
+) -> tuple[str, ...]:
     record = product_record(product)
     notes = [
         f"Product {record.product} is in stage {record.stage}.",
-        f"Intro route: {record.intro_route[0]} × {record.intro_route[1]}.",
-        f"Worksheet tier: {_tier_label_for_note(questions)}.",
+        f"Intro route: {_format_route(record.intro_route)}.",
+        f"Distinct multiplication routes: {len(record.factor_families)}.",
+        f"Teacher-side factor families: {_format_routes(record.factor_families)}.",
         f"Structural role: {record.structural_role}.",
     ]
 
-    if pattern_ids:
-        first_pattern = get_pattern(pattern_ids[0])
-        notes.append(f"Primary pattern focus: {first_pattern.name}.")
-        notes.append(first_pattern.teacher_note)
+    for pattern_id in pattern_ids[:2]:
+        pattern = get_pattern(pattern_id)
+        notes.append(f"{pattern.name}: {pattern.teacher_note}")
 
-    if len(pattern_ids) > 1:
-        second_pattern = get_pattern(pattern_ids[1])
-        notes.append(f"Secondary pattern focus: {second_pattern.name}.")
-        notes.append(second_pattern.teacher_note)
-
-    return notes
+    return tuple(notes)
 
 
-def _question_intro_route(record: ProductRecord, tier: Tier) -> QuestionSpec:
+def _question_intro_route(record: ProductRecord) -> QuestionSpec:
     a, b = record.intro_route
     return QuestionSpec(
         id=1,
         prompt_key="intro_route",
-        pupil_prompt=f"Complete the intro route: {a} × {b} = ___",
+        pupil_prompt=_inline_equation_prompt(
+            "Complete the route:",
+            a,
+            b,
+        ),
         answer=str(record.product),
         pattern_id="product_hub",
         memory_cue_id="intro_route_anchor",
     )
 
 
-def _question_commutative(record: ProductRecord, tier: Tier) -> QuestionSpec:
+def _question_switch(record: ProductRecord) -> QuestionSpec:
     a, b = record.intro_route
+
+    if a == b:
+        prompt = _inline_equation_prompt(
+            "Use the same-factor route:",
+            a,
+            b,
+        )
+    else:
+        prompt = _inline_equation_prompt(
+            "Switch the factors:",
+            b,
+            a,
+        )
+
     return QuestionSpec(
         id=2,
-        prompt_key="commutative_switch",
-        pupil_prompt=f"Switch the factors and complete: {b} × {a} = ___",
+        prompt_key="switch_route",
+        pupil_prompt=prompt,
         answer=str(record.product),
         pattern_id="commutative_switch",
         memory_cue_id="switch_same_product",
     )
 
 
-def _question_route_count(record: ProductRecord, tier: Tier) -> QuestionSpec:
-    family_count = len(record.factor_families)
-    wording = {
-        "Support": "How many route families does this product have?",
-        "Core": f"How many factor families does {record.product} have?",
-        "Extension": f"State the number of distinct factor families for {record.product}.",
-    }[tier]
-
+def _question_route_count(record: ProductRecord) -> QuestionSpec:
     return QuestionSpec(
         id=3,
         prompt_key="route_count",
-        pupil_prompt=wording,
-        answer=str(family_count),
+        pupil_prompt=f"How many different multiplication routes make {record.product}?",
+        answer=str(len(record.factor_families)),
         pattern_id="route_multiplicity",
-        memory_cue_id="count_route_families",
+        memory_cue_id="count_routes",
     )
 
 
-def _question_factor_families(record: ProductRecord, tier: Tier) -> QuestionSpec:
-    prompt = {
-        "Support": f"List the factor families for {record.product}.",
-        "Core": f"Write all factor families that make {record.product}.",
-        "Extension": f"Enumerate all distinct factor families for {record.product}.",
-    }[tier]
-
-    answer = ", ".join(_format_route(route) for route in record.factor_families)
-
-    pattern_id = "same_product_different_routes"
+def _question_route_listing(record: ProductRecord) -> QuestionSpec:
     if len(record.factor_families) == 1:
-        pattern_id = "route_multiplicity"
+        prompt = f"Write the multiplication route that makes {record.product}."
+    else:
+        prompt = f"Write the different multiplication routes that make {record.product}."
 
     return QuestionSpec(
         id=4,
-        prompt_key="factor_families",
+        prompt_key="route_listing",
         pupil_prompt=prompt,
-        answer=answer,
-        pattern_id=pattern_id,
-        memory_cue_id="list_factor_families",
+        answer=_format_routes(record.factor_families),
+        pattern_id=_route_listing_pattern_id(record),
+        memory_cue_id="list_routes",
     )
 
 
-def _question_missing_factor(record: ProductRecord, tier: Tier) -> QuestionSpec:
+def _question_missing_factor_from_intro(record: ProductRecord, tier: Tier) -> QuestionSpec:
     a, b = record.intro_route
+
     if tier == "Support":
-        prompt = f"Fill the missing factor: {a} × ___ = {record.product}"
+        prompt = f"{a} × __ = {record.product}"
         answer = str(b)
     elif tier == "Core":
-        prompt = f"Fill the missing factor: ___ × {b} = {record.product}"
+        prompt = f"__ × {b} = {record.product}"
         answer = str(a)
     else:
-        if len(record.factor_families) > 1:
-            x, y = record.factor_families[-1]
-            prompt = f"Use a different route: {x} × ___ = {record.product}"
-            answer = str(y)
-        else:
-            prompt = f"Use the route you know: {a} × ___ = {record.product}"
-            answer = str(b)
+        prompt = f"Complete the route: {a} × __ = {record.product}"
+        answer = str(b)
 
     return QuestionSpec(
         id=5,
-        prompt_key="missing_factor",
+        prompt_key="missing_factor_intro",
         pupil_prompt=prompt,
         answer=answer,
         pattern_id="route_in_route_out",
-        memory_cue_id="product_fixes_missing_factor",
+        memory_cue_id="missing_factor_from_intro",
     )
 
 
-def _question_division_from_intro(record: ProductRecord, tier: Tier) -> QuestionSpec:
-    a, b = record.intro_route
-    if tier == "Support":
-        prompt = f"Complete: {record.product} ÷ {a} = ___"
-        answer = str(b)
-    elif tier == "Core":
-        prompt = f"Complete: {record.product} ÷ {b} = ___"
-        answer = str(a)
+def _question_missing_factor_from_alternate(
+    record: ProductRecord,
+    tier: Tier,
+    alternate: tuple[int, int] | None,
+) -> QuestionSpec:
+    if alternate is None:
+        a, b = record.intro_route
+        if a == b:
+            prompt = f"Complete the route again: __ × {b} = {record.product}"
+            answer = str(a)
+        else:
+            prompt = f"Switch the route again: {b} × __ = {record.product}"
+            answer = str(a)
     else:
-        prompt = f"Use division to recover a factor: {record.product} ÷ {a} = ___"
-        answer = str(b)
+        x, y = alternate
+        if tier == "Support":
+            prompt = f"{x} × __ = {record.product}"
+            answer = str(y)
+        elif tier == "Core":
+            prompt = f"__ × {y} = {record.product}"
+            answer = str(x)
+        else:
+            prompt = f"Use another route: {x} × __ = {record.product}"
+            answer = str(y)
 
     return QuestionSpec(
         id=6,
-        prompt_key="division_partner",
+        prompt_key="missing_factor_alternate",
         pupil_prompt=prompt,
         answer=answer,
-        pattern_id="route_in_route_out",
-        memory_cue_id="division_recovers_factor",
+        pattern_id="same_product_different_routes",
+        memory_cue_id="missing_factor_from_another_route",
     )
 
 
-def _question_related_product(record: ProductRecord, tier: Tier) -> QuestionSpec:
-    related = _best_related_product(record)
-    if related is None:
-        prompt = f"State the stage for {record.product}."
-        answer = record.stage
-        pattern_id = "product_hub"
-        memory_cue_id = "product_stage_anchor"
-    else:
-        prompt = {
-            "Support": f"Name one related product that shares a factor with {record.product}.",
-            "Core": f"Give one related product that overlaps with {record.product} through a shared factor.",
-            "Extension": f"State one related product structurally linked to {record.product} by a shared factor.",
-        }[tier]
-        answer = str(related)
-        pattern_id = "product_family_overlap"
-        memory_cue_id = "shared_factor_overlap"
-
+def _question_division_from_intro_left(record: ProductRecord) -> QuestionSpec:
+    a, b = record.intro_route
     return QuestionSpec(
         id=7,
-        prompt_key="related_product",
+        prompt_key="division_left",
+        pupil_prompt=f"{record.product} ÷ {a} = __",
+        answer=str(b),
+        pattern_id="route_in_route_out",
+        memory_cue_id="division_recovers_factor_left",
+    )
+
+
+def _question_division_from_intro_right(record: ProductRecord) -> QuestionSpec:
+    a, b = record.intro_route
+    return QuestionSpec(
+        id=8,
+        prompt_key="division_right",
+        pupil_prompt=f"{record.product} ÷ {b} = __",
+        answer=str(a),
+        pattern_id="route_in_route_out",
+        memory_cue_id="division_recovers_factor_right",
+    )
+
+
+def _question_same_product_another_route(
+    record: ProductRecord,
+    alternate: tuple[int, int] | None,
+) -> QuestionSpec:
+    if alternate is None:
+        a, b = record.intro_route
+        prompt = f"Does {a} × {b} make {record.product}? Write yes or no."
+        answer = "yes"
+        pattern_id = "product_hub"
+        memory_cue_id = "same_route_same_product"
+    else:
+        x, y = alternate
+        prompt = _inline_equation_prompt(
+            f"Another route makes the same product {record.product}:",
+            x,
+            y,
+        )
+        answer = str(record.product)
+        pattern_id = "same_product_different_routes"
+        memory_cue_id = "another_route_same_product"
+
+    return QuestionSpec(
+        id=9,
+        prompt_key="same_product_another_route",
         pupil_prompt=prompt,
         answer=answer,
         pattern_id=pattern_id,
@@ -269,82 +307,101 @@ def _question_related_product(record: ProductRecord, tier: Tier) -> QuestionSpec
     )
 
 
-def _question_pattern_focus(
+def _question_square_or_route_focus(
     record: ProductRecord,
-    tier: Tier,
+    families: tuple[tuple[int, int], ...],
+    intro: tuple[int, int],
+    alternate: tuple[int, int] | None,
     pattern_ids: tuple[str, ...],
-    slot_index: int,
 ) -> QuestionSpec:
-    question_id = 8 + slot_index
-    pattern_id = _pattern_for_slot(pattern_ids, slot_index)
-    pattern = get_pattern(pattern_id)
+    square_route = _square_route(families)
 
-    if tier == "Support":
-        prompt = f"Pattern focus: {pattern.short_prompt} for {record.product}."
-    elif tier == "Core":
-        prompt = f"Use this pattern idea for {record.product}: {pattern.learner_label}"
+    if square_route is not None:
+        a, b = square_route
+        prompt = _inline_equation_prompt(
+            "Complete the square route:",
+            a,
+            b,
+        )
+        answer = str(record.product)
+        pattern_id = "square_pattern"
+        memory_cue_id = "square_route_anchor"
+    elif alternate is not None and alternate != intro:
+        x, y = alternate
+        prompt = f"Give another way to make {record.product}."
+        answer = _format_route((x, y))
+        pattern_id = "same_product_different_routes"
+        memory_cue_id = "give_another_route"
     else:
-        prompt = f"Explain the pattern link for {record.product}: {pattern.name}"
-
-    return QuestionSpec(
-        id=question_id,
-        prompt_key=f"pattern_focus_{slot_index + 1}",
-        pupil_prompt=prompt,
-        answer=pattern.child_text,
-        pattern_id=pattern.id,
-        memory_cue_id=_memory_cue_id_for_pattern(pattern.id),
-    )
-
-
-def _question_structural_role(record: ProductRecord, tier: Tier) -> QuestionSpec:
-    prompt = {
-        "Support": f"What structural role does {record.product} have?",
-        "Core": f"State the structural role label for {record.product}.",
-        "Extension": f"Classify {record.product} by structural role.",
-    }[tier]
+        chosen_pattern_id = _best_pattern_for_final_question(pattern_ids)
+        pattern = get_pattern(chosen_pattern_id)
+        prompt = f"What does this product show? {pattern.learner_label}"
+        answer = pattern.child_text
+        pattern_id = pattern.id
+        memory_cue_id = f"pattern::{pattern.id}"
 
     return QuestionSpec(
         id=10,
-        prompt_key="structural_role",
+        prompt_key="square_or_route_focus",
         pupil_prompt=prompt,
-        answer=record.structural_role,
-        pattern_id="product_hub",
-        memory_cue_id="structural_role_name",
+        answer=answer,
+        pattern_id=pattern_id,
+        memory_cue_id=memory_cue_id,
     )
 
 
-def _pattern_for_slot(pattern_ids: tuple[str, ...], slot_index: int) -> str:
-    if not pattern_ids:
-        return "product_hub"
-    if slot_index < len(pattern_ids):
-        return pattern_ids[slot_index]
-    return pattern_ids[-1]
+def _best_pattern_for_final_question(pattern_ids: tuple[str, ...]) -> str:
+    preferred = (
+        "closure_with_7x7",
+        "nine_quantifier_build",
+        "doubling_chain",
+        "ten_times_benchmark",
+        "five_half_ten",
+        "product_hub",
+    )
+
+    for pattern_id in preferred:
+        if pattern_id in pattern_ids:
+            return pattern_id
+
+    if pattern_ids:
+        return pattern_ids[0]
+
+    return "product_hub"
 
 
-def _best_related_product(record: ProductRecord) -> int | None:
-    for related in record.related_products:
-        if related != record.product:
-            return related
+def _route_listing_pattern_id(record: ProductRecord) -> str:
+    if len(record.factor_families) > 1:
+        return "same_product_different_routes"
+    return "product_hub"
+
+
+def _alternate_family(record: ProductRecord) -> tuple[int, int] | None:
+    for family in record.factor_families:
+        if family != tuple(sorted(record.intro_route)):
+            return family
     return None
 
 
-def _memory_cue_id_for_pattern(pattern_id: str) -> str:
-    return f"pattern::{pattern_id}"
+def _square_route(
+    families: tuple[tuple[int, int], ...],
+) -> tuple[int, int] | None:
+    for a, b in families:
+        if a == b:
+            return (a, b)
+    return None
 
 
-def _tier_label_for_note(questions: tuple[QuestionSpec, ...]) -> str:
-    support_signals = sum("Support" in question.pupil_prompt for question in questions)
-    extension_signals = sum("Explain" in question.pupil_prompt for question in questions)
-
-    if extension_signals:
-        return "Extension"
-    if support_signals:
-        return "Support"
-    return "Core"
+def _inline_equation_prompt(prefix: str, a: int, b: int) -> str:
+    return f"{prefix} {a} × {b} = __"
 
 
 def _format_route(route: tuple[int, int]) -> str:
     return f"{route[0]} × {route[1]}"
+
+
+def _format_routes(routes: tuple[tuple[int, int], ...]) -> str:
+    return ", ".join(_format_route(route) for route in routes)
 
 
 def _validate_product(product: int) -> None:
