@@ -400,12 +400,11 @@ def product_pattern_ids(product: int) -> Tuple[PatternId, ...]:
 
     families = factor_families(product)
     entry_routes = ways_in(product)
-    route_count = len(families)
 
     if len(entry_routes) > 1:
         found.add("same_product_different_routes")
 
-    if route_count > 1:
+    if len(families) > 1:
         found.add("product_family_overlap")
 
     if any(a == b for a, b in families):
@@ -415,14 +414,6 @@ def product_pattern_ids(product: int) -> Tuple[PatternId, ...]:
 
     for pattern_id in STAGE_PATTERN_IDS.get(stage, ()):
         found.add(pattern_id)
-
-    role = structural_role(product)
-
-    if role == "closure_hub":
-        found.add("closure_with_7x7")
-
-    if role == "compression_hub":
-        pass
 
     found.add("parity_structure")
 
@@ -434,6 +425,9 @@ def product_pattern_ids(product: int) -> Tuple[PatternId, ...]:
     else:
         found.add("odd_times_odd_is_odd")
         found.add("odd_product_excludes_even_route")
+
+    if structural_role(product) == "closure_hub":
+        found.add("closure_with_7x7")
 
     found.add("use_one_product_for_another")
 
