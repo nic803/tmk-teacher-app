@@ -1,0 +1,189 @@
+from __future__ import annotations
+
+from typing import Dict, Iterable, Tuple
+
+from question_form_engine import QuestionSpec
+from wording_policy import render_prompt, world_membership_prompt
+from worlds import TMK_WORLD, validate_world_name_usage
+
+
+def render_pupil_prompt(question: QuestionSpec) -> str:
+    prompt_key = question.prompt_key
+    data = question.prompt_data
+
+    if prompt_key == "circle_product":
+        return _safe_text(f"Circle {data['product']}.")
+
+    if prompt_key == "find_product":
+        return _safe_text(f"Find {data['product']}.")
+
+    if prompt_key == "notice_product_structure":
+        return _safe_text(f"What do you notice about {data['product']}?")
+
+    if prompt_key == "product_notice":
+        return render_prompt("product_notice", data)
+
+    if prompt_key == "complete_way_in":
+        return render_prompt("complete_way_in", data)
+
+    if prompt_key == "rebuild_intro_route":
+        return _safe_text(
+            f"Rebuild {data['product']} using {data['left']}. Explain."
+        )
+
+    if prompt_key == "match_route":
+        route = data["route"]
+        return _safe_text(
+            f"Match {data['product']} to {route['left']} × {route['right']}."
+        )
+
+    if prompt_key == "reverse_factor":
+        return render_prompt("reverse_factor", data)
+
+    if prompt_key == "odd_one_out":
+        options = _render_option_routes(data["options"])
+        return _safe_text(
+            f"Find the odd one out for {data['product']}: {', '.join(options)}."
+        )
+
+    if prompt_key == "way_out":
+        return render_prompt("way_out", data)
+
+    if prompt_key == "way_out_compare":
+        return _safe_text(
+            f"Show the way out from {data['product']} using {data['divisor']}."
+        )
+
+    if prompt_key == "is_route":
+        return _safe_text(
+            f"Is {data['left']} × {data['right']} = {data['product']} a way in? Yes or no?"
+        )
+
+    if prompt_key == "truth_check":
+        return render_prompt("truth_check", data)
+
+    if prompt_key == "true_outside_false":
+        return _safe_text(
+            f"Check: {data['left']} × {data['right']} = {data['product']}. "
+            f"Is it true, outside {TMK_WORLD}, or false?"
+        )
+
+    if prompt_key == "match_way_in_out":
+        return _safe_text(
+            f"Match a way in and a way out for {data['product']}."
+        )
+
+    if prompt_key == "compare_routes":
+        route_a = data["route_a"]
+        route_b = data["route_b"]
+        return render_prompt(
+            "compare_routes",
+            {
+                "product": data["product"],
+                "route_a": f"{route_a['left']} × {route_a['right']}",
+                "route_b": f"{route_b['left']} × {route_b['right']}",
+            },
+        )
+
+    if prompt_key == "compare_routes_family":
+        routes = _render_routes(data["routes"])
+        return _safe_text(
+            f"Compare these ways in to {data['product']}: {', '.join(routes)}."
+        )
+
+    if prompt_key == "belongs_yes_no":
+        return world_membership_prompt(int(data["candidate"]))
+
+    if prompt_key == "choose_world_member":
+        candidates = ", ".join(str(candidate) for candidate in data["candidates"])
+        return _safe_text(f"Which number belongs in {TMK_WORLD}: {candidates}?")
+
+    if prompt_key == "world_membership_classify":
+        return _safe_text(
+            f"Check: {data['left']} × {data['right']} = {data['product']}. "
+            f"Is it inside {TMK_WORLD}, outside {TMK_WORLD}, or false?"
+        )
+
+    if prompt_key == "repair_equation":
+        if "right" in data:
+            return _safe_text(
+                f"Fix this: {data['left']} × {data['right']} = {data['product']}."
+            )
+        return _safe_text(
+            f"Complete to fix: {data['left']} × __ = {data['product']}."
+        )
+
+    if prompt_key == "repair_broken_route":
+        return _safe_text(
+            f"Check: {data['left']} × {data['right']} = {data['product']}. Fix it."
+        )
+
+    if prompt_key == "sort_and_justify":
+        options = _render_classified_options(data["options"])
+        return _safe_text(
+            f"Sort these for {data['product']} and say why: {', '.join(options)}."
+        )
+
+    if prompt_key == "choose_route":
+        options = _render_classified_options(data["options"])
+        return _safe_text(
+            f"Which of these is a way in to {data['product']}? {', '.join(options)}."
+        )
+
+    if prompt_key == "sort_routes":
+        options = _render_classified_options(data["options"])
+        return _safe_text(
+            f"Sort these for {data['product']}: {', '.join(options)}."
+        )
+
+    if prompt_key == "belongs_reason":
+        return _safe_text(
+            f"Complete: {data['product']} belongs in {TMK_WORLD} because __."
+        )
+
+    if prompt_key == "rebuild_product":
+        return _safe_text(
+            f"If you forgot {data['product']}, how could you rebuild it?"
+        )
+
+    if prompt_key == "one_sentence_explain":
+        return _safe_text(
+            f"Explain one true thing about {data['product']} in one sentence."
+        )
+
+    if prompt_key == "explain_product":
+        return render_prompt("explanation", data)
+
+    return _safe_text(str(prompt_key))
+
+
+def render_pupil_prompts(questions: Iterable[QuestionSpec]) -> Tuple[str, ...]:
+    return tuple(render_pupil_prompt(question) for question in questions)
+
+
+def _render_routes(routes: Iterable[Dict[str, object]]) -> Tuple[str, ...]:
+    rendered = []
+    for route in routes:
+        rendered.append(f"{route['left']} × {route['right']}")
+    return tuple(rendered)
+
+
+def _render_option_routes(options: Iterable[Dict[str, object]]) -> Tuple[str, ...]:
+    rendered = []
+    for option in options:
+        route = option["route"]
+        rendered.append(f"{route['left']} × {route['right']}")
+    return tuple(rendered)
+
+
+def _render_classified_options(options: Iterable[Dict[str, object]]) -> Tuple[str, ...]:
+    rendered = []
+    for option in options:
+        route = option["route"]
+        rendered.append(f"{route['left']} × {route['right']}")
+    return tuple(rendered)
+
+
+def _safe_text(text: str) -> str:
+    validate_world_name_usage(text)
+    return text
