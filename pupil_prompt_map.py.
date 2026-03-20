@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from typing import Dict, Iterable, Tuple
+from typing import Iterable, Tuple
 
 from question_form_engine import QuestionSpec
+from route_models import MultiplicationRoute
+from route_render import render_multiplication_route
 from wording_policy import render_prompt, world_membership_prompt
 from worlds import TMK_WORLD, validate_world_name_usage
 
@@ -32,9 +34,9 @@ def render_pupil_prompt(question: QuestionSpec) -> str:
         )
 
     if prompt_key == "match_route":
-        route = data["route"]
+        route = _route_from_data(data["route"])
         return _safe_text(
-            f"Match {data['product']} to {route['left']} × {route['right']}."
+            f"Match {data['product']} to {render_multiplication_route(route)}."
         )
 
     if prompt_key == "reverse_factor":
@@ -74,14 +76,14 @@ def render_pupil_prompt(question: QuestionSpec) -> str:
         )
 
     if prompt_key == "compare_routes":
-        route_a = data["route_a"]
-        route_b = data["route_b"]
+        route_a = _route_from_data(data["route_a"])
+        route_b = _route_from_data(data["route_b"])
         return render_prompt(
             "compare_routes",
             {
                 "product": data["product"],
-                "route_a": f"{route_a['left']} × {route_a['right']}",
-                "route_b": f"{route_b['left']} × {route_b['right']}",
+                "route_a": render_multiplication_route(route_a),
+                "route_b": render_multiplication_route(route_b),
             },
         )
 
@@ -161,26 +163,39 @@ def render_pupil_prompts(questions: Iterable[QuestionSpec]) -> Tuple[str, ...]:
     return tuple(render_pupil_prompt(question) for question in questions)
 
 
-def _render_routes(routes: Iterable[Dict[str, object]]) -> Tuple[str, ...]:
+def _route_from_data(data: object) -> MultiplicationRoute:
+    if isinstance(data, MultiplicationRoute):
+        return data
+
+    if isinstance(data, dict):
+        return MultiplicationRoute(left=data["left"], right=data["right"])
+
+    if isinstance(data, (tuple, list)) and len(data) == 2:
+        return MultiplicationRoute(left=data[0], right=data[1])
+
+    raise ValueError(f"Cannot interpret route data: {data}")
+
+
+def _render_routes(routes: Iterable[object]) -> Tuple[str, ...]:
     rendered = []
     for route in routes:
-        rendered.append(f"{route['left']} × {route['right']}")
+        rendered.append(render_multiplication_route(_route_from_data(route)))
     return tuple(rendered)
 
 
-def _render_option_routes(options: Iterable[Dict[str, object]]) -> Tuple[str, ...]:
+def _render_option_routes(options: Iterable[dict]) -> Tuple[str, ...]:
     rendered = []
     for option in options:
-        route = option["route"]
-        rendered.append(f"{route['left']} × {route['right']}")
+        route = _route_from_data(option["route"])
+        rendered.append(render_multiplication_route(route))
     return tuple(rendered)
 
 
-def _render_classified_options(options: Iterable[Dict[str, object]]) -> Tuple[str, ...]:
+def _render_classified_options(options: Iterable[dict]) -> Tuple[str, ...]:
     rendered = []
     for option in options:
-        route = option["route"]
-        rendered.append(f"{route['left']} × {route['right']}")
+        route = _route_from_data(option["route"])
+        rendered.append(render_multiplication_route(route))
     return tuple(rendered)
 
 
