@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from collections.abc import Iterable
 from typing import Any
 
@@ -8,8 +9,8 @@ import streamlit as st
 from products import ALL_PRODUCTS, product_record, stage_label
 from worksheet_engine import generate_worksheet
 
-APP_TITLE = "TMK Worksheet Studio"
-APP_CAPTION = "Product-based worksheet generation for the TMK World"
+APP_TITLE = "TMK Teacher App"
+APP_CAPTION = "TMK World and product hubs"
 TIERS = ("Support", "Core", "Extension")
 
 
@@ -24,36 +25,46 @@ def main() -> None:
     st.title(APP_TITLE)
     st.caption(APP_CAPTION)
 
-    product, tier = _render_controls()
+    product, tier, view = _render_sidebar()
 
-    worksheet = generate_worksheet(product, tier)
+    if view == "TMK World":
+        _render_world_home(selected_product=product)
+        return
 
-    _render_summary(
-        product=worksheet.product,
-        stage=worksheet.stage,
-        tier=worksheet.tier,
-        question_count=len(worksheet.questions),
-    )
-    _render_product_context(worksheet.product)
-    _render_pupil_worksheet(worksheet.questions)
-    _render_teacher_key(worksheet.teacher_key)
+    if view == "Product Hubs":
+        _render_hubs_home(selected_product=product)
+        return
+
+    if view == "Product Detail":
+        _render_product_detail(selected_product=product)
+        return
+
+    if view == "Worksheets":
+        _render_worksheet_view(product=product, tier=tier)
+        return
 
 
-def _render_controls() -> tuple[int, str]:
+def _render_sidebar() -> tuple[int, str, str]:
     with st.sidebar:
-        st.header("Worksheet Settings")
+        st.header("Teacher Controls")
+
+        view = st.radio(
+            "View",
+            options=("TMK World", "Product Hubs", "Product Detail", "Worksheets"),
+            index=0,
+        )
 
         default_product = 36 if 36 in ALL_PRODUCTS else ALL_PRODUCTS[0]
 
         product = st.selectbox(
-            "Product",
+            "Selected product",
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(default_product),
             format_func=_product_option_label,
         )
 
         tier = st.radio(
-            "Tier",
+            "Worksheet tier",
             options=TIERS,
             index=1,
             horizontal=True,
@@ -62,127 +73,250 @@ def _render_controls() -> tuple[int, str]:
         record = product_record(product)
 
         st.divider()
-        st.markdown("**Product Overview**")
+        st.markdown("**Current Product**")
+        st.write(f"Product: {record.product}")
         st.write(f"Stage: {stage_label(record.stage)}")
-        st.write(f"Intro route: {record.intro_route[0]} × {record.intro_route[1]}")
+        st.write(f"Intro route: {_format_route(record.intro_route)}")
+        st.write(f"Routes: {len(record.factor_families)}")
         st.write(f"Structural role: {record.structural_role}")
-        st.write(f"Factor families: {_format_routes(record.factor_families)}")
-        st.write(f"Ways in: {_format_routes(record.ways_in)}")
 
-    return product, tier
+    return product, tier, view
 
 
-def _render_summary(product: int, stage: str, tier: str, question_count: int) -> None:
-    col1, col2, col3, col4 = st.columns(4)
+def _render_world_home(selected_product: int) -> None:
+    st.subheader("TMK World")
 
-    col1.metric("Product", str(product))
-    col2.metric("Stage", str(stage))
-    col3.metric("Tier", str(tier))
-    col4.metric("Questions", str(question_count))
+    selected = product_record(selected_product)
+
+    hero_left, hero_right = st.columns([1.3, 1])
+
+    with hero_left:
+        st.markdown("### World Overview")
+        st.write(
+            "This is the teacher-facing TMK front face. It shows the bounded multiplication world "
+            "through stages and products, with the selected product highlighted."
+        )
+
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Products", str(len(ALL_PRODUCTS)))
+        col2.metric("Selected", str(selected.product))
+        col3.metric("Stage", str(stage_label(selected.stage)))
+        col4.metric("Routes", str(len(selected.factor_families)))
+
+    with hero_right:
+        st.markdown("### Selected Product")
+        st.write(f"Product: {selected.product}")
+        st.write(f"Intro route: {_format_route(selected.intro_route)}")
+        st.write(f"Role: {selected.structural_role}")
+        st.write(f"Ways in: {_format_routes(selected.ways_in)}")
 
     st.divider()
 
+    stage_groups = _products_by_stage()
 
-def _render_product_context(product: int) -> None:
-    record = product_record(product)
+    for stage in _sorted_stage_keys(stage_groups):
+        products = stage_groups[stage]
+        label = stage_label(stage)
 
-    with st.expander("Product Context", expanded=False):
-        st.write(f"Stage label: {stage_label(record.stage)}")
-        st.write(f"Intro route: {record.intro_route[0]} × {record.intro_route[1]}")
-        st.write(f"Ways in: {_format_routes(record.ways_in)}")
-        st.write(f"Ways out: {_format_routes(record.ways_out)}")
-        st.write(f"Factor families: {_format_routes(record.factor_families)}")
-        st.write(f"Related products: {_format_scalar_sequence(record.related_products)}")
-        st.write(f"Structural role: {record.structural_role}")
+        st.markdown(f"### {label}")
+        cols = st.columns(6)
+
+        for index, product in enumerate(products):
+            record = product_record(product)
+            marker = "⬅ selected" if product == selected_product else ""
+
+            with cols[index % 6]:
+                with st.container(border=True):
+                    st.markdown(f"**{product}**")
+                    st.write(f"Intro: {_format_route(record.intro_route)}")
+                    st.write(f"Routes: {len(record.factor_families)}")
+                    st.write(f"Role: {record.structural_role}")
+                    if marker:
+                        st.write(marker)
 
 
-def _render_pupil_worksheet(questions: Iterable[Any]) -> None:
-    st.subheader("Pupil Worksheet")
+def _render_hubs_home(selected_product: int) -> None:
+    st.subheader("Product Hubs")
+    st.write(
+        "Products grouped by structural role, so the teacher can inspect the hub structure of the TMK world."
+    )
 
-    for index, question in enumerate(questions, start=1):
+    selected = product_record(selected_product)
+
+    top1, top2, top3, top4 = st.columns(4)
+    top1.metric("Selected Product", str(selected.product))
+    top2.metric("Stage", str(stage_label(selected.stage)))
+    top3.metric("Routes", str(len(selected.factor_families)))
+    top4.metric("Role", str(selected.structural_role))
+
+    st.divider()
+
+    role_groups = _products_by_role()
+
+    for role in sorted(role_groups):
+        products = role_groups[role]
+        st.markdown(f"### {role}")
+        cols = st.columns(4)
+
+        for index, product in enumerate(products):
+            record = product_record(product)
+            marker = "⬅ selected" if product == selected_product else ""
+
+            with cols[index % 4]:
+                with st.container(border=True):
+                    st.markdown(f"**{product}**")
+                    st.write(f"Stage: {stage_label(record.stage)}")
+                    st.write(f"Hub route: {_format_route(record.intro_route)}")
+                    st.write(f"Routes: {len(record.factor_families)}")
+                    if marker:
+                        st.write(marker)
+
+
+def _render_product_detail(selected_product: int) -> None:
+    record = product_record(selected_product)
+
+    st.subheader(f"Product Detail · {selected_product}")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
         with st.container(border=True):
-            st.markdown(f"**Q{_question_number(question, index)}**")
-            st.write(_render_question_text(question))
-            _render_question_metadata(question)
+            st.markdown("### Core Structure")
+            st.write(f"Stage: {stage_label(record.stage)}")
+            st.write(f"Intro route: {_format_route(record.intro_route)}")
+            st.write(f"Ways in: {_format_routes(record.ways_in)}")
+            st.write(f"Ways out: {_format_routes(record.ways_out)}")
+            st.write(f"Routes: {_format_routes(record.factor_families)}")
+            st.write(f"Related products: {_format_scalar_sequence(record.related_products)}")
+            st.write(f"Structural role: {record.structural_role}")
+
+    with col2:
+        with st.container(border=True):
+            st.markdown("### Teacher Reading")
+            st.write(_teacher_reading_for_product(record))
+
+    st.divider()
+    st.markdown("### Route Cards")
+
+    route_cols = st.columns(max(1, min(4, len(record.factor_families))))
+
+    for index, route in enumerate(record.factor_families):
+        with route_cols[index % len(route_cols)]:
+            with st.container(border=True):
+                st.markdown(f"**Route {index + 1}**")
+                st.write(_format_route(route))
+                st.write(f"This route makes {record.product}.")
+
+    st.divider()
+    st.markdown("### Related Product Cards")
+
+    related_products = [p for p in record.related_products if p in ALL_PRODUCTS]
+
+    if not related_products:
+        st.write("No related products attached.")
+        return
+
+    related_cols = st.columns(4)
+    for index, related in enumerate(related_products):
+        related_record = product_record(related)
+        with related_cols[index % 4]:
+            with st.container(border=True):
+                st.markdown(f"**{related}**")
+                st.write(f"Stage: {stage_label(related_record.stage)}")
+                st.write(f"Intro: {_format_route(related_record.intro_route)}")
+                st.write(f"Role: {related_record.structural_role}")
 
 
-def _render_teacher_key(teacher_key: Any) -> None:
+def _render_worksheet_view(product: int, tier: str) -> None:
+    st.subheader("Worksheets")
+
+    worksheet = generate_worksheet(product, tier)
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Product", str(worksheet.product))
+    col2.metric("Stage", str(worksheet.stage))
+    col3.metric("Tier", str(worksheet.tier))
+    col4.metric("Questions", str(len(worksheet.questions)))
+
     st.divider()
 
-    with st.expander("Teacher Key", expanded=False):
-        answers = _coerce_sequence(_get_attr(teacher_key, "answers"))
-        pattern_ids = _coerce_sequence(_get_attr(teacher_key, "pattern_ids"))
-        memory_cue_ids = _coerce_sequence(_get_attr(teacher_key, "memory_cue_ids"))
-        notes = _coerce_sequence(_get_attr(teacher_key, "notes"))
+    left, right = st.columns([1.5, 1])
+
+    with left:
+        st.markdown("### Pupil Worksheet")
+        for index, question in enumerate(worksheet.questions, start=1):
+            with st.container(border=True):
+                st.markdown(f"**Q{_question_number(question, index)}**")
+                st.write(_render_question_text(question))
+
+    with right:
+        st.markdown("### Teacher Key")
+        answers = _coerce_sequence(_get_attr(worksheet.teacher_key, "answers"))
+        notes = _coerce_sequence(_get_attr(worksheet.teacher_key, "notes"))
 
         st.markdown("**Answers**")
-        if answers:
-            for index, answer in enumerate(answers, start=1):
-                st.write(f"Q{index}. {_stringify(answer)}")
-        else:
-            st.write("No answers available.")
+        for index, answer in enumerate(answers, start=1):
+            st.write(f"Q{index}. {_stringify(answer)}")
 
-        st.markdown("**Pattern Links**")
-        if pattern_ids:
-            st.write(", ".join(_stringify(item) for item in pattern_ids))
-        else:
-            st.write("No pattern links attached.")
-
-        st.markdown("**Memory Cues**")
-        if memory_cue_ids:
-            st.write(", ".join(_stringify(item) for item in memory_cue_ids))
-        else:
-            st.write("No memory cues attached.")
-
-        st.markdown("**Teacher Notes**")
-        if notes:
-            for note in notes:
-                st.write(f"- {_stringify(note)}")
-        else:
-            st.write("No teacher notes attached.")
+        st.markdown("**Notes**")
+        for note in notes:
+            st.write(f"- {_stringify(note)}")
 
 
-def _render_question_metadata(question: Any) -> None:
-    metadata = []
+def _products_by_stage() -> dict[str, list[int]]:
+    grouped: dict[str, list[int]] = defaultdict(list)
 
-    prompt_key = _get_attr(question, "prompt_key")
-    if prompt_key:
-        metadata.append(("Prompt key", prompt_key))
+    for product in ALL_PRODUCTS:
+        grouped[product_record(product).stage].append(product)
 
-    pattern_id = _get_attr(question, "pattern_id")
-    if pattern_id:
-        metadata.append(("Pattern", pattern_id))
+    for stage in grouped:
+        grouped[stage].sort()
 
-    memory_cue_id = _get_attr(question, "memory_cue_id")
-    if memory_cue_id:
-        metadata.append(("Memory cue", memory_cue_id))
+    return dict(grouped)
 
-    answer = _get_attr(question, "answer")
-    if answer not in (None, ""):
-        metadata.append(("Expected answer", _stringify(answer)))
 
-    if metadata:
-        with st.expander("Question metadata", expanded=False):
-            for label, value in metadata:
-                st.write(f"{label}: {_stringify(value)}")
+def _products_by_role() -> dict[str, list[int]]:
+    grouped: dict[str, list[int]] = defaultdict(list)
+
+    for product in ALL_PRODUCTS:
+        grouped[product_record(product).structural_role].append(product)
+
+    for role in grouped:
+        grouped[role].sort()
+
+    return dict(grouped)
+
+
+def _sorted_stage_keys(stage_groups: dict[str, list[int]]) -> list[str]:
+    return sorted(stage_groups.keys())
+
+
+def _product_option_label(product: int) -> str:
+    record = product_record(product)
+    return f"{product} · {record.stage}"
+
+
+def _teacher_reading_for_product(record: Any) -> str:
+    route_count = len(record.factor_families)
+
+    if route_count == 1:
+        return (
+            f"{record.product} is a single-route product in the current TMK world. "
+            f"The teacher focus is to secure {_format_route(record.intro_route)} as the stable route in."
+        )
+
+    return (
+        f"{record.product} is a multi-route product. "
+        f"The teacher focus is to keep the product as the hub while connecting "
+        f"{_format_route(record.intro_route)} to the other routes."
+    )
 
 
 def _render_question_text(question: Any) -> str:
-    for field_name in (
-        "pupil_prompt",
-        "prompt",
-        "display_text",
-        "text",
-        "question_text",
-        "body",
-    ):
+    for field_name in ("pupil_prompt", "prompt", "display_text", "text", "question_text", "body"):
         value = _get_attr(question, field_name)
         if value not in (None, ""):
             return _stringify(value)
-
-    prompt_key = _get_attr(question, "prompt_key")
-    if prompt_key:
-        return f"[{prompt_key}]"
 
     return _stringify(question)
 
@@ -194,16 +328,15 @@ def _question_number(question: Any, fallback: int) -> int:
     return fallback
 
 
-def _product_option_label(product: int) -> str:
-    record = product_record(product)
-    return f"{product} · {record.stage}"
+def _format_route(route: tuple[int, int]) -> str:
+    return f"{route[0]} × {route[1]}"
 
 
 def _format_routes(routes: Iterable[Any]) -> str:
     items = []
     for route in routes:
         if isinstance(route, tuple) and len(route) == 2:
-            items.append(f"{route[0]} × {route[1]}")
+            items.append(_format_route(route))
         else:
             items.append(_stringify(route))
     return ", ".join(items) if items else "—"
@@ -234,7 +367,7 @@ def _get_attr(obj: Any, name: str) -> Any:
 
 def _stringify(value: Any) -> str:
     if isinstance(value, tuple) and len(value) == 2:
-        return f"{value[0]} × {value[1]}"
+        return _format_route(value)
     return str(value)
 
 
