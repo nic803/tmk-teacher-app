@@ -19,7 +19,7 @@ def main() -> None:
     worksheet = generate_worksheet_dict(product, tier)
 
     _render_summary(worksheet)
-    _render_questions(worksheet["questions"])
+    _render_questions(worksheet["questions"], str(worksheet["tier"]))
     _render_teacher_key(worksheet["teacher_key"])
 
 
@@ -61,7 +61,7 @@ def _render_summary(worksheet: Dict[str, object]) -> None:
     st.divider()
 
 
-def _render_questions(questions: Iterable[Dict[str, object]]) -> None:
+def _render_questions(questions: Iterable[Dict[str, object]], tier: str) -> None:
     st.subheader("Pupil Worksheet")
 
     for question in questions:
@@ -69,20 +69,12 @@ def _render_questions(questions: Iterable[Dict[str, object]]) -> None:
             qid = question["id"]
             section = _title_case(str(question["section"]))
             st.markdown(f"**Q{qid}. {section}**")
-
-            prompt_key = str(question["prompt_key"])
-            prompt_data = question["prompt_data"]
-            st.write(_render_prompt(prompt_key, prompt_data))
-
-            with st.expander("Question metadata"):
-                st.write({"prompt_key": prompt_key})
-                st.write({"prompt_data": prompt_data})
-                st.write({"pattern_ids": question["pattern_ids"]})
-                st.write({"msvwa_tags": question["msvwa_tags"]})
+            st.write(render_pupil_prompt(question, tier))
 
 
 def _render_teacher_key(teacher_key: Dict[str, object]) -> None:
     st.divider()
+
     with st.expander("Teacher Key", expanded=False):
         st.markdown("**Answers**")
         for index, answer in enumerate(teacher_key["answers"], start=1):
@@ -108,6 +100,149 @@ def _render_teacher_key(teacher_key: Dict[str, object]) -> None:
             st.write(f"- {note}")
 
 
+def render_pupil_prompt(question: Dict[str, object], tier: str) -> str:
+    question_id = int(question["id"])
+    prompt_data = question["prompt_data"]
+
+    if question_id == 1:
+        return _render_q1(tier, prompt_data)
+    if question_id == 2:
+        return _render_q2(tier, prompt_data)
+    if question_id == 3:
+        return _render_q3(tier, prompt_data)
+    if question_id == 4:
+        return _render_q4(tier, prompt_data)
+    if question_id == 5:
+        return _render_q5(tier, prompt_data)
+    if question_id == 6:
+        return _render_q6(tier, prompt_data)
+    if question_id == 7:
+        return _render_q7(tier, prompt_data)
+    if question_id == 8:
+        return _render_q8(tier, prompt_data)
+    if question_id == 9:
+        return _render_q9(tier, prompt_data)
+    if question_id == 10:
+        return _render_q10(tier, prompt_data)
+
+    return ""
+
+
+def _render_q1(tier: str, prompt_data: Dict[str, object]) -> str:
+    product = prompt_data["product"]
+
+    if tier == "Support":
+        return f"Find {product}."
+    if tier == "Core":
+        return f"Find {product}."
+    return f"What do you notice about {product}?"
+
+
+def _render_q2(tier: str, prompt_data: Dict[str, object]) -> str:
+    left = prompt_data["left"]
+    product = prompt_data["product"]
+
+    if tier == "Support":
+        return f"Complete: {left} × __ = {product}"
+    if tier == "Core":
+        return f"Find a way in to {product} using {left}."
+    return f"Show a way in to {product} using {left}."
+
+
+def _render_q3(tier: str, prompt_data: Dict[str, object]) -> str:
+    left = prompt_data["left"]
+    product = prompt_data["product"]
+
+    if tier == "Support":
+        return f"Complete: {left} × __ = {product}"
+    if tier == "Core":
+        return f"Find another way in to {product} using {left}."
+    return f"Show another way in to {product} using {left}."
+
+
+def _render_q4(tier: str, prompt_data: Dict[str, object]) -> str:
+    product = prompt_data["product"]
+    divisor = prompt_data["divisor"]
+
+    if tier == "Support":
+        return f"{product} ÷ {divisor} = __"
+    if tier == "Core":
+        return f"{product} ÷ {divisor} = __"
+    return f"Show the way out from {product} using {divisor}."
+
+
+def _render_q5(tier: str, prompt_data: Dict[str, object]) -> str:
+    product = prompt_data["product"]
+    divisor = prompt_data["divisor"]
+
+    if tier == "Support":
+        return f"{product} ÷ {divisor} = __"
+    if tier == "Core":
+        return f"{product} ÷ {divisor} = __"
+    return f"Show another way out from {product} using {divisor}."
+
+
+def _render_q6(tier: str, prompt_data: Dict[str, object]) -> str:
+    product = prompt_data["product"]
+    intro_route = prompt_data.get("intro_route")
+
+    if intro_route:
+        route_text = f"{intro_route['left']} × {intro_route['right']}"
+    else:
+        route_text = ""
+
+    if tier == "Support":
+        return f"One way in is {route_text}. Find another way in to {product}."
+    if tier == "Core":
+        return f"One way in is {route_text}. Find another way in to {product}."
+    return f"{product} has more than one way in. Show another one."
+
+
+def _render_q7(tier: str, prompt_data: Dict[str, object]) -> str:
+    if "candidate" in prompt_data:
+        candidate = prompt_data["candidate"]
+    else:
+        candidate = prompt_data["candidates"][0]
+
+    if tier == "Support":
+        return f"Does {candidate} belong in the TMK World? Yes or no?"
+    if tier == "Core":
+        return f"Does {candidate} belong in the TMK World?"
+    return f"Does {candidate} belong in the TMK World? Explain."
+
+
+def _render_q8(tier: str, prompt_data: Dict[str, object]) -> str:
+    left = prompt_data["left"]
+    right = prompt_data["right"]
+    product = prompt_data["product"]
+
+    if tier == "Support":
+        return f"Check: {left} × {right} = {product}. Fix it."
+    if tier == "Core":
+        return f"Check: {left} × {right} = {product}. Fix it."
+    return f"Check: {left} × {right} = {product}. Is it inside the TMK World? Fix or explain."
+
+
+def _render_q9(tier: str, prompt_data: Dict[str, object]) -> str:
+    product = prompt_data["product"]
+
+    if tier == "Support":
+        return f"Complete: I can rebuild {product} by using __ × __."
+    if tier == "Core":
+        return f"If you forgot {product}, how could you rebuild it?"
+    return f"Explain how you could rebuild {product} using a known route."
+
+
+def _render_q10(tier: str, prompt_data: Dict[str, object]) -> str:
+    product = prompt_data["product"]
+
+    if tier == "Support":
+        return f"Complete: {product} belongs in the TMK World because __."
+    if tier == "Core":
+        return f"Tell one true thing about {product}."
+    return f"Explain the structure of {product}."
+
+
 def _product_option_label(product: int) -> str:
     record = product_record(product)
     return f"{product} · {record.stage}"
@@ -115,113 +250,6 @@ def _product_option_label(product: int) -> str:
 
 def _title_case(value: str) -> str:
     return value.replace("_", " ").title()
-
-
-def _render_prompt(prompt_key: str, prompt_data: Dict[str, object]) -> str:
-    if prompt_key == "notice_product":
-        return f"Notice the product {prompt_data['product']}."
-
-    if prompt_key == "identify_product":
-        return f"Find the product {prompt_data['product']}."
-
-    if prompt_key == "explain_product_notice":
-        return f"What do you notice about the product {prompt_data['product']}?"
-
-    if prompt_key == "complete_intro_way_in":
-        return f"Complete the way in: {prompt_data['left']} × ___ = {prompt_data['product']}"
-
-    if prompt_key == "complete_other_way_in":
-        return f"Find another way in: {prompt_data['left']} × ___ = {prompt_data['product']}"
-
-    if prompt_key == "find_intro_way_in":
-        return f"Find the intro way in for {prompt_data['product']} using {prompt_data['left']}."
-
-    if prompt_key == "find_other_way_in":
-        return f"Find another way in for {prompt_data['product']} using {prompt_data['left']}."
-
-    if prompt_key == "justify_intro_way_in":
-        return f"Build and explain the intro way in for {prompt_data['product']} using {prompt_data['left']}."
-
-    if prompt_key == "justify_other_way_in":
-        return f"Build and explain another way in for {prompt_data['product']} using {prompt_data['left']}."
-
-    if prompt_key == "complete_intro_way_out":
-        return f"Complete the way out: {prompt_data['product']} ÷ {prompt_data['divisor']} = ___"
-
-    if prompt_key == "complete_other_way_out":
-        return f"Find another way out: {prompt_data['product']} ÷ {prompt_data['divisor']} = ___"
-
-    if prompt_key == "find_intro_way_out":
-        return f"Find the way out from {prompt_data['product']} using divisor {prompt_data['divisor']}."
-
-    if prompt_key == "find_other_way_out":
-        return f"Find another way out from {prompt_data['product']} using divisor {prompt_data['divisor']}."
-
-    if prompt_key == "justify_intro_way_out":
-        return f"Explain the way out from {prompt_data['product']} using divisor {prompt_data['divisor']}."
-
-    if prompt_key == "justify_other_way_out":
-        return f"Explain another way out from {prompt_data['product']} using divisor {prompt_data['divisor']}."
-
-    if prompt_key == "match_another_way":
-        intro_route = _route_text(prompt_data["intro_route"])
-        other_route = _route_text(prompt_data["other_route"])
-        return f"Compare the ways in for {prompt_data['product']}: {intro_route} and {other_route}."
-
-    if prompt_key == "find_another_way":
-        intro_route = _route_text(prompt_data["intro_route"])
-        return f"The intro way in is {intro_route}. Find another way in for {prompt_data['product']}."
-
-    if prompt_key == "compare_another_way":
-        intro_route = _route_text(prompt_data["intro_route"])
-        other_route = _route_text(prompt_data["other_route"])
-        return f"Compare these two ways in for {prompt_data['product']}: {intro_route} and {other_route}."
-
-    if prompt_key == "choose_belongs_number":
-        candidates = prompt_data["candidates"]
-        return f"Which number belongs to the TMK World: {candidates[0]} or {candidates[1]}?"
-
-    if prompt_key == "does_number_belong":
-        return f"Does {prompt_data['candidate']} belong to the TMK World?"
-
-    if prompt_key == "explain_belongs_decision":
-        return f"Does {prompt_data['candidate']} belong to the TMK World? Explain."
-
-    if prompt_key == "repair_broken_output":
-        return f"Check the route: {prompt_data['left']} × {prompt_data['right']} = {prompt_data['product']}. Fix it."
-
-    if prompt_key == "repair_broken_route":
-        return f"Check the route: {prompt_data['left']} × {prompt_data['right']} = {prompt_data['product']}. Fix the route."
-
-    if prompt_key == "classify_true_but_outside_world":
-        return (
-            f"Check this route: {prompt_data['left']} × {prompt_data['right']} = {prompt_data['product']}. "
-            "Is it inside the TMK World?"
-        )
-
-    if prompt_key == "say_how_to_rebuild":
-        return f"How could you rebuild {prompt_data['product']}?"
-
-    if prompt_key == "choose_product_fact":
-        return f"Choose a true fact about the product {prompt_data['product']}."
-
-    if prompt_key == "explain_how_to_rebuild":
-        return f"Explain how you could rebuild {prompt_data['product']} if you forgot it."
-
-    if prompt_key == "explain_product_structure":
-        return f"Explain the structure of the product {prompt_data['product']}."
-
-    if prompt_key == "justify_rebuild_strategy":
-        return f"Justify a strong rebuild strategy for {prompt_data['product']}."
-
-    if prompt_key == "generalise_product_structure":
-        return f"What structure can you generalise from the product {prompt_data['product']}?"
-
-    return f"{prompt_key}: {prompt_data}"
-
-
-def _route_text(route_data: Dict[str, object]) -> str:
-    return f"{route_data['left']} × {route_data['right']}"
 
 
 if __name__ == "__main__":
