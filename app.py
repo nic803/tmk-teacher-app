@@ -447,20 +447,17 @@ def _apply_styles() -> None:
 
 
 def _render_nav() -> None:
-    cols = st.columns(len(SURFACES))
+    selected_surface = st.segmented_control(
+        "Navigation",
+        options=SURFACES,
+        default=st.session_state.surface,
+        key="tmk_surface_navigation_segmented",
+        label_visibility="collapsed",
+    )
 
-    for index, surface in enumerate(SURFACES):
-        surface_slug = surface.lower().replace(" ", "_")
-        button_type = "primary" if st.session_state.surface == surface else "secondary"
-
-        if cols[index].button(
-            label=surface,
-            key=f"tmk_top_nav_button__{index}__{surface_slug}",
-            use_container_width=True,
-            type=button_type,
-        ):
-            st.session_state.surface = surface
-            st.rerun()
+    if selected_surface and selected_surface != st.session_state.surface:
+        st.session_state.surface = selected_surface
+        st.rerun()
 
 def _render_sidebar() -> None:
     with st.sidebar:
