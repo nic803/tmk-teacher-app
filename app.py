@@ -447,17 +447,18 @@ def _apply_styles() -> None:
 
 
 def _render_nav() -> None:
-    selected_surface = st.segmented_control(
-        "Navigation",
+    selected_surface = st.radio(
+        "",
         options=SURFACES,
-        default=st.session_state.surface,
-        key="tmk_surface_navigation_segmented",
+        index=SURFACES.index(st.session_state.surface),
+        horizontal=True,
         label_visibility="collapsed",
     )
 
-    if selected_surface and selected_surface != st.session_state.surface:
+    if selected_surface != st.session_state.surface:
         st.session_state.surface = selected_surface
         st.rerun()
+
 
 def _render_sidebar() -> None:
     with st.sidebar:
@@ -687,7 +688,7 @@ def _render_product_lab(product: int) -> None:
     st.markdown(
         """
         <div class="tmk-note">
-            Entry routes point inward. Exit routes show the division routes back out from the product.
+            Entry routes point inward. Exit routes point outward.
         </div>
         """,
         unsafe_allow_html=True,
@@ -859,7 +860,7 @@ def _render_visible_products_grid(product: int) -> None:
 
     for row_start in range(0, len(products), cols_per_row):
         cols = st.columns(cols_per_row)
-        for offset, visible_product in enumerate(products[row_start: row_start + cols_per_row]):
+        for offset, visible_product in enumerate(products[row_start : row_start + cols_per_row]):
             button_type = "primary" if visible_product == product else "secondary"
             if cols[offset].button(
                 str(visible_product),
@@ -899,7 +900,6 @@ def _world_map_html(
     link_mode: str,
     focus_stage_only: bool,
 ) -> str:
-    width = 1320
     lane_x = 26
     lane_w = 1268
     lane_h = 94
