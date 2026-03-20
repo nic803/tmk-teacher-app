@@ -236,42 +236,75 @@ def _format_answer(answer: Dict[str, object]) -> str:
 
     if "value" in answer and "route" in answer:
         route = answer["route"]
-        return f"{answer['value']} ({route['left']} × {route['right']})"
+        if isinstance(route, dict):
+            return f"{answer['value']} ({route['left']} × {route['right']})"
+        if isinstance(route, (tuple, list)) and len(route) == 2:
+            return f"{answer['value']} ({route[0]} × {route[1]})"
 
     if "value" in answer and "division" in answer:
         division = answer["division"]
-        return f"{answer['value']} ({division['product']} ÷ {division['divisor']} = {division['quotient']})"
+        if isinstance(division, dict):
+            return f"{answer['value']} ({division['product']} ÷ {division['divisor']} = {division['quotient']})"
 
-    if "route" in answer and isinstance(answer["route"], dict):
+    if "route" in answer:
         route = answer["route"]
-        return f"{route['left']} × {route['right']}"
+        if isinstance(route, dict):
+            return f"{route['left']} × {route['right']}"
+        if isinstance(route, (tuple, list)) and len(route) == 2:
+            return f"{route[0]} × {route[1]}"
 
-    if "division" in answer and isinstance(answer["division"], dict):
+    if "division" in answer:
         division = answer["division"]
-        return f"{division['product']} ÷ {division['divisor']} = {division['quotient']}"
+        if isinstance(division, dict):
+            return f"{division['product']} ÷ {division['divisor']} = {division['quotient']}"
 
     if "belongs" in answer:
         return "Yes" if answer["belongs"] else "No"
 
     if "correct_equation" in answer:
-        eq = answer["correct_equation"]
-        return f"{eq['left']} × {eq['right']} = {eq['product']}"
+        eq = answer["correct"]
+        if isinstance(eq, dict):
+            return f"{eq['left']} × {eq['right']} = {eq['product']}"
+
+    if "correct" in answer:
+        eq = answer["correct"]
+        if isinstance(eq, dict):
+            return f"{eq['left']} × {eq['right']} = {eq['product']}"
 
     if "classification" in answer:
         return str(answer["classification"])
 
     if "accepted_routes" in answer:
-        routes = [f"{route['left']} × {route['right']}" for route in answer["accepted_routes"]]
-        return "; ".join(routes)
+        formatted_routes = []
+        for route in answer["accepted_routes"]:
+            if isinstance(route, dict):
+                formatted_routes.append(f"{route['left']} × {route['right']}")
+            elif isinstance(route, (tuple, list)) and len(route) == 2:
+                formatted_routes.append(f"{route[0]} × {route[1]}")
+            else:
+                formatted_routes.append(str(route))
+        return "; ".join(formatted_routes)
 
     if "accepted_pattern_ids" in answer:
-        return ", ".join(answer["accepted_pattern_ids"])
+        return ", ".join(str(pattern_id) for pattern_id in answer["accepted_pattern_ids"])
 
     if "has_another_way_in" in answer:
         return "No"
 
     if "has_another_way_out" in answer:
         return "No"
+
+    if "comparison" in answer:
+        return str(answer["comparison"])
+
+    if "valid_routes" in answer:
+        formatted_routes = []
+        for route in answer["valid_routes"]:
+            if isinstance(route, (tuple, list)) and len(route) == 2:
+                formatted_routes.append(f"{route[0]} × {route[1]}")
+            else:
+                formatted_routes.append(str(route))
+        return "; ".join(formatted_routes)
 
     return str(answer)
 
