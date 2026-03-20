@@ -552,7 +552,12 @@ if not MEMORY_CUES_AVAILABLE:
 
 with st.sidebar:
     st.header("Teacher Controls")
-    stage = st.radio(
+        st.markdown("---")
+    language_mode = st.radio(
+        "Language mode",
+        ["Teacher", "Child"],
+        key="language_mode",
+    )    stage = st.radio(
         "Unlock stage",
         STAGE_ORDER,
         index=STAGE_ORDER.index(st.session_state.get("selected_stage", "0")),
@@ -682,12 +687,20 @@ if not cues:
     st.caption("No memory cues attached to this product.")
 else:
     for cue in cues:
+
+        if st.session_state.get("language_mode", "Teacher") == "Child":
+            text = cue.child_text
+            note = ""
+        else:
+            text = cue.cue_text
+            note = cue.teacher_note
+
         st.markdown(
             cue_badge_html(
                 cue.id.replace("_", " ").title(),
-                cue.cue_text,
+                text,
                 cue.cue_type,
-                cue.teacher_note,
+                note,
             ),
             unsafe_allow_html=True,
         )
