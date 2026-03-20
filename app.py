@@ -552,7 +552,7 @@ if not MEMORY_CUES_AVAILABLE:
 
 with st.sidebar:
     st.header("Teacher Controls")
-        st.markdown("---")
+    st.markdown("---")
     language_mode = st.radio(
         "Language mode",
         ["Teacher", "Child"],
