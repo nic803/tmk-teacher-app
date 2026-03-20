@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Tuple
 
-
 TMK_WORLD: str = "TMK World"
 BEYOND_10_WORLD: str = "Beyond-10 World"
 
@@ -28,10 +27,3 @@ def validate_world_name_usage(text: str) -> None:
             raise ValueError(
                 f"Forbidden world wording detected: '{phrase}' in '{text}'"
             )
-
-
-def world_names() -> Tuple[str, str]:
-    """
-    Canonical world names used by the system.
-    """
-    return (TMK_WORLD, BEYOND_10_WORLD)
