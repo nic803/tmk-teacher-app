@@ -443,5 +443,35 @@ def product_pattern_ids(product: int) -> Tuple[PatternId, ...]:
 
 
 @lru_cache(maxsize=None)
-def product_patterns(product: int) -> Tuple[Pattern, ...]:
-    return tuple(PATTERNS[pattern_id] for pattern_id in product_pattern_ids(product))
+def product_patterns(product: int):
+
+    patterns: List[PatternKey] = []
+
+    patterns.append("product_hub")
+
+    if len(ways_in(product)) > 1:
+        patterns.append("multiple_route_product")
+    else:
+        patterns.append("single_route_product")
+
+    if structural_role(product) == "compression_hub":
+        patterns.append("compression_hub")
+
+    if structural_role(product) == "bridge_hub":
+        patterns.append("bridge_hub")
+
+    if structural_role(product) == "closure_hub":
+        patterns.append("closure_hub")
+
+    if any(a == b for a, b in ways_in(product)):
+        patterns.append("square_product")
+
+    if product % 2 == 0:
+        patterns.append("even_product")
+    else:
+        patterns.append("odd_product")
+
+    if len(factor_families(product)) > 1:
+        patterns.append("product_family_overlap")
+
+    return tuple(PATTERNS[p] for p in patterns)
