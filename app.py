@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from html import escape
-from math import cos, pi, sin
 from typing import Iterable
 
 import streamlit as st
@@ -83,8 +82,6 @@ def _ensure_state() -> None:
         st.session_state.compare_product = 24 if 24 in ALL_PRODUCTS else ALL_PRODUCTS[0]
     if "planner_link_mode" not in st.session_state:
         st.session_state.planner_link_mode = "Selected links"
-    if "planner_show_route_labels" not in st.session_state:
-        st.session_state.planner_show_route_labels = True
     if "planner_focus_stage_only" not in st.session_state:
         st.session_state.planner_focus_stage_only = False
 
@@ -261,12 +258,49 @@ def _apply_styles() -> None:
                 margin-top: 0.8rem;
             }
 
-            .tmk-radial-text-list {
-                margin-top: 0.75rem;
+            .tmk-legend-box {
+                background: #fffaf2;
+                border: 1px solid #eadfd0;
+                border-radius: 16px;
+                padding: 0.8rem 0.95rem;
+                margin-top: 0.8rem;
             }
 
-            .tmk-radial-text-list .tmk-note {
-                margin-bottom: 0.28rem;
+            .tmk-legend-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.9rem;
+                align-items: center;
+            }
+
+            .tmk-legend-item {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.45rem;
+                color: #46516b;
+                font-size: 0.94rem;
+                font-weight: 700;
+            }
+
+            .tmk-line-swatch {
+                width: 36px;
+                height: 0;
+                border-top: 4px solid #ff9f43;
+                position: relative;
+            }
+
+            .tmk-line-swatch-purple {
+                width: 36px;
+                height: 0;
+                border-top: 2px dashed #7c3aed;
+                position: relative;
+            }
+
+            .tmk-line-swatch-grey {
+                width: 36px;
+                height: 0;
+                border-top: 2px solid rgba(170,181,197,0.8);
+                position: relative;
             }
 
             .tmk-worksheet-frame {
@@ -459,10 +493,6 @@ def _render_sidebar() -> None:
             index=PLANNER_LINK_MODES.index(st.session_state.planner_link_mode),
         )
         st.session_state.planner_link_mode = link_mode
-        st.session_state.planner_show_route_labels = st.checkbox(
-            "Show selected-route labels",
-            value=st.session_state.planner_show_route_labels,
-        )
         st.session_state.planner_focus_stage_only = st.checkbox(
             "Focus selected stage only",
             value=st.session_state.planner_focus_stage_only,
@@ -493,49 +523,40 @@ def _render_structural_planner(product: int) -> None:
     control_col1, control_col2, control_col3 = st.columns(3)
 
     with control_col1:
-        st.selectbox(
+        selected = st.selectbox(
             "Selected product",
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
-            key="planner_product_select",
             format_func=_product_option_label,
+            key="planner_product_select",
         )
-    if st.session_state.planner_product_select != st.session_state.selected_product:
-        st.session_state.selected_product = st.session_state.planner_product_select
+    if selected != st.session_state.selected_product:
+        st.session_state.selected_product = selected
         st.rerun()
 
     with control_col2:
-        st.selectbox(
+        link_mode = st.selectbox(
             "Link mode",
             options=PLANNER_LINK_MODES,
             index=PLANNER_LINK_MODES.index(st.session_state.planner_link_mode),
             key="planner_link_mode_select",
         )
-    st.session_state.planner_link_mode = st.session_state.planner_link_mode_select
+    st.session_state.planner_link_mode = link_mode
 
     with control_col3:
-        st.selectbox(
+        stage_focus = st.selectbox(
             "Stage focus",
             options=("Whole world", "Selected stage only"),
             index=1 if st.session_state.planner_focus_stage_only else 0,
             key="planner_stage_focus_select",
         )
-    st.session_state.planner_focus_stage_only = (
-        st.session_state.planner_stage_focus_select == "Selected stage only"
-    )
-
-    st.checkbox(
-        "Show selected-route labels on the map",
-        key="planner_route_labels_checkbox",
-        value=st.session_state.planner_show_route_labels,
-    )
-    st.session_state.planner_show_route_labels = st.session_state.planner_route_labels_checkbox
+    st.session_state.planner_focus_stage_only = stage_focus == "Selected stage only"
 
     st.markdown(
         """
         <div class="tmk-control-caption">
-            Selected links = only the selected product’s entry links are shown strongly. 
-            All links = the wider network is shown faintly behind the selected product. 
+            Selected links = only the selected product’s entry links are highlighted.
+            All links = the wider network appears faintly behind.
             No links = stage layout only.
         </div>
         """,
@@ -544,34 +565,37 @@ def _render_structural_planner(product: int) -> None:
 
     st.markdown("---")
 
-    explainer_left, explainer_right = st.columns([1.1, 1])
+    explainer_left, explainer_right = st.columns(2)
 
     with explainer_left:
-        st.markdown("### What is happening")
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-subhead">What is happening</div>', unsafe_allow_html=True)
         st.markdown(
             f"""
             <div class="tmk-note">
                 <strong>{record.product}</strong> is selected.<br>
                 It belongs to <strong>{stage_label(record.stage)}</strong>.<br>
                 Its intro route is <strong>{_format_route(record.intro_route)}</strong>.<br>
-                That means the planner highlights the links from <strong>{record.intro_route[0]}</strong> and <strong>{record.intro_route[1]}</strong> into <strong>{record.product}</strong>.
+                The planner highlights links from <strong>{record.intro_route[0]}</strong> and <strong>{record.intro_route[1]}</strong> into <strong>{record.product}</strong>.
             </div>
             """,
             unsafe_allow_html=True,
         )
+        st.markdown("</div>", unsafe_allow_html=True)
 
     with explainer_right:
-        st.markdown("### Link key")
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-subhead">Selected route reading</div>', unsafe_allow_html=True)
         st.markdown(
-            """
+            f"""
             <div class="tmk-note">
-                <strong>Orange + purple highlighted lines</strong> = the selected product’s intro route.<br>
-                <strong>Faint grey lines</strong> = the wider world network.<br>
-                <strong>Large node with orange ring</strong> = the selected product.
+                <strong>{record.intro_route[0]}</strong> × <strong>{record.intro_route[1]}</strong> = <strong>{record.product}</strong><br>
+                So the selected product is read through the intro route <strong>{_format_route(record.intro_route)}</strong>.
             </div>
             """,
             unsafe_allow_html=True,
         )
+        st.markdown("</div>", unsafe_allow_html=True)
 
     _render_stage_cards(product)
 
@@ -580,46 +604,27 @@ def _render_structural_planner(product: int) -> None:
         _world_map_html(
             selected_product=product,
             link_mode=st.session_state.planner_link_mode,
-            show_route_labels=st.session_state.planner_show_route_labels,
             focus_stage_only=st.session_state.planner_focus_stage_only,
         ),
-        height=860,
+        height=760,
         scrolling=True,
     )
     st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
 
-    info_col1, info_col2 = st.columns(2)
-
-    with info_col1:
-        st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-subhead">Selected link explanation</div>', unsafe_allow_html=True)
-        st.markdown(
-            f"""
-            <div class="tmk-note">
-                <strong>{record.intro_route[0]}</strong> links into <strong>{record.product}</strong> because it is one factor in the intro route.<br>
-                <strong>{record.intro_route[1]}</strong> links into <strong>{record.product}</strong> because it is the other factor in the intro route.<br>
-                The selected product is therefore read as <strong>{_format_route(record.intro_route)} = {record.product}</strong>.
+    st.markdown(
+        """
+        <div class="tmk-legend-box">
+            <div class="tmk-legend-row">
+                <div class="tmk-legend-item"><span class="tmk-line-swatch"></span> selected intro link</div>
+                <div class="tmk-legend-item"><span class="tmk-line-swatch-purple"></span> selected intro link overlay</div>
+                <div class="tmk-legend-item"><span class="tmk-line-swatch-grey"></span> wider world links</div>
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    with info_col2:
-        st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-subhead">Selected product summary</div>', unsafe_allow_html=True)
-        st.markdown(
-            f"""
-            <div class="tmk-note"><strong>Product:</strong> {record.product}</div>
-            <div class="tmk-note"><strong>Stage:</strong> {stage_label(record.stage)}</div>
-            <div class="tmk-note"><strong>Intro route:</strong> {_format_route(record.intro_route)}</div>
-            <div class="tmk-note"><strong>Routes:</strong> {len(record.factor_families)}</div>
-            <div class="tmk-note"><strong>Role:</strong> {record.structural_role}</div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Visible products</div>', unsafe_allow_html=True)
@@ -678,7 +683,7 @@ def _render_product_lab(product: int) -> None:
     st.markdown(
         """
         <div class="tmk-note">
-            Entry routes point inward to the product. Exit routes show the division routes back out from the product.
+            Entry routes point inward. Exit routes show the division routes back out from the product.
         </div>
         """,
         unsafe_allow_html=True,
@@ -888,7 +893,6 @@ def _render_pattern_links(product: int) -> None:
 def _world_map_html(
     selected_product: int,
     link_mode: str,
-    show_route_labels: bool,
     focus_stage_only: bool,
 ) -> str:
     width = 1320
@@ -903,7 +907,6 @@ def _world_map_html(
     selected_record = product_record(selected_product)
 
     lines: list[str] = []
-    route_labels: list[str] = []
 
     if link_mode == "All links":
         for product in ALL_PRODUCTS:
@@ -915,10 +918,10 @@ def _world_map_html(
             start = positions.get(record.intro_route[0])
             end = positions.get(product)
             if start and end:
-                lines.append(_svg_line(start[0], start[1], end[0], end[1], "#aab5c5", 2.4, 0.34, ""))
+                lines.append(_svg_line(start[0], start[1], end[0], end[1], "#aab5c5", 2.2, 0.30, ""))
             alt = positions.get(record.intro_route[1])
             if alt and end:
-                lines.append(_svg_line(alt[0], alt[1], end[0], end[1], "#aab5c5", 2.4, 0.34, ""))
+                lines.append(_svg_line(alt[0], alt[1], end[0], end[1], "#aab5c5", 2.2, 0.30, ""))
 
     if link_mode in ("Selected links", "All links"):
         selected_end = positions[selected_product]
@@ -927,17 +930,7 @@ def _world_map_html(
                 sx, sy = positions[factor]
                 ex, ey = selected_end
                 lines.append(_svg_line(sx, sy, ex, ey, "#ff9f43", 4.0, 0.96, "8 6"))
-                lines.append(_svg_line(sx, sy, ex, ey, "#7c3aed", 1.8, 0.96, "2 8"))
-
-        if show_route_labels:
-            a, b = selected_record.intro_route
-            mx1 = (positions[a][0] + selected_end[0]) / 2
-            my1 = (positions[a][1] + selected_end[1]) / 2
-            mx2 = (positions[b][0] + selected_end[0]) / 2
-            my2 = (positions[b][1] + selected_end[1]) / 2
-            route_labels.append(_svg_label_box(mx1, my1 - 18, str(a)))
-            route_labels.append(_svg_label_box(mx2, my2 + 18, str(b)))
-            route_labels.append(_svg_label_box(selected_end[0], selected_end[1] + 54, f"{a}×{b}={selected_product}"))
+                lines.append(_svg_line(sx, sy, ex, ey, "#7c3aed", 1.6, 0.96, "2 8"))
 
     lane_rects: list[str] = []
     lane_labels: list[str] = []
@@ -973,22 +966,13 @@ def _world_map_html(
             f'<text x="{x}" y="{y + 7}" text-anchor="middle" font-size="{22 if is_selected else 16}" font-weight="900" fill="#ffffff">{product}</text>'
         )
 
-    legend = f"""
-        <rect x="26" y="708" width="1268" height="48" rx="16" fill="rgba(255,255,255,0.6)" stroke="#eadfd0" stroke-width="1.2"></rect>
-        <text x="48" y="738" font-size="17" font-weight="700" fill="#4a5873">
-            Selected product: {selected_product}. Intro route: {_format_route(selected_record.intro_route)}. Link mode: {escape(link_mode)}.
-        </text>
-    """
-
     svg = f"""
-    <svg viewBox="0 0 1320 770" width="1320" height="770" xmlns="http://www.w3.org/2000/svg">
-        <rect x="0" y="0" width="1320" height="770" fill="#f5f3ef"></rect>
+    <svg viewBox="0 0 1320 700" width="1320" height="700" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="1320" height="700" fill="#f5f3ef"></rect>
         {''.join(lane_rects)}
         {''.join(lines)}
         {''.join(lane_labels)}
-        {''.join(route_labels)}
         {''.join(nodes)}
-        {legend}
     </svg>
     """
 
@@ -1127,8 +1111,7 @@ def _pill_cloud(items: Iterable[object], accent: bool) -> str:
     pills: list[str] = []
     cls = "tmk-pill tmk-pill-accent" if accent else "tmk-pill"
     for item in items:
-        label = _stringify(item)
-        pills.append(f'<span class="{cls}">{escape(label)}</span>')
+        pills.append(f'<span class="{cls}">{escape(_stringify(item))}</span>')
     return f'<div class="tmk-soft-list">{"".join(pills)}</div>'
 
 
@@ -1164,22 +1147,11 @@ def _svg_arrow(
     )
 
 
-def _svg_label_box(x: float, y: float, text: str) -> str:
-    safe = escape(text)
-    return f"""
-        <g>
-            <rect x="{x - 18}" y="{y - 12}" width="{max(36, len(text) * 10)}" height="24" rx="10" fill="rgba(255,255,255,0.92)" stroke="#eadfd0" stroke-width="1.2"></rect>
-            <text x="{x}" y="{y + 5}" font-size="14" font-weight="800" fill="#22304f">{safe}</text>
-        </g>
-    """
-
-
 def _svg_info_box(x: float, y: float, w: float, h: float, text: str, fill: str, stroke: str) -> str:
-    safe = escape(text)
     return f"""
         <g>
             <rect x="{x}" y="{y}" width="{w}" height="{h}" rx="14" fill="{fill}" stroke="{stroke}" stroke-width="2"></rect>
-            <text x="{x + w / 2}" y="{y + 26}" text-anchor="middle" font-size="18" font-weight="800" fill="#ffffff">{safe}</text>
+            <text x="{x + w / 2}" y="{y + 26}" text-anchor="middle" font-size="18" font-weight="800" fill="#ffffff">{escape(text)}</text>
         </g>
     """
 
@@ -1241,6 +1213,9 @@ def _stringify(value) -> str:
         return _format_route(value)
     return str(value)
 
+
+if __name__ == "__main__":
+    main()
 
 if __name__ == "__main__":
     main()
