@@ -450,18 +450,17 @@ def _render_nav() -> None:
     cols = st.columns(len(SURFACES))
 
     for index, surface in enumerate(SURFACES):
-
+        surface_slug = surface.lower().replace(" ", "_")
         button_type = "primary" if st.session_state.surface == surface else "secondary"
 
         if cols[index].button(
-            surface,
-            key=f"nav_surface_{index}_{surface.lower().replace(' ','_')}",
+            label=surface,
+            key=f"tmk_top_nav_button__{index}__{surface_slug}",
             use_container_width=True,
             type=button_type,
         ):
             st.session_state.surface = surface
             st.rerun()
-
 
 def _render_sidebar() -> None:
     with st.sidebar:
