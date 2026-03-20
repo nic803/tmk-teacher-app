@@ -1,44 +1,37 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Final, Tuple
+from typing import Tuple
 
 
-TMK_WORLD: Final[str] = "TMK World"
-BEYOND_10_WORLD: Final[str] = "Beyond-10 World"
-
-FORBIDDEN_WORLD_PHRASES: Final[Tuple[str, ...]] = (
-    "the TMK World",
-    "the Beyond-10 World",
-    "belongs to TMK World",
-    "belongs to Beyond-10 World",
-)
-
-
-@dataclass(frozen=True)
-class WorldNames:
-    tmk: str = TMK_WORLD
-    beyond_10: str = BEYOND_10_WORLD
-
-
-WORLD_NAMES: Final[WorldNames] = WorldNames()
-
-
-def tmk_world_name() -> str:
-    return WORLD_NAMES.tmk
-
-
-def beyond_10_world_name() -> str:
-    return WORLD_NAMES.beyond_10
+TMK_WORLD: str = "TMK World"
+BEYOND_10_WORLD: str = "Beyond-10 World"
 
 
 def forbidden_world_phrases() -> Tuple[str, ...]:
-    return FORBIDDEN_WORLD_PHRASES
+    """
+    Phrases that must never appear in prompts or UI text.
+    """
+    return (
+        "the TMK World",
+        "the Beyond-10 World",
+        "belongs to TMK World",
+        "belongs to Beyond-10 World",
+    )
 
 
 def validate_world_name_usage(text: str) -> None:
-    for phrase in FORBIDDEN_WORLD_PHRASES:
+    """
+    Ensure forbidden world wording never appears.
+    """
+    for phrase in forbidden_world_phrases():
         if phrase in text:
             raise ValueError(
-                f"Forbidden world phrasing detected: '{phrase}' in '{text}'"
+                f"Forbidden world wording detected: '{phrase}' in '{text}'"
             )
+
+
+def world_names() -> Tuple[str, str]:
+    """
+    Canonical world names used by the system.
+    """
+    return (TMK_WORLD, BEYOND_10_WORLD)
