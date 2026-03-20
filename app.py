@@ -448,9 +448,17 @@ def _apply_styles() -> None:
 
 def _render_nav() -> None:
     cols = st.columns(len(SURFACES))
+
     for index, surface in enumerate(SURFACES):
-        kind = "primary" if st.session_state.surface == surface else "secondary"
-        if cols[index].button(surface, use_container_width=True, type=kind):
+
+        button_type = "primary" if st.session_state.surface == surface else "secondary"
+
+        if cols[index].button(
+            surface,
+            key=f"nav_surface_{index}_{surface.lower().replace(' ','_')}",
+            use_container_width=True,
+            type=button_type,
+        ):
             st.session_state.surface = surface
             st.rerun()
 
