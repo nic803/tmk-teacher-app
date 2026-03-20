@@ -15,6 +15,17 @@ except Exception as exc:
     def product_patterns(product: int):
         return tuple()
 
+try:
+    from memory_cues import memory_cues_for_product
+    MEMORY_CUES_AVAILABLE = True
+    MEMORY_CUES_IMPORT_ERROR = ""
+except Exception as exc:
+    MEMORY_CUES_AVAILABLE = False
+    MEMORY_CUES_IMPORT_ERROR = str(exc)
+
+    def memory_cues_for_product(product: int):
+        return tuple()
+
 
 Route = Tuple[int, int]
 
@@ -487,6 +498,23 @@ def pattern_badge_html(title: str, body: str) -> str:
     """
 
 
+def cue_badge_html(title: str, cue_text: str, cue_type: str, note: str) -> str:
+    return f"""
+    <div style="
+        background:#fff7ed;
+        border:1px solid #fdba74;
+        border-radius:14px;
+        padding:12px 14px;
+        margin-bottom:10px;
+    ">
+        <div style="font-size:13px;font-weight:800;color:#9a3412;margin-bottom:6px;">{title}</div>
+        <div style="font-size:18px;line-height:1.35;font-weight:800;color:#7c2d12;margin-bottom:8px;">{cue_text}</div>
+        <div style="font-size:12px;font-weight:700;color:#c2410c;margin-bottom:6px;">Type: {cue_type}</div>
+        <div style="font-size:13px;line-height:1.5;color:#7c2d12;">{note}</div>
+    </div>
+    """
+
+
 def render_world_map(stage: str, selected: int, highlighted: List[int] | None = None) -> None:
     svg = build_world_svg(stage, selected, highlighted)
     st.markdown(svg, unsafe_allow_html=True)
@@ -518,6 +546,9 @@ st.caption("A deploy-safe teacher surface for product hubs, stage growth, routes
 
 if not PATTERNS_AVAILABLE:
     st.warning(f"Pattern panel unavailable. Check patterns.py. Import error: {PATTERN_IMPORT_ERROR}")
+
+if not MEMORY_CUES_AVAILABLE:
+    st.warning(f"Memory cues unavailable. Check memory_cues.py. Import error: {MEMORY_CUES_IMPORT_ERROR}")
 
 with st.sidebar:
     st.header("Teacher Controls")
@@ -643,6 +674,23 @@ else:
                 ),
                 unsafe_allow_html=True,
             )
+
+st.subheader("Memory Cues")
+cues = memory_cues_for_product(selected_product)
+
+if not cues:
+    st.caption("No memory cues attached to this product.")
+else:
+    for cue in cues:
+        st.markdown(
+            cue_badge_html(
+                cue.id.replace("_", " ").title(),
+                cue.cue_text,
+                cue.cue_type,
+                cue.teacher_note,
+            ),
+            unsafe_allow_html=True,
+        )
 
 st.subheader("Structural neighbours")
 neighbours = related_products(selected_product, selected_stage)
