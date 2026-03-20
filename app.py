@@ -91,6 +91,11 @@ def _apply_styles() -> None:
                 color: #1f2a44;
             }
 
+            .block-container {
+                padding-top: 1rem;
+                padding-bottom: 2rem;
+            }
+
             .tmk-shell {
                 max-width: 1240px;
                 margin: 0 auto;
@@ -101,7 +106,7 @@ def _apply_styles() -> None:
                 background: linear-gradient(180deg, #fffdf9 0%, #faf7f1 100%);
                 border: 1px solid #eadfd0;
                 border-radius: 24px;
-                padding: 1.4rem 1.5rem 1.1rem 1.5rem;
+                padding: 1.35rem 1.4rem 1.1rem 1.4rem;
                 box-shadow: 0 8px 24px rgba(34, 46, 75, 0.06);
                 margin-bottom: 1rem;
             }
@@ -117,7 +122,7 @@ def _apply_styles() -> None:
 
             .tmk-header h1 {
                 margin: 0;
-                font-size: 2.05rem;
+                font-size: 2rem;
                 line-height: 1.08;
                 color: #1f2a44;
             }
@@ -126,13 +131,14 @@ def _apply_styles() -> None:
                 margin: 0.45rem 0 0 0;
                 color: #46516b;
                 font-size: 1rem;
+                line-height: 1.45;
             }
 
             .tmk-panel {
                 background: rgba(255, 255, 255, 0.74);
                 border: 1px solid #eadfd0;
                 border-radius: 24px;
-                padding: 1.1rem 1.2rem;
+                padding: 1rem 1rem;
                 box-shadow: 0 10px 30px rgba(34, 46, 75, 0.05);
                 margin-bottom: 1rem;
             }
@@ -142,12 +148,14 @@ def _apply_styles() -> None:
                 line-height: 1.1;
                 font-weight: 800;
                 color: #22304f;
-                margin-bottom: 0.25rem;
+                margin-bottom: 0.2rem;
             }
 
             .tmk-section-subtitle {
                 color: #59667f;
-                margin-bottom: 0.9rem;
+                margin-bottom: 0.8rem;
+                font-size: 1rem;
+                line-height: 1.45;
             }
 
             .tmk-card {
@@ -156,6 +164,7 @@ def _apply_styles() -> None:
                 border-radius: 18px;
                 padding: 0.95rem 1rem;
                 height: 100%;
+                margin-bottom: 0.75rem;
             }
 
             .tmk-card-dark {
@@ -164,10 +173,11 @@ def _apply_styles() -> None:
                 border-radius: 24px;
                 padding: 0.75rem;
                 height: 100%;
+                margin-bottom: 0.75rem;
             }
 
             .tmk-small-label {
-                font-size: 0.72rem;
+                font-size: 0.74rem;
                 font-weight: 800;
                 letter-spacing: 0.08em;
                 text-transform: uppercase;
@@ -176,10 +186,11 @@ def _apply_styles() -> None:
             }
 
             .tmk-value {
-                font-size: 1.45rem;
+                font-size: 1.35rem;
                 font-weight: 800;
                 color: #22304f;
-                line-height: 1.1;
+                line-height: 1.2;
+                word-break: break-word;
             }
 
             .tmk-soft-list {
@@ -192,13 +203,14 @@ def _apply_styles() -> None:
             .tmk-pill {
                 display: inline-flex;
                 align-items: center;
-                padding: 0.42rem 0.68rem;
+                padding: 0.46rem 0.72rem;
                 border-radius: 999px;
                 background: #f3ede4;
                 border: 1px solid #e4d6c2;
                 color: #22304f;
-                font-size: 0.92rem;
+                font-size: 0.95rem;
                 font-weight: 700;
+                line-height: 1.2;
             }
 
             .tmk-pill-accent {
@@ -208,14 +220,57 @@ def _apply_styles() -> None:
 
             .tmk-note {
                 color: #59667f;
-                font-size: 0.93rem;
+                font-size: 0.98rem;
+                line-height: 1.55;
             }
 
             .tmk-subhead {
-                font-size: 1.15rem;
+                font-size: 1.18rem;
                 font-weight: 800;
                 color: #22304f;
                 margin-bottom: 0.5rem;
+            }
+
+            .tmk-stage-card {
+                border-radius: 20px;
+                border: 1px solid #eadfd0;
+                padding: 0.9rem;
+                margin-bottom: 0.8rem;
+                background: rgba(255,255,255,0.72);
+            }
+
+            .tmk-stage-title {
+                font-size: 1.05rem;
+                font-weight: 800;
+                color: #22304f;
+                margin-bottom: 0.55rem;
+            }
+
+            .tmk-mobile-map-note {
+                font-size: 0.95rem;
+                line-height: 1.5;
+                color: #59667f;
+                margin-bottom: 0.75rem;
+            }
+
+            .tmk-worksheet-frame {
+                background: linear-gradient(180deg, #fffdf9 0%, #faf6ee 100%);
+                border: 1px solid #eadfd0;
+                border-radius: 22px;
+                padding: 1rem;
+                margin-bottom: 0.9rem;
+            }
+
+            .tmk-answer-box {
+                background: rgba(255,255,255,0.85);
+                border: 1px solid #eadfd0;
+                border-radius: 16px;
+                padding: 0.9rem 0.95rem;
+                margin-bottom: 0.7rem;
+            }
+
+            .tmk-answer-box strong {
+                line-height: 1.45;
             }
 
             .stButton > button {
@@ -224,28 +279,16 @@ def _apply_styles() -> None:
                 background: #fffaf2;
                 color: #233250;
                 font-weight: 800;
-                min-height: 2.65rem;
+                min-height: 2.9rem;
                 box-shadow: none;
+                font-size: 0.98rem;
+                line-height: 1.2;
+                white-space: normal;
             }
 
             .stButton > button:hover {
                 border-color: #c8ab7a;
                 color: #1d2b47;
-            }
-
-            .tmk-worksheet-frame {
-                background: linear-gradient(180deg, #fffdf9 0%, #faf6ee 100%);
-                border: 1px solid #eadfd0;
-                border-radius: 22px;
-                padding: 1rem;
-            }
-
-            .tmk-answer-box {
-                background: rgba(255,255,255,0.85);
-                border: 1px solid #eadfd0;
-                border-radius: 16px;
-                padding: 0.85rem 0.95rem;
-                margin-bottom: 0.7rem;
             }
 
             [data-testid="stSidebar"] {
@@ -255,6 +298,132 @@ def _apply_styles() -> None:
 
             [data-testid="stMetric"] {
                 background: transparent;
+            }
+
+            .tmk-map-wrap {
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                border-radius: 20px;
+            }
+
+            .tmk-radial-text-list {
+                margin-top: 0.75rem;
+            }
+
+            .tmk-radial-text-list .tmk-note {
+                margin-bottom: 0.28rem;
+            }
+
+            @media (max-width: 900px) {
+                .tmk-shell {
+                    max-width: 100%;
+                }
+
+                .tmk-header {
+                    border-radius: 18px;
+                    padding: 1rem 0.95rem 0.9rem 0.95rem;
+                }
+
+                .tmk-header h1 {
+                    font-size: 1.6rem;
+                }
+
+                .tmk-header p {
+                    font-size: 0.98rem;
+                }
+
+                .tmk-panel {
+                    border-radius: 18px;
+                    padding: 0.85rem;
+                }
+
+                .tmk-section-title {
+                    font-size: 1.55rem;
+                }
+
+                .tmk-section-subtitle {
+                    font-size: 0.97rem;
+                }
+
+                .tmk-card,
+                .tmk-card-dark,
+                .tmk-worksheet-frame,
+                .tmk-answer-box {
+                    border-radius: 16px;
+                }
+
+                .tmk-value {
+                    font-size: 1.18rem;
+                }
+
+                .tmk-pill {
+                    font-size: 0.92rem;
+                    padding: 0.42rem 0.66rem;
+                }
+            }
+
+            @media (max-width: 640px) {
+                .block-container {
+                    padding-left: 0.65rem;
+                    padding-right: 0.65rem;
+                }
+
+                .tmk-header {
+                    padding: 0.9rem 0.85rem 0.85rem 0.85rem;
+                    margin-bottom: 0.8rem;
+                }
+
+                .tmk-kicker {
+                    font-size: 0.68rem;
+                }
+
+                .tmk-header h1 {
+                    font-size: 1.36rem;
+                }
+
+                .tmk-header p {
+                    font-size: 0.93rem;
+                    line-height: 1.45;
+                }
+
+                .tmk-panel {
+                    padding: 0.75rem;
+                    border-radius: 16px;
+                }
+
+                .tmk-section-title {
+                    font-size: 1.3rem;
+                }
+
+                .tmk-section-subtitle,
+                .tmk-note {
+                    font-size: 0.92rem;
+                    line-height: 1.5;
+                }
+
+                .tmk-subhead {
+                    font-size: 1.02rem;
+                }
+
+                .tmk-small-label {
+                    font-size: 0.66rem;
+                }
+
+                .tmk-value {
+                    font-size: 1.06rem;
+                    line-height: 1.25;
+                }
+
+                .tmk-pill {
+                    font-size: 0.88rem;
+                    padding: 0.38rem 0.58rem;
+                }
+
+                .stButton > button {
+                    min-height: 2.8rem;
+                    font-size: 0.94rem;
+                }
             }
         </style>
         """,
@@ -321,7 +490,21 @@ def _render_structural_planner(product: int) -> None:
         '<div class="tmk-section-subtitle">World map, stage unlock view, visible products, and product-first navigation.</div>',
         unsafe_allow_html=True,
     )
-    components.html(_world_map_html(product), height=760, scrolling=False)
+
+    st.markdown(
+        """
+        <div class="tmk-mobile-map-note">
+            On smaller screens, use the stage cards first. The large network map is still available below in a scrollable frame.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    _render_stage_cards(product)
+
+    st.markdown('<div class="tmk-map-wrap">', unsafe_allow_html=True)
+    components.html(_world_map_html(product), height=820, scrolling=True)
+    st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
@@ -333,11 +516,34 @@ def _render_structural_planner(product: int) -> None:
     _render_visible_products_grid(product)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    col1, col2, col3, col4 = st.columns(4)
-    _metric_card(col1, "Selected product", str(record.product))
-    _metric_card(col2, "Stage", stage_label(record.stage))
-    _metric_card(col3, "Intro route", _format_route(record.intro_route))
-    _metric_card(col4, "Structural role", record.structural_role)
+    col1, col2 = st.columns(2)
+    with col1:
+        _metric_card("Selected product", str(record.product))
+        _metric_card("Intro route", _format_route(record.intro_route))
+    with col2:
+        _metric_card("Stage", stage_label(record.stage))
+        _metric_card("Structural role", record.structural_role)
+
+
+def _render_stage_cards(selected_product: int) -> None:
+    for stage in [stage for stage in STAGE_ORDER if stage in STAGES]:
+        stage_record = STAGES[stage]
+        products = stage_record.products
+
+        pills: list[str] = []
+        for product in products:
+            pill_class = "tmk-pill tmk-pill-accent" if product == selected_product else "tmk-pill"
+            pills.append(f'<span class="{pill_class}">{product}</span>')
+
+        st.markdown(
+            f"""
+            <div class="tmk-stage-card" style="background:{_hex_to_rgba(stage_record.color, 0.10)}; border-color:{_hex_to_rgba(stage_record.color, 0.28)};">
+                <div class="tmk-stage-title">{escape(stage_record.label)}</div>
+                <div class="tmk-soft-list">{''.join(pills)}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 
 def _render_product_lab(product: int) -> None:
@@ -350,92 +556,93 @@ def _render_product_lab(product: int) -> None:
         '<div class="tmk-section-subtitle">Hub overview, truth set, inverse field, pattern links, stage relations, compare products, and differentiation.</div>',
         unsafe_allow_html=True,
     )
-    top1, top2, top3, top4 = st.columns(4)
-    _metric_card(top1, "Product", str(record.product))
-    _metric_card(top2, "Stage", stage_label(record.stage))
-    _metric_card(top3, "Routes", str(len(record.factor_families)))
-    _metric_card(top4, "Role", record.structural_role)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    left, right = st.columns([1.25, 1])
+    _metric_card_row(
+        [
+            ("Product", str(record.product)),
+            ("Stage", stage_label(record.stage)),
+            ("Routes", str(len(record.factor_families))),
+            ("Role", record.structural_role),
+        ]
+    )
 
-    with left:
-        st.markdown('<div class="tmk-card-dark">', unsafe_allow_html=True)
-        components.html(_radial_hub_html(product), height=430, scrolling=False)
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('<div class="tmk-card-dark">', unsafe_allow_html=True)
+    components.html(_radial_hub_html(product), height=520, scrolling=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    with right:
-        st.markdown(
-            f"""
-            <div class="tmk-card">
-                <div class="tmk-small-label">Hub overview</div>
-                <div class="tmk-value">{record.product}</div>
-                <div class="tmk-note">Intro route: {_format_route(record.intro_route)}</div>
-                <div class="tmk-note">Ways in: {len(record.ways_in)} ordered routes</div>
-                <div class="tmk-note">Ways out: {len(record.ways_out)} ordered exits</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-subhead">Radial route list</div>', unsafe_allow_html=True)
+    _render_radial_text_fallback(record)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    row1, row2 = st.columns(2)
+    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-subhead">Hub overview</div>', unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="tmk-note"><strong>Product:</strong> {record.product}</div>
+        <div class="tmk-note"><strong>Intro route:</strong> {_format_route(record.intro_route)}</div>
+        <div class="tmk-note"><strong>Ways in:</strong> {len(record.ways_in)} ordered routes</div>
+        <div class="tmk-note"><strong>Ways out:</strong> {len(record.ways_out)} ordered exits</div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    with row1:
-        st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-subhead">Truth set</div>', unsafe_allow_html=True)
-        st.markdown(_pill_cloud(record.ways_in, accent=True), unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-subhead">Truth set</div>', unsafe_allow_html=True)
+    st.markdown(_pill_cloud(record.ways_in, accent=True), unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-subhead">Pattern links</div>', unsafe_allow_html=True)
-        _render_pattern_links(product)
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-subhead">Inverse field</div>', unsafe_allow_html=True)
+    st.markdown(_pill_cloud(_inverse_labels(product), accent=False), unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-subhead">Differentiation</div>', unsafe_allow_html=True)
-        st.markdown(
-            """
-            <div class="tmk-note">
-                Support keeps the same structure with lower working-memory load.<br>
-                Core keeps the full product-centred route structure.<br>
-                Extension keeps the same product but asks for comparison, justification, and explanation.
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-subhead">Pattern links</div>', unsafe_allow_html=True)
+    _render_pattern_links(product)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    with row2:
-        st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-subhead">Inverse field</div>', unsafe_allow_html=True)
-        st.markdown(_pill_cloud(_inverse_labels(product), accent=False), unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-subhead">Stage relations</div>', unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="tmk-note">Current stage: {stage_label(record.stage)}</div>
+        <div class="tmk-note">Visible products up to this stage: {len(visible_products(record.stage))}</div>
+        <div class="tmk-note">Related products sharing factors: {len(record.related_products)}</div>
+        <div class="tmk-note">Intro-route rule stays fixed: {record.product} enters through {_format_route(record.intro_route)}.</div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-subhead">Stage relations</div>', unsafe_allow_html=True)
-        st.markdown(
-            f"""
-            <div class="tmk-note">Current stage: {stage_label(record.stage)}</div>
-            <div class="tmk-note">Visible products up to this stage: {len(visible_products(record.stage))}</div>
-            <div class="tmk-note">Related products sharing factors: {len(record.related_products)}</div>
-            <div class="tmk-note">Intro-route rule stays fixed: {record.product} enters through {_format_route(record.intro_route)}.</div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-subhead">Compare products</div>', unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="tmk-note"><strong>{record.product}</strong> · {stage_label(record.stage)} · {_format_route(record.intro_route)}</div>
+        <div class="tmk-note"><strong>{compare.product}</strong> · {stage_label(compare.stage)} · {_format_route(compare.intro_route)}</div>
+        <div class="tmk-note">Shared factors: {_shared_factors(record.product, compare.product)}</div>
+        <div class="tmk-note">Route counts: {len(record.factor_families)} vs {len(compare.factor_families)}</div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-subhead">Compare products</div>', unsafe_allow_html=True)
-        st.markdown(
-            f"""
-            <div class="tmk-note"><strong>{record.product}</strong> · {stage_label(record.stage)} · {_format_route(record.intro_route)}</div>
-            <div class="tmk-note"><strong>{compare.product}</strong> · {stage_label(compare.stage)} · {_format_route(compare.intro_route)}</div>
-            <div class="tmk-note">Shared factors: {_shared_factors(record.product, compare.product)}</div>
-            <div class="tmk-note">Route counts: {len(record.factor_families)} vs {len(compare.factor_families)}</div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-subhead">Differentiation</div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="tmk-note">
+            Support keeps the same structure with lower working-memory load.<br>
+            Core keeps the full product-centred route structure.<br>
+            Extension keeps the same product but asks for comparison, justification, and explanation.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def _render_worksheet_studio(product: int, tier: str) -> None:
@@ -449,76 +656,81 @@ def _render_worksheet_studio(product: int, tier: str) -> None:
     )
     st.markdown("</div>", unsafe_allow_html=True)
 
-    top1, top2, top3, top4 = st.columns(4)
-    _metric_card(top1, "Product", str(worksheet.product))
-    _metric_card(top2, "Stage", str(worksheet.stage))
-    _metric_card(top3, "Tier", str(worksheet.tier))
-    _metric_card(top4, "Questions", str(len(worksheet.questions)))
+    _metric_card_row(
+        [
+            ("Product", str(worksheet.product)),
+            ("Stage", str(worksheet.stage)),
+            ("Tier", str(worksheet.tier)),
+            ("Questions", str(len(worksheet.questions))),
+        ]
+    )
 
-    left, right = st.columns([1.25, 1])
-
-    with left:
-        st.markdown('<div class="tmk-worksheet-frame">', unsafe_allow_html=True)
-        st.markdown("### Pupil worksheet")
-        for index, question in enumerate(worksheet.questions, start=1):
-            st.markdown(
-                f"""
-                <div class="tmk-answer-box">
-                    <div class="tmk-small-label">Q{_question_number(question, index)}</div>
-                    <div style="font-size:1.02rem;font-weight:700;color:#22304f;">{escape(_render_question_text(question))}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with right:
-        st.markdown('<div class="tmk-worksheet-frame">', unsafe_allow_html=True)
-        st.markdown("### Teacher key")
-        answers = _coerce_sequence(getattr(worksheet.teacher_key, "answers", ()))
-        notes = _coerce_sequence(getattr(worksheet.teacher_key, "notes", ()))
-
-        st.markdown("#### Answers")
-        for index, answer in enumerate(answers, start=1):
-            st.markdown(
-                f"""
-                <div class="tmk-answer-box">
-                    <strong>Q{index}.</strong> {escape(_stringify(answer))}
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-        st.markdown("#### Notes")
-        for note in notes:
-            st.markdown(
-                f"""
-                <div class="tmk-answer-box">
-                    {escape(_stringify(note))}
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        st.markdown("</div>", unsafe_allow_html=True)
-
-
-def _metric_card(column, label: str, value: str) -> None:
-    with column:
+    st.markdown('<div class="tmk-worksheet-frame">', unsafe_allow_html=True)
+    st.markdown("### Pupil worksheet")
+    for index, question in enumerate(worksheet.questions, start=1):
         st.markdown(
             f"""
-            <div class="tmk-card">
-                <div class="tmk-small-label">{escape(label)}</div>
-                <div class="tmk-value">{escape(value)}</div>
+            <div class="tmk-answer-box">
+                <div class="tmk-small-label">Q{_question_number(question, index)}</div>
+                <div style="font-size:1.02rem;font-weight:700;color:#22304f;line-height:1.5;">{escape(_render_question_text(question))}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="tmk-worksheet-frame">', unsafe_allow_html=True)
+    st.markdown("### Teacher key")
+    answers = _coerce_sequence(getattr(worksheet.teacher_key, "answers", ()))
+    notes = _coerce_sequence(getattr(worksheet.teacher_key, "notes", ()))
+
+    st.markdown("#### Answers")
+    for index, answer in enumerate(answers, start=1):
+        st.markdown(
+            f"""
+            <div class="tmk-answer-box">
+                <strong>Q{index}.</strong> {escape(_stringify(answer))}
             </div>
             """,
             unsafe_allow_html=True,
         )
 
+    st.markdown("#### Notes")
+    for note in notes:
+        st.markdown(
+            f"""
+            <div class="tmk-answer-box">
+                {escape(_stringify(note))}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def _metric_card_row(items: list[tuple[str, str]]) -> None:
+    cols = st.columns(len(items))
+    for col, (label, value) in zip(cols, items):
+        with col:
+            _metric_card(label, value)
+
+
+def _metric_card(label: str, value: str) -> None:
+    st.markdown(
+        f"""
+        <div class="tmk-card">
+            <div class="tmk-small-label">{escape(label)}</div>
+            <div class="tmk-value">{escape(value)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 
 def _render_visible_products_grid(product: int) -> None:
     record = product_record(product)
     products = visible_products(record.stage)
-    cols_per_row = 6
+    cols_per_row = 4
 
     for row_start in range(0, len(products), cols_per_row):
         cols = st.columns(cols_per_row)
@@ -553,16 +765,32 @@ def _render_pattern_links(product: int) -> None:
     )
 
 
+def _render_radial_text_fallback(record) -> None:
+    entry_lines = _entry_routes_for_radial(record)
+    exit_lines = _exit_routes_for_radial(record)
+
+    st.markdown('<div class="tmk-radial-text-list">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-note"><strong>Entry routes</strong></div>', unsafe_allow_html=True)
+    for route in entry_lines:
+        st.markdown(f'<div class="tmk-note">{escape(_format_route(route))}</div>', unsafe_allow_html=True)
+
+    st.markdown('<div style="height:0.5rem;"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-note"><strong>Exit routes</strong></div>', unsafe_allow_html=True)
+    for label in exit_lines:
+        st.markdown(f'<div class="tmk-note">{escape(label)}</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
 def _world_map_html(selected_product: int) -> str:
-    width = 1120
-    lane_x = 18
-    lane_w = 1084
-    lane_h = 84
-    lane_gap = 46
-    top = 22
+    width = 1320
+    lane_x = 26
+    lane_w = 1268
+    lane_h = 94
+    lane_gap = 58
+    top = 24
     stages = [stage for stage in STAGE_ORDER if stage in STAGES]
     y_positions = {stage: top + index * (lane_h + lane_gap) for index, stage in enumerate(stages)}
-    positions = _world_positions(width, lane_x, lane_w, lane_h, lane_gap, top)
+    positions = _world_positions(lane_x, lane_w, lane_h, lane_gap, top)
 
     lines: list[str] = []
     for product in ALL_PRODUCTS:
@@ -570,32 +798,10 @@ def _world_map_html(selected_product: int) -> str:
         start = positions.get(record.intro_route[0])
         end = positions.get(product)
         if start and end:
-            lines.append(
-                _svg_line(
-                    start[0],
-                    start[1],
-                    end[0],
-                    end[1],
-                    "#aab5c5",
-                    2.0,
-                    0.38,
-                    "",
-                )
-            )
+            lines.append(_svg_line(start[0], start[1], end[0], end[1], "#aab5c5", 2.4, 0.34, ""))
         alt = positions.get(record.intro_route[1])
         if alt and end:
-            lines.append(
-                _svg_line(
-                    alt[0],
-                    alt[1],
-                    end[0],
-                    end[1],
-                    "#aab5c5",
-                    2.0,
-                    0.38,
-                    "",
-                )
-            )
+            lines.append(_svg_line(alt[0], alt[1], end[0], end[1], "#aab5c5", 2.4, 0.34, ""))
 
     selected_record = product_record(selected_product)
     selected_end = positions[selected_product]
@@ -603,8 +809,8 @@ def _world_map_html(selected_product: int) -> str:
         if factor in positions:
             sx, sy = positions[factor]
             ex, ey = selected_end
-            lines.append(_svg_line(sx, sy, ex, ey, "#ff9f43", 3.5, 0.95, "7 5"))
-            lines.append(_svg_line(sx, sy, ex, ey, "#7c3aed", 1.6, 0.95, "2 8"))
+            lines.append(_svg_line(sx, sy, ex, ey, "#ff9f43", 4.0, 0.96, "8 6"))
+            lines.append(_svg_line(sx, sy, ex, ey, "#7c3aed", 1.8, 0.96, "2 8"))
 
     lane_rects: list[str] = []
     lane_labels: list[str] = []
@@ -612,12 +818,12 @@ def _world_map_html(selected_product: int) -> str:
         y = y_positions[stage]
         stage_record = STAGES[stage]
         fill = _hex_to_rgba(stage_record.color, 0.10)
-        stroke = _hex_to_rgba(stage_record.color, 0.22)
+        stroke = _hex_to_rgba(stage_record.color, 0.26)
         lane_rects.append(
-            f'<rect x="{lane_x}" y="{y}" width="{lane_w}" height="{lane_h}" rx="22" fill="{fill}" stroke="{stroke}" stroke-width="1.5"></rect>'
+            f'<rect x="{lane_x}" y="{y}" width="{lane_w}" height="{lane_h}" rx="24" fill="{fill}" stroke="{stroke}" stroke-width="2"></rect>'
         )
         lane_labels.append(
-            f'<text x="{lane_x + 18}" y="{y + 24}" font-size="14" font-weight="800" fill="#22304f">{escape(stage_record.label)}</text>'
+            f'<text x="{lane_x + 22}" y="{y + 28}" font-size="22" font-weight="800" fill="#22304f">{escape(stage_record.label)}</text>'
         )
 
     nodes: list[str] = []
@@ -626,29 +832,25 @@ def _world_map_html(selected_product: int) -> str:
         record = product_record(product)
         fill = stage_color(record.stage)
         is_selected = product == selected_product
-        radius = 33 if is_selected else 22
-        outer_radius = radius + 5 if is_selected else radius + 2
+        radius = 36 if is_selected else 24
+        outer_radius = radius + 6 if is_selected else radius + 3
         outer_fill = "#ff9f43" if is_selected else _hex_to_rgba(fill, 0.14)
         stroke = "#fff7ee" if is_selected else "#f8fafc"
 
+        nodes.append(f'<circle cx="{x}" cy="{y}" r="{outer_radius}" fill="{outer_fill}" opacity="0.95"></circle>')
+        nodes.append(f'<circle cx="{x}" cy="{y}" r="{radius}" fill="{fill}" stroke="{stroke}" stroke-width="4"></circle>')
         nodes.append(
-            f'<circle cx="{x}" cy="{y}" r="{outer_radius}" fill="{outer_fill}" opacity="0.95"></circle>'
-        )
-        nodes.append(
-            f'<circle cx="{x}" cy="{y}" r="{radius}" fill="{fill}" stroke="{stroke}" stroke-width="3"></circle>'
-        )
-        nodes.append(
-            f'<text x="{x}" y="{y + 6}" text-anchor="middle" font-size="{18 if is_selected else 14}" font-weight="900" fill="#ffffff">{product}</text>'
+            f'<text x="{x}" y="{y + 7}" text-anchor="middle" font-size="{22 if is_selected else 16}" font-weight="900" fill="#ffffff">{product}</text>'
         )
 
     legend = """
-        <rect x="20" y="690" width="1080" height="42" rx="16" fill="rgba(255,255,255,0.55)" stroke="#eadfd0" stroke-width="1"></rect>
-        <text x="38" y="716" font-size="13" font-weight="700" fill="#4a5873">Highlighted lines show the selected product’s intro route. Faint lines show the wider route network.</text>
+        <rect x="26" y="708" width="1268" height="48" rx="16" fill="rgba(255,255,255,0.6)" stroke="#eadfd0" stroke-width="1.2"></rect>
+        <text x="48" y="738" font-size="17" font-weight="700" fill="#4a5873">Highlighted lines show the selected product’s intro route. Faint lines show the wider route network.</text>
     """
 
     svg = f"""
-    <svg viewBox="0 0 1120 740" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-        <rect x="0" y="0" width="1120" height="740" fill="#f5f3ef"></rect>
+    <svg viewBox="0 0 1320 770" width="1320" height="770" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="1320" height="770" fill="#f5f3ef"></rect>
         {''.join(lane_rects)}
         {''.join(lines)}
         {''.join(lane_labels)}
@@ -656,15 +858,15 @@ def _world_map_html(selected_product: int) -> str:
         {legend}
     </svg>
     """
+
     return f"""
-    <div style="background:#f5f3ef;border-radius:24px;overflow:hidden;">
+    <div style="background:#f5f3ef;border-radius:24px;overflow:auto;max-width:100%;">
         {svg}
     </div>
     """
 
 
 def _world_positions(
-    width: int,
     lane_x: int,
     lane_w: int,
     lane_h: int,
@@ -672,7 +874,7 @@ def _world_positions(
     top: int,
 ) -> dict[int, tuple[float, float]]:
     positions: dict[int, tuple[float, float]] = {}
-    usable_x = lane_w - 84
+    usable_x = lane_w - 120
 
     for row_index, stage in enumerate([stage for stage in STAGE_ORDER if stage in STAGES]):
         products = STAGES[stage].products
@@ -683,7 +885,7 @@ def _world_positions(
 
         step = usable_x / (len(products) - 1)
         for index, product in enumerate(products):
-            x = lane_x + 68 + index * step
+            x = lane_x + 84 + index * step
             positions[product] = (x, y)
 
     return positions
@@ -691,55 +893,55 @@ def _world_positions(
 
 def _radial_hub_html(product: int) -> str:
     record = product_record(product)
-    cx = 340
-    cy = 212
-    r = 64
+    cx = 380
+    cy = 245
+    r = 76
     entry_routes = _entry_routes_for_radial(record)
     exit_routes = _exit_routes_for_radial(record)
-    entry_angles = [-90, -152, -28, -205][: len(entry_routes)]
-    exit_angles = [90, 152, 28, 215][: len(exit_routes)]
+    entry_angles = [-90, -152, -28, -210][: len(entry_routes)]
+    exit_angles = [90, 152, 28, 210][: len(exit_routes)]
 
     lines: list[str] = []
     labels: list[str] = []
 
     for angle, route in zip(entry_angles, entry_routes):
-        x2, y2 = _point(cx, cy, 160, angle)
-        x1, y1 = _point(cx, cy, r + 6, angle)
-        lines.append(_svg_arrow(x2, y2, x1, y1, "#dbe4f4", 3))
+        x2, y2 = _point(cx, cy, 190, angle)
+        x1, y1 = _point(cx, cy, r + 10, angle)
+        lines.append(_svg_arrow(x2, y2, x1, y1, "#dbe4f4", 4))
         labels.append(
-            f'<text x="{x2}" y="{y2 - 12}" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">{escape(_format_route(route))}</text>'
+            f'<text x="{x2}" y="{y2 - 14}" text-anchor="middle" font-size="22" font-weight="800" fill="#ffffff">{escape(_format_route(route))}</text>'
         )
 
     for angle, label in zip(exit_angles, exit_routes):
-        x1, y1 = _point(cx, cy, r + 8, angle)
-        x2, y2 = _point(cx, cy, 160, angle)
-        lines.append(_svg_arrow(x1, y1, x2, y2, "#9c7cff", 3))
+        x1, y1 = _point(cx, cy, r + 12, angle)
+        x2, y2 = _point(cx, cy, 190, angle)
+        lines.append(_svg_arrow(x1, y1, x2, y2, "#9c7cff", 4))
         labels.append(
-            f'<text x="{x2}" y="{y2 + 18}" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">{escape(label)}</text>'
+            f'<text x="{x2}" y="{y2 + 22}" text-anchor="middle" font-size="20" font-weight="800" fill="#ffffff">{escape(label)}</text>'
         )
 
     svg = f"""
-    <svg viewBox="0 0 680 430" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 760 490" width="760" height="490" xmlns="http://www.w3.org/2000/svg">
         <defs>
-            <marker id="arrow-end-light" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <marker id="arrow-end-light" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="#dbe4f4"></path>
             </marker>
-            <marker id="arrow-end-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <marker id="arrow-end-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="#9c7cff"></path>
             </marker>
         </defs>
-        <rect x="0" y="0" width="680" height="430" rx="24" fill="#031026"></rect>
-        <text x="18" y="24" font-size="14" font-weight="800" fill="#ffffff">Radial Hub View</text>
-        <text x="18" y="42" font-size="12" font-weight="500" fill="#d4def1">Multiplication routes point inward · Division routes point outward</text>
+        <rect x="0" y="0" width="760" height="490" rx="28" fill="#031026"></rect>
+        <text x="18" y="28" font-size="18" font-weight="800" fill="#ffffff">Radial Hub View</text>
+        <text x="18" y="52" font-size="15" font-weight="500" fill="#d4def1">Multiplication routes point inward · Division routes point outward</text>
         {''.join(lines)}
-        <circle cx="{cx}" cy="{cy}" r="{r}" fill="#9ba4b5" stroke="#f5f7fb" stroke-width="4"></circle>
-        <text x="{cx}" y="{cy + 10}" text-anchor="middle" font-size="34" font-weight="900" fill="#ffffff">{product}</text>
-        <text x="{cx}" y="{cy - 76}" text-anchor="middle" font-size="14" font-weight="800" fill="#ffffff">Entry routes</text>
-        <text x="{cx}" y="{cy + 100}" text-anchor="middle" font-size="14" font-weight="800" fill="#ffffff">Exit routes</text>
+        <circle cx="{cx}" cy="{cy}" r="{r}" fill="#9ba4b5" stroke="#f5f7fb" stroke-width="5"></circle>
+        <text x="{cx}" y="{cy + 13}" text-anchor="middle" font-size="42" font-weight="900" fill="#ffffff">{product}</text>
+        <text x="{cx}" y="{cy - 100}" text-anchor="middle" font-size="22" font-weight="800" fill="#ffffff">Entry routes</text>
+        <text x="{cx}" y="{cy + 126}" text-anchor="middle" font-size="22" font-weight="800" fill="#ffffff">Exit routes</text>
         {''.join(labels)}
     </svg>
     """
-    return svg.replace("marker-end=\"LIGHT\"", 'marker-end="url(#arrow-end-light)"').replace(
+    return svg.replace('marker-end="LIGHT"', 'marker-end="url(#arrow-end-light)"').replace(
         'marker-end="PURPLE"', 'marker-end="url(#arrow-end-purple)"'
     )
 
