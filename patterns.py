@@ -4,12 +4,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Dict, Final, Tuple
 
-from products import (
-    factor_families,
-    stage_of,
-    structural_role,
-    ways_in,
-)
+from products import factor_families, stage_of, structural_role, ways_in
 
 PatternId = str
 
@@ -319,7 +314,6 @@ PATTERNS: Final[Dict[PatternId, Pattern]] = {
     ),
 }
 
-
 PATTERN_ORDER: Final[Tuple[PatternId, ...]] = tuple(PATTERNS.keys())
 
 STAGE_PATTERN_IDS: Final[Dict[str, Tuple[PatternId, ...]]] = {
@@ -405,10 +399,10 @@ def product_pattern_ids(product: int) -> Tuple[PatternId, ...]:
     }
 
     families = factor_families(product)
-    routes = ways_in(product)
+    entry_routes = ways_in(product)
     route_count = len(families)
 
-    if len(routes) > 1:
+    if len(entry_routes) > 1:
         found.add("same_product_different_routes")
 
     if route_count > 1:
@@ -422,8 +416,13 @@ def product_pattern_ids(product: int) -> Tuple[PatternId, ...]:
     for pattern_id in STAGE_PATTERN_IDS.get(stage, ()):
         found.add(pattern_id)
 
-    if structural_role(product) == "closure_hub":
+    role = structural_role(product)
+
+    if role == "closure_hub":
         found.add("closure_with_7x7")
+
+    if role == "compression_hub":
+        pass
 
     found.add("parity_structure")
 
@@ -443,35 +442,5 @@ def product_pattern_ids(product: int) -> Tuple[PatternId, ...]:
 
 
 @lru_cache(maxsize=None)
-def product_patterns(product: int):
-
-    patterns: List[PatternKey] = []
-
-    patterns.append("product_hub")
-
-    if len(ways_in(product)) > 1:
-        patterns.append("multiple_route_product")
-    else:
-        patterns.append("single_route_product")
-
-    if structural_role(product) == "compression_hub":
-        patterns.append("compression_hub")
-
-    if structural_role(product) == "bridge_hub":
-        patterns.append("bridge_hub")
-
-    if structural_role(product) == "closure_hub":
-        patterns.append("closure_hub")
-
-    if any(a == b for a, b in ways_in(product)):
-        patterns.append("square_product")
-
-    if product % 2 == 0:
-        patterns.append("even_product")
-    else:
-        patterns.append("odd_product")
-
-    if len(factor_families(product)) > 1:
-        patterns.append("product_family_overlap")
-
-    return tuple(PATTERNS[p] for p in patterns)
+def product_patterns(product: int) -> Tuple[Pattern, ...]:
+    return tuple(PATTERNS[pattern_id] for pattern_id in product_pattern_ids(product))
