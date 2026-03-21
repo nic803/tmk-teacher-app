@@ -38,6 +38,7 @@ st.set_page_config(
 
 def main() -> None:
     _ensure_state()
+    _sync_surface_from_query_params()
     _apply_styles()
 
     st.markdown('<div class="tmk-shell">', unsafe_allow_html=True)
@@ -74,16 +75,41 @@ def main() -> None:
 def _ensure_state() -> None:
     if "surface" not in st.session_state:
         st.session_state.surface = "Structural Planner"
+
     if "selected_product" not in st.session_state:
         st.session_state.selected_product = 36 if 36 in ALL_PRODUCTS else ALL_PRODUCTS[0]
+
     if "selected_tier" not in st.session_state:
         st.session_state.selected_tier = "Core"
+
     if "compare_product" not in st.session_state:
-        st.session_state.compare_product = 24 if 24 in ALL_PRODUCTS else ALL_PRODUCTS[0]
+        default_compare = 24 if 24 in ALL_PRODUCTS else ALL_PRODUCTS[0]
+        if default_compare == st.session_state.selected_product and len(ALL_PRODUCTS) > 1:
+            default_compare = ALL_PRODUCTS[1]
+        st.session_state.compare_product = default_compare
+
     if "planner_link_mode" not in st.session_state:
         st.session_state.planner_link_mode = "Selected links"
+
     if "planner_focus_stage_only" not in st.session_state:
         st.session_state.planner_focus_stage_only = False
+
+
+def _sync_surface_from_query_params() -> None:
+    params = st.query_params
+    requested_surface = params.get("surface")
+
+    if isinstance(requested_surface, list):
+        requested_surface = requested_surface[0] if requested_surface else None
+
+    if requested_surface in SURFACES and requested_surface != st.session_state.surface:
+        st.session_state.surface = requested_surface
+
+
+def _set_surface(surface: str) -> None:
+    if surface in SURFACES:
+        st.session_state.surface = surface
+        st.query_params["surface"] = surface
 
 
 def _apply_styles() -> None:
@@ -145,19 +171,25 @@ def _apply_styles() -> None:
                 margin-bottom: 1rem;
             }
 
-            .tmk-nav-pill {
+            .tmk-nav-link {
                 display: inline-flex;
                 align-items: center;
-                padding: 0.55rem 0.9rem;
+                padding: 0.6rem 0.95rem;
                 border-radius: 999px;
                 border: 1px solid #dfd2bf;
                 background: #fffaf2;
                 color: #233250;
                 font-weight: 800;
                 font-size: 0.95rem;
+                text-decoration: none;
             }
 
-            .tmk-nav-pill-active {
+            .tmk-nav-link:hover {
+                border-color: #c8ab7a;
+                color: #1d2b47;
+            }
+
+            .tmk-nav-link-active {
                 background: #f2e3c8;
                 border-color: #c8ab7a;
             }
@@ -471,67 +503,111 @@ def _apply_styles() -> None:
 
 
 def _render_nav() -> None:
-    pills: list[str] = []
+    links: list[str] = []
     for surface in SURFACES:
-        active_class = " tmk-nav-pill-active" if surface == st.session_state.surface else ""
-        pills.append(f'<span class="tmk-nav-pill{active_class}">{escape(surface)}</span>')
-    st.markdown(f'<div class="tmk-nav-strip">{"".join(pills)}</div>', unsafe_allow_html=True)
+        active_class = " tmk-nav-link-active" if surface == st.session_state.surface else ""
+        href = f"?surface={surface.replace(' ', '%20')}"
+        links.append(f'<a class="tmk-nav-link{active_class}" href="{href}">{escape(surface)}</a>')
+
+    st.markdown(f'<div class="tmk-nav-strip">{"".join(links)}</div>', unsafe_allow_html=True)
+
+
+def _on_sidebar_surface_change() -> None:
+    _set_surface(st.session_state.sidebar_surface_select_v2)
+    st.rerun()
+
+
+def _on_sidebar_product_change() -> None:
+    st.session_state.selected_product = st.session_state.sidebar_selected_product_v2
+    st.rerun()
+
+
+def _on_sidebar_compare_product_change() -> None:
+    st.session_state.compare_product = st.session_state.sidebar_compare_product_v2
+
+
+def _on_sidebar_tier_change() -> None:
+    st.session_state.selected_tier = st.session_state.sidebar_tier_radio_v2
+
+
+def _on_sidebar_link_mode_change() -> None:
+    st.session_state.planner_link_mode = st.session_state.sidebar_link_mode_v2
+
+
+def _on_sidebar_focus_stage_change() -> None:
+    st.session_state.planner_focus_stage_only = st.session_state.sidebar_focus_stage_only_v2
+
+
+def _on_planner_product_change() -> None:
+    st.session_state.selected_product = st.session_state.planner_product_select_v2
+    st.rerun()
+
+
+def _on_planner_link_mode_change() -> None:
+    st.session_state.planner_link_mode = st.session_state.planner_link_mode_select_v2
+
+
+def _on_planner_stage_focus_change() -> None:
+    st.session_state.planner_focus_stage_only = (
+        st.session_state.planner_stage_focus_select_v2 == "Selected stage only"
+    )
 
 
 def _render_sidebar() -> None:
     with st.sidebar:
         st.markdown("## Controls")
 
-        surface = st.selectbox(
+        st.selectbox(
             "Surface",
             options=SURFACES,
             index=SURFACES.index(st.session_state.surface),
-            key="sidebar_surface_select_v1",
+            key="sidebar_surface_select_v2",
+            on_change=_on_sidebar_surface_change,
         )
-        st.session_state.surface = surface
 
-        product = st.selectbox(
+        st.selectbox(
             "Selected product",
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="sidebar_selected_product_v1",
+            key="sidebar_selected_product_v2",
+            on_change=_on_sidebar_product_change,
         )
-        if product != st.session_state.selected_product:
-            st.session_state.selected_product = product
-            st.rerun()
 
-        tier = st.radio(
+        st.radio(
             "Worksheet tier",
             options=TIERS,
             index=TIERS.index(st.session_state.selected_tier),
             horizontal=True,
-            key="sidebar_tier_radio_v1",
+            key="sidebar_tier_radio_v2",
+            on_change=_on_sidebar_tier_change,
         )
-        st.session_state.selected_tier = tier
 
-        compare_product = st.selectbox(
+        st.selectbox(
             "Compare with",
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.compare_product),
             format_func=_product_option_label,
-            key="sidebar_compare_product_v1",
+            key="sidebar_compare_product_v2",
+            on_change=_on_sidebar_compare_product_change,
         )
-        st.session_state.compare_product = compare_product
 
         st.markdown("---")
         st.markdown("### Planner display")
-        link_mode = st.radio(
+
+        st.radio(
             "Link mode",
             options=PLANNER_LINK_MODES,
             index=PLANNER_LINK_MODES.index(st.session_state.planner_link_mode),
-            key="sidebar_link_mode_v1",
+            key="sidebar_link_mode_v2",
+            on_change=_on_sidebar_link_mode_change,
         )
-        st.session_state.planner_link_mode = link_mode
-        st.session_state.planner_focus_stage_only = st.checkbox(
+
+        st.checkbox(
             "Focus selected stage only",
             value=st.session_state.planner_focus_stage_only,
-            key="sidebar_focus_stage_only_v1",
+            key="sidebar_focus_stage_only_v2",
+            on_change=_on_sidebar_focus_stage_change,
         )
 
         record = product_record(st.session_state.selected_product)
@@ -559,34 +635,32 @@ def _render_structural_planner(product: int) -> None:
     control_col1, control_col2, control_col3 = st.columns(3)
 
     with control_col1:
-        selected = st.selectbox(
+        st.selectbox(
             "Selected product",
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="planner_product_select_v1",
+            key="planner_product_select_v2",
+            on_change=_on_planner_product_change,
         )
-    if selected != st.session_state.selected_product:
-        st.session_state.selected_product = selected
-        st.rerun()
 
     with control_col2:
-        link_mode = st.selectbox(
+        st.selectbox(
             "Link mode",
             options=PLANNER_LINK_MODES,
             index=PLANNER_LINK_MODES.index(st.session_state.planner_link_mode),
-            key="planner_link_mode_select_v1",
+            key="planner_link_mode_select_v2",
+            on_change=_on_planner_link_mode_change,
         )
-    st.session_state.planner_link_mode = link_mode
 
     with control_col3:
-        stage_focus = st.selectbox(
+        st.selectbox(
             "Stage focus",
             options=("Whole world", "Selected stage only"),
             index=1 if st.session_state.planner_focus_stage_only else 0,
-            key="planner_stage_focus_select_v1",
+            key="planner_stage_focus_select_v2",
+            on_change=_on_planner_stage_focus_change,
         )
-    st.session_state.planner_focus_stage_only = stage_focus == "Selected stage only"
 
     st.markdown(
         """
@@ -891,11 +965,11 @@ def _render_visible_products_grid(product: int) -> None:
 
     for row_start in range(0, len(products), cols_per_row):
         cols = st.columns(cols_per_row)
-        for offset, visible_product in enumerate(products[row_start: row_start + cols_per_row]):
+        for offset, visible_product in enumerate(products[row_start : row_start + cols_per_row]):
             button_type = "primary" if visible_product == product else "secondary"
             if cols[offset].button(
                 str(visible_product),
-                key=f"visible_product_button_v1_{visible_product}",
+                key=f"visible_product_button_v2_{visible_product}",
                 use_container_width=True,
                 type=button_type,
             ):
