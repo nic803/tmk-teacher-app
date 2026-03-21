@@ -41,12 +41,9 @@ LIGHT_THEME = {
     "accent": "#C76412",
     "accent_soft": "#E89A3A",
     "map_link_selected": "#C76412",
-    "map_link_overlay": "rgba(199, 100, 18, 0.14)",
     "map_link_future": "rgba(199, 100, 18, 0.35)",
     "map_node_outline": "#E3D6C6",
     "map_node_selected": "#C76412",
-    "map_stage_tint": "#F7EFE3",
-    "map_spine": "#E6DACE",
     "stage_a": "#C76412",
     "stage_b": "#4F6D8A",
     "stage_c": "#3F7C85",
@@ -63,12 +60,9 @@ DARK_THEME = {
     "accent": "#E89A3A",
     "accent_soft": "#C76412",
     "map_link_selected": "#E89A3A",
-    "map_link_overlay": "rgba(232, 154, 58, 0.18)",
     "map_link_future": "rgba(232, 154, 58, 0.35)",
     "map_node_outline": "#364454",
     "map_node_selected": "#E89A3A",
-    "map_stage_tint": "#1C2430",
-    "map_spine": "#364454",
     "stage_a": "#E89A3A",
     "stage_b": "#7F9BB6",
     "stage_c": "#73A9A7",
@@ -204,12 +198,9 @@ def _css_theme_vars(theme: dict[str, str]) -> str:
             f"                --tmk-accent: {theme['accent']};",
             f"                --tmk-accent-soft: {theme['accent_soft']};",
             f"                --tmk-map-link-selected: {theme['map_link_selected']};",
-            f"                --tmk-map-link-overlay: {theme['map_link_overlay']};",
             f"                --tmk-map-link-future: {theme['map_link_future']};",
             f"                --tmk-map-node-outline: {theme['map_node_outline']};",
             f"                --tmk-map-node-selected: {theme['map_node_selected']};",
-            f"                --tmk-map-stage-tint: {theme['map_stage_tint']};",
-            f"                --tmk-map-spine: {theme['map_spine']};",
             f"                --tmk-stage-a: {theme['stage_a']};",
             f"                --tmk-stage-b: {theme['stage_b']};",
             f"                --tmk-stage-c: {theme['stage_c']};",
@@ -463,21 +454,18 @@ def _apply_styles() -> None:
                 width: 36px;
                 height: 0;
                 border-top: 4px solid var(--tmk-map-link-selected);
-                position: relative;
             }}
 
             .tmk-line-swatch-purple {{
                 width: 36px;
                 height: 0;
                 border-top: 3px solid var(--tmk-map-link-future);
-                position: relative;
             }}
 
             .tmk-line-swatch-grey {{
                 width: 36px;
                 height: 0;
-                border-top: 3px solid var(--tmk-map-spine);
-                position: relative;
+                border-top: 3px solid var(--tmk-border);
             }}
 
             .tmk-worksheet-frame {{
@@ -650,49 +638,48 @@ def _render_nav() -> None:
         active_class = " tmk-nav-link-active" if surface == st.session_state.surface else ""
         href = f"?surface={surface.replace(' ', '%20')}"
         links.append(f'<a class="tmk-nav-link{active_class}" href="{href}">{escape(surface)}</a>')
-
     st.markdown(f'<div class="tmk-nav-strip">{"".join(links)}</div>', unsafe_allow_html=True)
 
 
 def _on_planner_product_change() -> None:
-    st.session_state.selected_product = st.session_state.planner_product_select_v7
+    st.session_state.selected_product = st.session_state.planner_product_select_v9
     st.rerun()
 
 
 def _on_planner_link_mode_change() -> None:
-    st.session_state.planner_link_mode = st.session_state.planner_link_mode_select_v7
+    st.session_state.planner_link_mode = st.session_state.planner_link_mode_select_v9
 
 
 def _on_planner_zoom_mode_change() -> None:
-    st.session_state.planner_zoom_mode = st.session_state.planner_zoom_mode_select_v7
+    st.session_state.planner_zoom_mode = st.session_state.planner_zoom_mode_select_v9
 
 
 def _on_lab_product_change() -> None:
-    st.session_state.selected_product = st.session_state.lab_product_select_v7
+    st.session_state.selected_product = st.session_state.lab_product_select_v9
     if st.session_state.compare_product == st.session_state.selected_product and len(ALL_PRODUCTS) > 1:
         st.session_state.compare_product = next(
-            product for product in ALL_PRODUCTS if product != st.session_state.selected_product
+            item for item in ALL_PRODUCTS if item != st.session_state.selected_product
         )
     st.session_state.selected_route_index = 0
     st.rerun()
 
 
 def _on_lab_compare_change() -> None:
-    st.session_state.compare_product = st.session_state.lab_compare_select_v7
+    st.session_state.compare_product = st.session_state.lab_compare_select_v9
 
 
 def _on_lab_route_view_mode_change() -> None:
-    st.session_state.route_view_mode = st.session_state.lab_route_view_mode_v7
+    st.session_state.route_view_mode = st.session_state.lab_route_view_mode_v9
     st.session_state.selected_route_index = 0
 
 
 def _on_worksheet_product_change() -> None:
-    st.session_state.selected_product = st.session_state.worksheet_product_select_v7
+    st.session_state.selected_product = st.session_state.worksheet_product_select_v9
     st.rerun()
 
 
 def _on_worksheet_tier_change() -> None:
-    st.session_state.selected_tier = st.session_state.worksheet_tier_radio_v7
+    st.session_state.selected_tier = st.session_state.worksheet_tier_radio_v9
 
 
 def _render_sidebar() -> None:
@@ -731,7 +718,7 @@ def _render_structural_planner(product: int) -> None:
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Structural Planner</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="tmk-section-subtitle">See how the selected product is linked to the world through its intro route.</div>',
+        '<div class="tmk-section-subtitle">See how the selected product sits in its stage and how its intro route connects across the visible world.</div>',
         unsafe_allow_html=True,
     )
 
@@ -744,7 +731,7 @@ def _render_structural_planner(product: int) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="planner_product_select_v7",
+            key="planner_product_select_v9",
             on_change=_on_planner_product_change,
         )
 
@@ -753,7 +740,7 @@ def _render_structural_planner(product: int) -> None:
             "Link mode",
             options=PLANNER_LINK_MODES,
             index=PLANNER_LINK_MODES.index(st.session_state.planner_link_mode),
-            key="planner_link_mode_select_v7",
+            key="planner_link_mode_select_v9",
             on_change=_on_planner_link_mode_change,
         )
 
@@ -762,15 +749,15 @@ def _render_structural_planner(product: int) -> None:
             "Planner zoom",
             options=PLANNER_ZOOM_MODES,
             index=PLANNER_ZOOM_MODES.index(st.session_state.planner_zoom_mode),
-            key="planner_zoom_mode_select_v7",
+            key="planner_zoom_mode_select_v9",
             on_change=_on_planner_zoom_mode_change,
         )
 
     st.markdown(
         """
         <div class="tmk-control-caption">
-            The planner now uses a learning spine so teachers can scan the journey top to bottom.
-            The selected product sits on the spine for its stage, while side nodes branch out as alternatives.
+            This planner is structural, not a fake teaching path.
+            The selected product is emphasised, its intro factors are highlighted, and the rest of the visible field stays calm in the background.
         </div>
         """,
         unsafe_allow_html=True,
@@ -789,7 +776,7 @@ def _render_structural_planner(product: int) -> None:
                 <strong>{record.product}</strong> is selected.<br>
                 It belongs to <strong>{stage_label(record.stage)}</strong>.<br>
                 Its intro route is <strong>{_format_route(record.intro_route)}</strong>.<br>
-                The selected stage anchor sits on the learning spine and the route branches from that line.
+                The planner highlights the factors that feed into the selected product.
             </div>
             """,
             unsafe_allow_html=True,
@@ -828,9 +815,9 @@ def _render_structural_planner(product: int) -> None:
         """
         <div class="tmk-legend-box">
             <div class="tmk-legend-row">
-                <div class="tmk-legend-item"><span class="tmk-line-swatch"></span> completed path</div>
-                <div class="tmk-legend-item"><span class="tmk-line-swatch-purple"></span> future path</div>
-                <div class="tmk-legend-item"><span class="tmk-line-swatch-grey"></span> learning spine</div>
+                <div class="tmk-legend-item"><span class="tmk-line-swatch"></span> selected intro route</div>
+                <div class="tmk-legend-item"><span class="tmk-line-swatch-purple"></span> wider route field</div>
+                <div class="tmk-legend-item"><span class="tmk-line-swatch-grey"></span> stage structure</div>
             </div>
         </div>
         """,
@@ -889,7 +876,7 @@ def _render_product_lab(product: int) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="lab_product_select_v7",
+            key="lab_product_select_v9",
             on_change=_on_lab_product_change,
         )
 
@@ -903,7 +890,7 @@ def _render_product_lab(product: int) -> None:
             options=compare_options,
             index=compare_options.index(st.session_state.compare_product),
             format_func=_product_option_label,
-            key="lab_compare_select_v7",
+            key="lab_compare_select_v9",
             on_change=_on_lab_compare_change,
         )
 
@@ -913,7 +900,7 @@ def _render_product_lab(product: int) -> None:
             options=ROUTE_VIEW_MODES,
             index=ROUTE_VIEW_MODES.index(st.session_state.route_view_mode),
             horizontal=True,
-            key="lab_route_view_mode_v7",
+            key="lab_route_view_mode_v9",
             on_change=_on_lab_route_view_mode_change,
         )
 
@@ -944,10 +931,7 @@ def _render_product_lab(product: int) -> None:
     st.markdown('<div class="tmk-card-dark">', unsafe_allow_html=True)
     components.html(_radial_hub_html(record.product), height=660, scrolling=True)
     st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown(
-        '<div class="tmk-mobile-note">Mobile layout switches to stacked route cards below 720px width.</div>',
-        unsafe_allow_html=True,
-    )
+    st.markdown('<div class="tmk-mobile-note">Mobile layout switches to stacked route cards below 720px width.</div>', unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
     _render_route_inspector(record)
@@ -1048,7 +1032,7 @@ def _render_route_inspector(record) -> None:
         button_type = "primary" if index == st.session_state.selected_route_index else "secondary"
         if col.button(
             item["label"],
-            key=f"route_inspector_button_v7_{st.session_state.route_view_mode}_{index}",
+            key=f"route_inspector_button_v9_{st.session_state.route_view_mode}_{index}",
             use_container_width=True,
             type=button_type,
         ):
@@ -1061,10 +1045,7 @@ def _render_route_inspector(record) -> None:
     label = st.session_state.route_view_mode[:-1] if st.session_state.route_view_mode.endswith("s") else st.session_state.route_view_mode
     st.markdown(f'<div class="tmk-small-label">{escape(label)}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="tmk-value">{escape(selected_item["headline"])}</div>', unsafe_allow_html=True)
-    st.markdown(
-        f'<div class="tmk-note" style="margin-top:0.55rem;">{escape(selected_item["explanation"])}</div>',
-        unsafe_allow_html=True,
-    )
+    st.markdown(f'<div class="tmk-note" style="margin-top:0.55rem;">{escape(selected_item["explanation"])}</div>', unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -1110,7 +1091,7 @@ def _render_worksheet_studio(product: int, tier: str) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="worksheet_product_select_v7",
+            key="worksheet_product_select_v9",
             on_change=_on_worksheet_product_change,
         )
 
@@ -1120,7 +1101,7 @@ def _render_worksheet_studio(product: int, tier: str) -> None:
             options=TIERS,
             index=TIERS.index(st.session_state.selected_tier),
             horizontal=True,
-            key="worksheet_tier_radio_v7",
+            key="worksheet_tier_radio_v9",
             on_change=_on_worksheet_tier_change,
         )
 
@@ -1210,7 +1191,7 @@ def _render_visible_products_grid(product: int) -> None:
             button_type = "primary" if visible_product == product else "secondary"
             if cols[offset].button(
                 str(visible_product),
-                key=f"visible_product_button_v7_{visible_product}",
+                key=f"visible_product_button_v9_{visible_product}",
                 use_container_width=True,
                 type=button_type,
             ):
@@ -1279,7 +1260,7 @@ def _world_map_html(
     selected_record = product_record(selected_product)
     stages = _visible_world_stages(focus_stage_only, selected_record.stage)
     y_positions = {stage: top + index * (lane_h + lane_gap) for index, stage in enumerate(stages)}
-    layout = _world_positions(
+    positions = _world_positions(
         lane_x=lane_x,
         lane_w=lane_w,
         lane_h=lane_h,
@@ -1288,27 +1269,17 @@ def _world_map_html(
         header_band_h=header_band_h,
         left_label_space=left_label_space,
         stages=stages,
-        selected_product=selected_product,
     )
-    positions = layout["positions"]
-    anchors = layout["anchors"]
-    spine_x = layout["spine_x"]
     total_width, total_height = _world_map_dimensions(focus_stage_only, selected_record.stage)
 
     light_vars = _embed_theme_vars(LIGHT_THEME)
     dark_vars = _embed_theme_vars(DARK_THEME)
 
-    selected_stage_index = stages.index(selected_record.stage)
-    stage_centers = [
-        y_positions[stage] + header_band_h + (lane_h - header_band_h) / 2 + 10
-        for stage in stages
-    ]
-
     lane_rects: list[str] = []
     lane_labels: list[str] = []
-    branch_lines: list[str] = []
     background_lines: list[str] = []
     selected_lines: list[str] = []
+    structure_lines: list[str] = []
 
     for stage in stages:
         y = y_positions[stage]
@@ -1324,43 +1295,32 @@ def _world_map_html(
             f'<text x="{lane_x + 18}" y="{y + 44}" font-size="15" font-weight="600" fill="var(--tmk-text)">{escape(stage_name_label)}</text>'
         )
 
-        anchor_product = anchors[stage]
-        anchor_x, anchor_y = positions[anchor_product]
-        branch_lines.append(
-            _svg_line(spine_x, anchor_y, anchor_x, anchor_y, "var(--tmk-map-spine)", 2.6, 1.0, "")
-        )
+        stage_products = STAGES[stage].products
+        if len(stage_products) > 1:
+            xs = [positions[item][0] for item in stage_products]
+            y_line = positions[stage_products[0]][1]
+            structure_lines.append(
+                _svg_line(min(xs), y_line, max(xs), y_line, "var(--tmk-border)", 2.0, 0.8, "")
+            )
 
         if link_mode == "All links":
-            for product in STAGES[stage].products:
-                if product == anchor_product:
-                    continue
-                x, y_node = positions[product]
-                background_lines.append(
-                    _svg_line(anchor_x, y_node, x, y_node, "var(--tmk-map-link-future)", 2.4, 1.0, "")
-                )
-
-    spine_lines: list[str] = []
-    if stage_centers:
-        spine_top = stage_centers[0]
-        spine_bottom = stage_centers[-1]
-        spine_lines.append(
-            _svg_line(spine_x, spine_top, spine_x, spine_bottom, "var(--tmk-map-spine)", 3.0, 1.0, "")
-        )
-        completed_bottom = stage_centers[selected_stage_index]
-        spine_lines.append(
-            _svg_line(spine_x, spine_top, spine_x, completed_bottom, "var(--tmk-map-link-selected)", 3.4, 1.0, "")
-        )
+            for product in stage_products:
+                record = product_record(product)
+                end_x, end_y = positions[product]
+                for factor in record.intro_route:
+                    if factor in positions:
+                        start_x, start_y = positions[factor]
+                        background_lines.append(
+                            _svg_line(start_x, start_y, end_x, end_y, "var(--tmk-map-link-future)", 2.6, 1.0, "")
+                        )
 
     if link_mode in ("Selected links", "All links"):
-        selected_x, selected_y = positions[selected_product]
-        selected_lines.append(
-            _svg_line(spine_x, selected_y, selected_x, selected_y, "var(--tmk-map-link-selected)", 4.0, 1.0, "")
-        )
+        end_x, end_y = positions[selected_product]
         for factor in selected_record.intro_route:
             if factor in positions:
-                factor_x, factor_y = positions[factor]
+                start_x, start_y = positions[factor]
                 selected_lines.append(
-                    _svg_line(selected_x, factor_y, factor_x, factor_y, "var(--tmk-map-link-selected)", 3.2, 1.0, "")
+                    _svg_line(start_x, start_y, end_x, end_y, "var(--tmk-map-link-selected)", 4.0, 1.0, "")
                 )
 
     nodes: list[str] = []
@@ -1422,8 +1382,7 @@ def _world_map_html(
                 </defs>
                 <rect x="0" y="0" width="{total_width}" height="{total_height}" fill="transparent"></rect>
                 {''.join(lane_rects)}
-                {''.join(spine_lines)}
-                {''.join(branch_lines)}
+                {''.join(structure_lines)}
                 {''.join(background_lines)}
                 {''.join(selected_lines)}
                 {''.join(lane_labels)}
@@ -1445,57 +1404,26 @@ def _world_positions(
     header_band_h: int,
     left_label_space: int,
     stages: list[str],
-    selected_product: int,
-) -> dict[str, object]:
+) -> dict[int, tuple[float, float]]:
     positions: dict[int, tuple[float, float]] = {}
-    anchors: dict[str, int] = {}
-
-    selected_record = product_record(selected_product)
-    selected_stage_products = list(STAGES[selected_record.stage].products)
-    selected_stage_index = selected_stage_products.index(selected_product)
-    selected_ratio = (
-        selected_stage_index / (len(selected_stage_products) - 1)
-        if len(selected_stage_products) > 1
-        else 0.5
-    )
-
-    spine_x = lane_x + left_label_space + 360
+    usable_x = lane_w - left_label_space - 76
 
     for row_index, stage in enumerate(stages):
-        products = list(STAGES[stage].products)
+        products = STAGES[stage].products
         row_top = top + row_index * (lane_h + lane_gap)
         y = row_top + header_band_h + (lane_h - header_band_h) / 2 + 10
 
-        if stage == selected_record.stage:
-            anchor_product = selected_product
-        else:
-            if len(products) == 1:
-                anchor_product = products[0]
-            else:
-                target_index = round(selected_ratio * (len(products) - 1))
-                anchor_product = products[target_index]
+        if len(products) == 1:
+            positions[products[0]] = (lane_x + left_label_space + usable_x / 2, y)
+            continue
 
-        anchors[stage] = anchor_product
+        step = usable_x / (len(products) - 1)
+        start_x = lane_x + left_label_space
+        for index, product in enumerate(products):
+            x = start_x + index * step
+            positions[product] = (x, y)
 
-        left_products = [product for product in products if product < anchor_product]
-        right_products = [product for product in products if product > anchor_product]
-
-        left_products = [product for product in products if products.index(product) < products.index(anchor_product)]
-        right_products = [product for product in products if products.index(product) > products.index(anchor_product)]
-
-        positions[anchor_product] = (spine_x, y)
-
-        for reverse_index, product in enumerate(reversed(left_products), start=1):
-            positions[product] = (spine_x - reverse_index * 92, y)
-
-        for index, product in enumerate(right_products, start=1):
-            positions[product] = (spine_x + index * 92, y)
-
-    return {
-        "positions": positions,
-        "anchors": anchors,
-        "spine_x": spine_x,
-    }
+    return positions
 
 
 def _radial_hub_html(product: int) -> str:
@@ -1714,12 +1642,9 @@ def _embed_theme_vars(theme: dict[str, str]) -> str:
             f"                --tmk-accent: {theme['accent']};",
             f"                --tmk-accent-soft: {theme['accent_soft']};",
             f"                --tmk-map-link-selected: {theme['map_link_selected']};",
-            f"                --tmk-map-link-overlay: {theme['map_link_overlay']};",
             f"                --tmk-map-link-future: {theme['map_link_future']};",
             f"                --tmk-map-node-outline: {theme['map_node_outline']};",
             f"                --tmk-map-node-selected: {theme['map_node_selected']};",
-            f"                --tmk-map-stage-tint: {theme['map_stage_tint']};",
-            f"                --tmk-map-spine: {theme['map_spine']};",
             f"                --tmk-stage-a: {theme['stage_a']};",
             f"                --tmk-stage-b: {theme['stage_b']};",
             f"                --tmk-stage-c: {theme['stage_c']};",
