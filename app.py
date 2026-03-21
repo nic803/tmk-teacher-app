@@ -447,11 +447,11 @@ def _apply_styles() -> None:
 
 
 def _render_nav() -> None:
-    selected_surface = st.radio(
-        "",
+    selected_surface = st.selectbox(
+        "Navigation",
         options=SURFACES,
         index=SURFACES.index(st.session_state.surface),
-        horizontal=True,
+        key="tmk_unique_surface_nav_selectbox_v1",
         label_visibility="collapsed",
     )
 
