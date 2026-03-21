@@ -23,6 +23,7 @@ except Exception:
     get_pattern = None
     product_pattern_ids = None
 
+
 APP_TITLE = "TMK Teacher App"
 SURFACES = ("Structural Planner", "Product Lab", "Worksheet Studio")
 TIERS = ("Support", "Core", "Extension")
@@ -623,6 +624,7 @@ def _render_sidebar() -> None:
 
 def _render_structural_planner(product: int) -> None:
     record = product_record(product)
+    map_width, map_height = _world_map_dimensions()
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Structural Planner</div>', unsafe_allow_html=True)
@@ -716,7 +718,7 @@ def _render_structural_planner(product: int) -> None:
             link_mode=st.session_state.planner_link_mode,
             focus_stage_only=st.session_state.planner_focus_stage_only,
         ),
-        height=760,
+        height=map_height + 36,
         scrolling=True,
     )
     st.markdown("</div>", unsafe_allow_html=True)
@@ -1000,6 +1002,19 @@ def _render_pattern_links(product: int) -> None:
     )
 
 
+def _world_map_dimensions() -> tuple[int, int]:
+    lane_x = 26
+    lane_w = 1268
+    lane_h = 130
+    lane_gap = 28
+    top = 24
+    bottom_padding = 28
+    stage_count = len([stage for stage in STAGE_ORDER if stage in STAGES])
+    total_height = top + stage_count * lane_h + max(stage_count - 1, 0) * lane_gap + bottom_padding
+    total_width = lane_x + lane_w + 26
+    return total_width, total_height
+
+
 def _world_map_html(
     selected_product: int,
     link_mode: str,
@@ -1007,13 +1022,26 @@ def _world_map_html(
 ) -> str:
     lane_x = 26
     lane_w = 1268
-    lane_h = 94
-    lane_gap = 58
+    lane_h = 130
+    lane_gap = 28
     top = 24
+    header_band_h = 42
+    left_label_space = 260
+    bottom_padding = 28
+
     stages = [stage for stage in STAGE_ORDER if stage in STAGES]
     y_positions = {stage: top + index * (lane_h + lane_gap) for index, stage in enumerate(stages)}
-    positions = _world_positions(lane_x, lane_w, lane_h, lane_gap, top)
+    positions = _world_positions(
+        lane_x=lane_x,
+        lane_w=lane_w,
+        lane_h=lane_h,
+        lane_gap=lane_gap,
+        top=top,
+        header_band_h=header_band_h,
+        left_label_space=left_label_space,
+    )
     selected_record = product_record(selected_product)
+    total_width, total_height = _world_map_dimensions()
 
     lines: list[str] = []
 
@@ -1052,7 +1080,7 @@ def _world_map_html(
             f'<rect x="{lane_x}" y="{y}" width="{lane_w}" height="{lane_h}" rx="24" fill="{fill}" stroke="{stroke}" stroke-width="2"></rect>'
         )
         lane_labels.append(
-            f'<text x="{lane_x + 22}" y="{y + 28}" font-size="22" font-weight="800" fill="#22304f">{escape(stage_record.label)}</text>'
+            f'<text x="{lane_x + 18}" y="{y + 28}" font-size="18" font-weight="800" fill="#22304f">{escape(stage_record.label)}</text>'
         )
 
     nodes: list[str] = []
@@ -1076,8 +1104,8 @@ def _world_map_html(
         )
 
     svg = f"""
-    <svg viewBox="0 0 1320 700" width="1320" height="700" xmlns="http://www.w3.org/2000/svg">
-        <rect x="0" y="0" width="1320" height="700" fill="#f5f3ef"></rect>
+    <svg viewBox="0 0 {total_width} {total_height}" width="{total_width}" height="{total_height}" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="{total_width}" height="{total_height}" fill="#f5f3ef"></rect>
         {''.join(lane_rects)}
         {''.join(lines)}
         {''.join(lane_labels)}
@@ -1086,7 +1114,7 @@ def _world_map_html(
     """
 
     return f"""
-    <div style="background:#f5f3ef;border-radius:24px;overflow:auto;max-width:100%;">
+    <div style="background:#f5f3ef;border-radius:24px;overflow:auto;max-width:100%;padding-bottom:{bottom_padding}px;">
         {svg}
     </div>
     """
@@ -1098,20 +1126,25 @@ def _world_positions(
     lane_h: int,
     lane_gap: int,
     top: int,
+    header_band_h: int,
+    left_label_space: int,
 ) -> dict[int, tuple[float, float]]:
     positions: dict[int, tuple[float, float]] = {}
-    usable_x = lane_w - 120
+    usable_x = lane_w - left_label_space - 76
 
     for row_index, stage in enumerate([stage for stage in STAGE_ORDER if stage in STAGES]):
         products = STAGES[stage].products
-        y = top + row_index * (lane_h + lane_gap) + lane_h / 2
+        row_top = top + row_index * (lane_h + lane_gap)
+        y = row_top + header_band_h + (lane_h - header_band_h) / 2 + 10
+
         if len(products) == 1:
-            positions[products[0]] = (lane_x + lane_w / 2, y)
+            positions[products[0]] = (lane_x + left_label_space + usable_x / 2, y)
             continue
 
         step = usable_x / (len(products) - 1)
+        start_x = lane_x + left_label_space
         for index, product in enumerate(products):
-            x = lane_x + 84 + index * step
+            x = start_x + index * step
             positions[product] = (x, y)
 
     return positions
