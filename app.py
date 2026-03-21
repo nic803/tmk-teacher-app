@@ -642,20 +642,20 @@ def _render_nav() -> None:
 
 
 def _on_planner_product_change() -> None:
-    st.session_state.selected_product = st.session_state.planner_product_select_v9
+    st.session_state.selected_product = st.session_state.planner_product_select_v10
     st.rerun()
 
 
 def _on_planner_link_mode_change() -> None:
-    st.session_state.planner_link_mode = st.session_state.planner_link_mode_select_v9
+    st.session_state.planner_link_mode = st.session_state.planner_link_mode_select_v10
 
 
 def _on_planner_zoom_mode_change() -> None:
-    st.session_state.planner_zoom_mode = st.session_state.planner_zoom_mode_select_v9
+    st.session_state.planner_zoom_mode = st.session_state.planner_zoom_mode_select_v10
 
 
 def _on_lab_product_change() -> None:
-    st.session_state.selected_product = st.session_state.lab_product_select_v9
+    st.session_state.selected_product = st.session_state.lab_product_select_v10
     if st.session_state.compare_product == st.session_state.selected_product and len(ALL_PRODUCTS) > 1:
         st.session_state.compare_product = next(
             item for item in ALL_PRODUCTS if item != st.session_state.selected_product
@@ -665,21 +665,21 @@ def _on_lab_product_change() -> None:
 
 
 def _on_lab_compare_change() -> None:
-    st.session_state.compare_product = st.session_state.lab_compare_select_v9
+    st.session_state.compare_product = st.session_state.lab_compare_select_v10
 
 
 def _on_lab_route_view_mode_change() -> None:
-    st.session_state.route_view_mode = st.session_state.lab_route_view_mode_v9
+    st.session_state.route_view_mode = st.session_state.lab_route_view_mode_v10
     st.session_state.selected_route_index = 0
 
 
 def _on_worksheet_product_change() -> None:
-    st.session_state.selected_product = st.session_state.worksheet_product_select_v9
+    st.session_state.selected_product = st.session_state.worksheet_product_select_v10
     st.rerun()
 
 
 def _on_worksheet_tier_change() -> None:
-    st.session_state.selected_tier = st.session_state.worksheet_tier_radio_v9
+    st.session_state.selected_tier = st.session_state.worksheet_tier_radio_v10
 
 
 def _render_sidebar() -> None:
@@ -705,8 +705,9 @@ def _render_sidebar() -> None:
             st.write(f"**Tier:** {st.session_state.selected_tier}")
 
         st.markdown("---")
-        st.markdown("### Hub summary")
-        st.write(f"**Routes:** {len(record.factor_families)}")
+        st.markdown("### Structural summary")
+        st.write(f"**Full routes:** {len(record.factor_families)}")
+        st.write(f"**Division exits:** {len(record.ways_out)}")
         st.write(f"**Role:** {record.structural_role}")
 
 
@@ -714,11 +715,13 @@ def _render_structural_planner(product: int) -> None:
     record = product_record(product)
     focus_stage_only = st.session_state.planner_zoom_mode == "Selected stage lane only"
     _, map_height = _world_map_dimensions(focus_stage_only, record.stage)
+    selected_stage_products = STAGES[record.stage].products
+    visible_stage_order = [stage_label(stage) for stage in _visible_world_stages(False, record.stage)]
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Structural Planner</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="tmk-section-subtitle">See how the selected product sits in its stage and how its intro route connects across the visible world.</div>',
+        '<div class="tmk-section-subtitle">The planner shows structural curriculum logic: fixed stage order, stage introductions, selected intro route, wider route atlas, division exits, and structural reason.</div>',
         unsafe_allow_html=True,
     )
 
@@ -731,7 +734,7 @@ def _render_structural_planner(product: int) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="planner_product_select_v9",
+            key="planner_product_select_v10",
             on_change=_on_planner_product_change,
         )
 
@@ -740,7 +743,7 @@ def _render_structural_planner(product: int) -> None:
             "Link mode",
             options=PLANNER_LINK_MODES,
             index=PLANNER_LINK_MODES.index(st.session_state.planner_link_mode),
-            key="planner_link_mode_select_v9",
+            key="planner_link_mode_select_v10",
             on_change=_on_planner_link_mode_change,
         )
 
@@ -749,52 +752,70 @@ def _render_structural_planner(product: int) -> None:
             "Planner zoom",
             options=PLANNER_ZOOM_MODES,
             index=PLANNER_ZOOM_MODES.index(st.session_state.planner_zoom_mode),
-            key="planner_zoom_mode_select_v9",
+            key="planner_zoom_mode_select_v10",
             on_change=_on_planner_zoom_mode_change,
         )
 
     st.markdown(
         """
         <div class="tmk-control-caption">
-            This planner is structural, not a fake teaching path.
-            The selected product is emphasised, its intro factors are highlighted, and the rest of the visible field stays calm in the background.
+            Curriculum sequence, intro-route dependency, and later lesson-delivery pedagogy are separate layers.
+            This planner only shows the structural curriculum layer.
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.markdown("---")
+    _metric_card_row(
+        [
+            ("Selected stage", stage_label(record.stage)),
+            ("Introduced here", str(len(selected_stage_products))),
+            ("Full routes", str(len(record.factor_families))),
+            ("Division exits", str(len(record.ways_out))),
+        ]
+    )
 
-    explainer_left, explainer_right = st.columns(2)
+    stage_col, intro_col = st.columns(2)
 
-    with explainer_left:
+    with stage_col:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-subhead">What is happening</div>', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-subhead">Fixed stage unlock order</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="tmk-note">{" → ".join(escape(item) for item in visible_stage_order)}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with intro_col:
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-subhead">Pedagogical intro route</div>', unsafe_allow_html=True)
         st.markdown(
             f"""
             <div class="tmk-note">
-                <strong>{record.product}</strong> is selected.<br>
-                It belongs to <strong>{stage_label(record.stage)}</strong>.<br>
-                Its intro route is <strong>{_format_route(record.intro_route)}</strong>.<br>
-                The planner highlights the factors that feed into the selected product.
+                {record.product} is introduced through <strong>{_format_route(record.intro_route)}</strong>.<br>
+                This is the pedagogical entry route, not the full admissible route atlas.
             </div>
             """,
             unsafe_allow_html=True,
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
-    with explainer_right:
+    reason_col, exits_col = st.columns(2)
+
+    with reason_col:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-subhead">Selected route reading</div>', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-subhead">Why this stage occurs here</div>', unsafe_allow_html=True)
         st.markdown(
-            f"""
-            <div class="tmk-note">
-                <strong>{record.intro_route[0]}</strong> × <strong>{record.intro_route[1]}</strong> = <strong>{record.product}</strong><br>
-                So the selected product is read through the intro route <strong>{_format_route(record.intro_route)}</strong>.
-            </div>
-            """,
+            f'<div class="tmk-note">{escape(str(record.structural_role))}</div>',
             unsafe_allow_html=True,
         )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with exits_col:
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-subhead">Division exits</div>', unsafe_allow_html=True)
+        exit_labels = "<br>".join(escape(f"{record.product}÷{a}={b}") for a, b in record.ways_out[:6])
+        st.markdown(f'<div class="tmk-note">{exit_labels}</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     _render_stage_cards(product)
@@ -816,7 +837,7 @@ def _render_structural_planner(product: int) -> None:
         <div class="tmk-legend-box">
             <div class="tmk-legend-row">
                 <div class="tmk-legend-item"><span class="tmk-line-swatch"></span> selected intro route</div>
-                <div class="tmk-legend-item"><span class="tmk-line-swatch-purple"></span> wider route field</div>
+                <div class="tmk-legend-item"><span class="tmk-line-swatch-purple"></span> wider route atlas</div>
                 <div class="tmk-legend-item"><span class="tmk-line-swatch-grey"></span> stage structure</div>
             </div>
         </div>
@@ -827,12 +848,12 @@ def _render_structural_planner(product: int) -> None:
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-section-title">Visible products</div>', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-section-title">Products introduced at this stage</div>', unsafe_allow_html=True)
     st.markdown(
-        f'<div class="tmk-section-subtitle">{stage_label(record.stage)} unlocks {len(visible_products(record.stage))} visible products.</div>',
+        f'<div class="tmk-section-subtitle">{stage_label(record.stage)} introduces {len(selected_stage_products)} products.</div>',
         unsafe_allow_html=True,
     )
-    _render_visible_products_grid(product)
+    _render_visible_products_grid(product, only_stage=record.stage)
     st.markdown("</div>", unsafe_allow_html=True)
 
 
@@ -876,7 +897,7 @@ def _render_product_lab(product: int) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="lab_product_select_v9",
+            key="lab_product_select_v10",
             on_change=_on_lab_product_change,
         )
 
@@ -890,7 +911,7 @@ def _render_product_lab(product: int) -> None:
             options=compare_options,
             index=compare_options.index(st.session_state.compare_product),
             format_func=_product_option_label,
-            key="lab_compare_select_v9",
+            key="lab_compare_select_v10",
             on_change=_on_lab_compare_change,
         )
 
@@ -900,7 +921,7 @@ def _render_product_lab(product: int) -> None:
             options=ROUTE_VIEW_MODES,
             index=ROUTE_VIEW_MODES.index(st.session_state.route_view_mode),
             horizontal=True,
-            key="lab_route_view_mode_v9",
+            key="lab_route_view_mode_v10",
             on_change=_on_lab_route_view_mode_change,
         )
 
@@ -1032,7 +1053,7 @@ def _render_route_inspector(record) -> None:
         button_type = "primary" if index == st.session_state.selected_route_index else "secondary"
         if col.button(
             item["label"],
-            key=f"route_inspector_button_v9_{st.session_state.route_view_mode}_{index}",
+            key=f"route_inspector_button_v10_{st.session_state.route_view_mode}_{index}",
             use_container_width=True,
             type=button_type,
         ):
@@ -1091,7 +1112,7 @@ def _render_worksheet_studio(product: int, tier: str) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="worksheet_product_select_v9",
+            key="worksheet_product_select_v10",
             on_change=_on_worksheet_product_change,
         )
 
@@ -1101,7 +1122,7 @@ def _render_worksheet_studio(product: int, tier: str) -> None:
             options=TIERS,
             index=TIERS.index(st.session_state.selected_tier),
             horizontal=True,
-            key="worksheet_tier_radio_v9",
+            key="worksheet_tier_radio_v10",
             on_change=_on_worksheet_tier_change,
         )
 
@@ -1180,9 +1201,13 @@ def _metric_card(label: str, value: str) -> None:
     )
 
 
-def _render_visible_products_grid(product: int) -> None:
-    record = product_record(product)
-    products = visible_products(record.stage)
+def _render_visible_products_grid(product: int, only_stage: str | None = None) -> None:
+    if only_stage is None:
+        record = product_record(product)
+        products = visible_products(record.stage)
+    else:
+        products = list(STAGES[only_stage].products)
+
     cols_per_row = 4
 
     for row_start in range(0, len(products), cols_per_row):
@@ -1191,7 +1216,7 @@ def _render_visible_products_grid(product: int) -> None:
             button_type = "primary" if visible_product == product else "secondary"
             if cols[offset].button(
                 str(visible_product),
-                key=f"visible_product_button_v9_{visible_product}",
+                key=f"visible_product_button_v10_{only_stage}_{visible_product}",
                 use_container_width=True,
                 type=button_type,
             ):
@@ -1259,7 +1284,6 @@ def _world_map_html(
 
     selected_record = product_record(selected_product)
     stages = _visible_world_stages(focus_stage_only, selected_record.stage)
-    y_positions = {stage: top + index * (lane_h + lane_gap) for index, stage in enumerate(stages)}
     positions = _world_positions(
         lane_x=lane_x,
         lane_w=lane_w,
@@ -1281,8 +1305,8 @@ def _world_map_html(
     selected_lines: list[str] = []
     structure_lines: list[str] = []
 
-    for stage in stages:
-        y = y_positions[stage]
+    for index, stage in enumerate(stages):
+        y = top + index * (lane_h + lane_gap)
         style = _stage_palette(stage)
         stage_key_label, stage_name_label = _split_stage_label(stage, STAGES[stage].label)
         lane_rects.append(
