@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from html import escape
+from math import cos, pi, sin
 from typing import Iterable
 
 import streamlit as st
@@ -28,6 +29,8 @@ APP_TITLE = "TMK Teacher App"
 SURFACES = ("Structural Planner", "Product Lab", "Worksheet Studio")
 TIERS = ("Support", "Core", "Extension")
 PLANNER_LINK_MODES = ("Selected links", "All links", "No links")
+PLANNER_ZOOM_MODES = ("Whole world", "Selected stage lane only")
+ROUTE_VIEW_MODES = ("Entry routes", "Exit routes")
 
 
 st.set_page_config(
@@ -92,8 +95,14 @@ def _ensure_state() -> None:
     if "planner_link_mode" not in st.session_state:
         st.session_state.planner_link_mode = "Selected links"
 
-    if "planner_focus_stage_only" not in st.session_state:
-        st.session_state.planner_focus_stage_only = False
+    if "planner_zoom_mode" not in st.session_state:
+        st.session_state.planner_zoom_mode = "Whole world"
+
+    if "route_view_mode" not in st.session_state:
+        st.session_state.route_view_mode = "Entry routes"
+
+    if "selected_route_index" not in st.session_state:
+        st.session_state.selected_route_index = 0
 
 
 def _sync_surface_from_query_params() -> None:
@@ -117,9 +126,45 @@ def _apply_styles() -> None:
     st.markdown(
         """
         <style>
+            :root {
+                --tmk-bg: #f5f3ef;
+                --tmk-surface: rgba(255, 255, 255, 0.74);
+                --tmk-surface-strong: #fffaf2;
+                --tmk-border: #eadfd0;
+                --tmk-text: #1f2a44;
+                --tmk-text-soft: #59667f;
+                --tmk-accent: #c8ab7a;
+                --tmk-accent-soft: #f2e3c8;
+                --tmk-pill: #f3ede4;
+                --tmk-pill-border: #e4d6c2;
+                --tmk-dark-card: #08172f;
+                --tmk-dark-border: #243b5e;
+                --tmk-dark-text: #eef4ff;
+                --tmk-dark-muted: #c4d2e6;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                :root {
+                    --tmk-bg: #10161f;
+                    --tmk-surface: rgba(25, 34, 47, 0.88);
+                    --tmk-surface-strong: #172130;
+                    --tmk-border: #2d4058;
+                    --tmk-text: #eef4ff;
+                    --tmk-text-soft: #c4d2e6;
+                    --tmk-accent: #d8b77b;
+                    --tmk-accent-soft: #3a2f1f;
+                    --tmk-pill: #1b2738;
+                    --tmk-pill-border: #334860;
+                    --tmk-dark-card: #08172f;
+                    --tmk-dark-border: #36527b;
+                    --tmk-dark-text: #eef4ff;
+                    --tmk-dark-muted: #c4d2e6;
+                }
+            }
+
             .stApp {
-                background: #f5f3ef;
-                color: #1f2a44;
+                background: var(--tmk-bg);
+                color: var(--tmk-text);
             }
 
             .block-container {
@@ -134,8 +179,8 @@ def _apply_styles() -> None:
             }
 
             .tmk-header {
-                background: linear-gradient(180deg, #fffdf9 0%, #faf7f1 100%);
-                border: 1px solid #eadfd0;
+                background: linear-gradient(180deg, var(--tmk-surface-strong) 0%, var(--tmk-surface) 100%);
+                border: 1px solid var(--tmk-border);
                 border-radius: 24px;
                 padding: 1.35rem 1.4rem 1.1rem 1.4rem;
                 box-shadow: 0 8px 24px rgba(34, 46, 75, 0.06);
@@ -147,7 +192,7 @@ def _apply_styles() -> None:
                 font-weight: 800;
                 letter-spacing: 0.12em;
                 text-transform: uppercase;
-                color: #7f5b2e;
+                color: var(--tmk-accent);
                 margin-bottom: 0.25rem;
             }
 
@@ -155,12 +200,12 @@ def _apply_styles() -> None:
                 margin: 0;
                 font-size: 2rem;
                 line-height: 1.08;
-                color: #1f2a44;
+                color: var(--tmk-text);
             }
 
             .tmk-header p {
                 margin: 0.45rem 0 0 0;
-                color: #46516b;
+                color: var(--tmk-text-soft);
                 font-size: 1rem;
                 line-height: 1.45;
             }
@@ -177,27 +222,26 @@ def _apply_styles() -> None:
                 align-items: center;
                 padding: 0.6rem 0.95rem;
                 border-radius: 999px;
-                border: 1px solid #dfd2bf;
-                background: #fffaf2;
-                color: #233250;
+                border: 1px solid var(--tmk-accent);
+                background: var(--tmk-surface-strong);
+                color: var(--tmk-text);
                 font-weight: 800;
                 font-size: 0.95rem;
                 text-decoration: none;
             }
 
             .tmk-nav-link:hover {
-                border-color: #c8ab7a;
-                color: #1d2b47;
+                border-color: var(--tmk-accent);
+                color: var(--tmk-text);
             }
 
             .tmk-nav-link-active {
-                background: #f2e3c8;
-                border-color: #c8ab7a;
+                background: var(--tmk-accent-soft);
             }
 
             .tmk-panel {
-                background: rgba(255, 255, 255, 0.74);
-                border: 1px solid #eadfd0;
+                background: var(--tmk-surface);
+                border: 1px solid var(--tmk-border);
                 border-radius: 24px;
                 padding: 1rem;
                 box-shadow: 0 10px 30px rgba(34, 46, 75, 0.05);
@@ -208,20 +252,20 @@ def _apply_styles() -> None:
                 font-size: 2rem;
                 line-height: 1.1;
                 font-weight: 800;
-                color: #22304f;
+                color: var(--tmk-text);
                 margin-bottom: 0.2rem;
             }
 
             .tmk-section-subtitle {
-                color: #59667f;
+                color: var(--tmk-text-soft);
                 margin-bottom: 0.8rem;
                 font-size: 1rem;
                 line-height: 1.45;
             }
 
             .tmk-card {
-                background: linear-gradient(180deg, #fffcf7 0%, #f9f4eb 100%);
-                border: 1px solid #eadfd0;
+                background: linear-gradient(180deg, var(--tmk-surface-strong) 0%, var(--tmk-surface) 100%);
+                border: 1px solid var(--tmk-border);
                 border-radius: 18px;
                 padding: 0.95rem 1rem;
                 height: 100%;
@@ -229,8 +273,8 @@ def _apply_styles() -> None:
             }
 
             .tmk-card-dark {
-                background: #041127;
-                border: 1px solid #142846;
+                background: var(--tmk-dark-card);
+                border: 1px solid var(--tmk-dark-border);
                 border-radius: 24px;
                 padding: 0.75rem;
                 height: 100%;
@@ -242,14 +286,14 @@ def _apply_styles() -> None:
                 font-weight: 800;
                 letter-spacing: 0.08em;
                 text-transform: uppercase;
-                color: #7d6640;
+                color: var(--tmk-text-soft);
                 margin-bottom: 0.3rem;
             }
 
             .tmk-value {
                 font-size: 1.35rem;
                 font-weight: 800;
-                color: #22304f;
+                color: var(--tmk-text);
                 line-height: 1.2;
                 word-break: break-word;
             }
@@ -266,21 +310,21 @@ def _apply_styles() -> None:
                 align-items: center;
                 padding: 0.46rem 0.72rem;
                 border-radius: 999px;
-                background: #f3ede4;
-                border: 1px solid #e4d6c2;
-                color: #22304f;
+                background: var(--tmk-pill);
+                border: 1px solid var(--tmk-pill-border);
+                color: var(--tmk-text);
                 font-size: 0.95rem;
                 font-weight: 700;
                 line-height: 1.2;
             }
 
             .tmk-pill-accent {
-                background: #fff2e1;
-                border-color: #f2bf7d;
+                background: var(--tmk-accent-soft);
+                border-color: var(--tmk-accent);
             }
 
             .tmk-note {
-                color: #59667f;
+                color: var(--tmk-text-soft);
                 font-size: 0.98rem;
                 line-height: 1.55;
             }
@@ -288,22 +332,22 @@ def _apply_styles() -> None:
             .tmk-subhead {
                 font-size: 1.18rem;
                 font-weight: 800;
-                color: #22304f;
+                color: var(--tmk-text);
                 margin-bottom: 0.5rem;
             }
 
             .tmk-stage-card {
                 border-radius: 20px;
-                border: 1px solid #eadfd0;
+                border: 1px solid var(--tmk-border);
                 padding: 0.9rem;
                 margin-bottom: 0.8rem;
-                background: rgba(255,255,255,0.72);
+                background: var(--tmk-surface);
             }
 
             .tmk-stage-title {
                 font-size: 1.05rem;
                 font-weight: 800;
-                color: #22304f;
+                color: var(--tmk-text);
                 margin-bottom: 0.55rem;
             }
 
@@ -316,8 +360,8 @@ def _apply_styles() -> None:
             }
 
             .tmk-legend-box {
-                background: #fffaf2;
-                border: 1px solid #eadfd0;
+                background: var(--tmk-surface-strong);
+                border: 1px solid var(--tmk-border);
                 border-radius: 16px;
                 padding: 0.8rem 0.95rem;
                 margin-top: 0.8rem;
@@ -334,7 +378,7 @@ def _apply_styles() -> None:
                 display: inline-flex;
                 align-items: center;
                 gap: 0.45rem;
-                color: #46516b;
+                color: var(--tmk-text-soft);
                 font-size: 0.94rem;
                 font-weight: 700;
             }
@@ -361,33 +405,47 @@ def _apply_styles() -> None:
             }
 
             .tmk-worksheet-frame {
-                background: linear-gradient(180deg, #fffdf9 0%, #faf6ee 100%);
-                border: 1px solid #eadfd0;
+                background: linear-gradient(180deg, var(--tmk-surface-strong) 0%, var(--tmk-surface) 100%);
+                border: 1px solid var(--tmk-border);
                 border-radius: 22px;
                 padding: 1rem;
                 margin-bottom: 0.9rem;
             }
 
             .tmk-answer-box {
-                background: rgba(255,255,255,0.85);
-                border: 1px solid #eadfd0;
+                background: rgba(255,255,255,0.08);
+                border: 1px solid var(--tmk-border);
                 border-radius: 16px;
                 padding: 0.9rem 0.95rem;
                 margin-bottom: 0.7rem;
+                color: var(--tmk-text);
             }
 
             .tmk-control-caption {
                 font-size: 0.92rem;
-                color: #5f6a80;
+                color: var(--tmk-text-soft);
                 line-height: 1.45;
+                margin-top: 0.25rem;
+            }
+
+            .tmk-route-button-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.55rem;
+                margin-top: 0.75rem;
+            }
+
+            .tmk-mobile-note {
+                color: var(--tmk-text-soft);
+                font-size: 0.9rem;
                 margin-top: 0.25rem;
             }
 
             .stButton > button {
                 border-radius: 999px;
-                border: 1px solid #dfd2bf;
-                background: #fffaf2;
-                color: #233250;
+                border: 1px solid var(--tmk-border);
+                background: var(--tmk-surface-strong);
+                color: var(--tmk-text);
                 font-weight: 800;
                 min-height: 2.9rem;
                 box-shadow: none;
@@ -397,13 +455,26 @@ def _apply_styles() -> None:
             }
 
             .stButton > button:hover {
-                border-color: #c8ab7a;
-                color: #1d2b47;
+                border-color: var(--tmk-accent);
+                color: var(--tmk-text);
             }
 
             [data-testid="stSidebar"] {
-                background: #faf7f1;
-                border-left: 1px solid #eadfd0;
+                background: var(--tmk-surface-strong);
+                border-left: 1px solid var(--tmk-border);
+            }
+
+            [data-testid="stSidebar"] * {
+                color: var(--tmk-text);
+            }
+
+            .stSelectbox label,
+            .stRadio label,
+            .stCheckbox label,
+            .stMarkdown,
+            .stCaption,
+            .stText {
+                color: var(--tmk-text);
             }
 
             @media (max-width: 900px) {
@@ -469,7 +540,8 @@ def _apply_styles() -> None:
 
                 .tmk-section-subtitle,
                 .tmk-note,
-                .tmk-control-caption {
+                .tmk-control-caption,
+                .tmk-mobile-note {
                     font-size: 0.92rem;
                     line-height: 1.5;
                 }
@@ -513,78 +585,69 @@ def _render_nav() -> None:
     st.markdown(f'<div class="tmk-nav-strip">{"".join(links)}</div>', unsafe_allow_html=True)
 
 
-def _on_sidebar_surface_change() -> None:
-    _set_surface(st.session_state.sidebar_surface_select_v3)
-    st.rerun()
-
-
 def _on_planner_product_change() -> None:
-    st.session_state.selected_product = st.session_state.planner_product_select_v3
+    st.session_state.selected_product = st.session_state.planner_product_select_v4
     st.rerun()
 
 
 def _on_planner_link_mode_change() -> None:
-    st.session_state.planner_link_mode = st.session_state.planner_link_mode_select_v3
+    st.session_state.planner_link_mode = st.session_state.planner_link_mode_select_v4
 
 
-def _on_planner_stage_focus_change() -> None:
-    st.session_state.planner_focus_stage_only = (
-        st.session_state.planner_stage_focus_select_v3 == "Selected stage only"
-    )
+def _on_planner_zoom_mode_change() -> None:
+    st.session_state.planner_zoom_mode = st.session_state.planner_zoom_mode_select_v4
 
 
 def _on_lab_product_change() -> None:
-    st.session_state.selected_product = st.session_state.lab_product_select_v3
+    st.session_state.selected_product = st.session_state.lab_product_select_v4
     if st.session_state.compare_product == st.session_state.selected_product and len(ALL_PRODUCTS) > 1:
-        fallback = next(product for product in ALL_PRODUCTS if product != st.session_state.selected_product)
-        st.session_state.compare_product = fallback
+        st.session_state.compare_product = next(
+            product for product in ALL_PRODUCTS if product != st.session_state.selected_product
+        )
+    st.session_state.selected_route_index = 0
     st.rerun()
 
 
 def _on_lab_compare_change() -> None:
-    st.session_state.compare_product = st.session_state.lab_compare_select_v3
+    st.session_state.compare_product = st.session_state.lab_compare_select_v4
+
+
+def _on_lab_route_view_mode_change() -> None:
+    st.session_state.route_view_mode = st.session_state.lab_route_view_mode_v4
+    st.session_state.selected_route_index = 0
 
 
 def _on_worksheet_product_change() -> None:
-    st.session_state.selected_product = st.session_state.worksheet_product_select_v3
+    st.session_state.selected_product = st.session_state.worksheet_product_select_v4
     st.rerun()
 
 
 def _on_worksheet_tier_change() -> None:
-    st.session_state.selected_tier = st.session_state.worksheet_tier_radio_v3
+    st.session_state.selected_tier = st.session_state.worksheet_tier_radio_v4
 
 
 def _render_sidebar() -> None:
     record = product_record(st.session_state.selected_product)
 
     with st.sidebar:
-        st.markdown("## Controls")
-
-        st.selectbox(
-            "Surface",
-            options=SURFACES,
-            index=SURFACES.index(st.session_state.surface),
-            key="sidebar_surface_select_v3",
-            on_change=_on_sidebar_surface_change,
-        )
-
-        st.markdown("---")
-        st.markdown("### Current selection")
+        st.markdown("## Current selection")
         st.write(f"**Product:** {record.product}")
         st.write(f"**Stage:** {stage_label(record.stage)}")
         st.write(f"**Intro route:** {_format_route(record.intro_route)}")
 
+        st.markdown("---")
+        st.markdown("### Current surface")
+
         if st.session_state.surface == "Structural Planner":
             st.write(f"**Link mode:** {st.session_state.planner_link_mode}")
-            st.write(
-                f"**Stage focus:** {'Selected stage only' if st.session_state.planner_focus_stage_only else 'Whole world'}"
-            )
+            st.write(f"**Zoom:** {st.session_state.planner_zoom_mode}")
 
-        if st.session_state.surface == "Product Lab":
+        elif st.session_state.surface == "Product Lab":
             compare = product_record(st.session_state.compare_product)
             st.write(f"**Compare with:** {compare.product}")
+            st.write(f"**Route view:** {st.session_state.route_view_mode}")
 
-        if st.session_state.surface == "Worksheet Studio":
+        else:
             st.write(f"**Tier:** {st.session_state.selected_tier}")
 
         st.markdown("---")
@@ -595,7 +658,8 @@ def _render_sidebar() -> None:
 
 def _render_structural_planner(product: int) -> None:
     record = product_record(product)
-    _, map_height = _world_map_dimensions()
+    focus_stage_only = st.session_state.planner_zoom_mode == "Selected stage lane only"
+    _, map_height = _world_map_dimensions(focus_stage_only, record.stage)
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Structural Planner</div>', unsafe_allow_html=True)
@@ -613,7 +677,7 @@ def _render_structural_planner(product: int) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="planner_product_select_v3",
+            key="planner_product_select_v4",
             on_change=_on_planner_product_change,
         )
 
@@ -622,17 +686,17 @@ def _render_structural_planner(product: int) -> None:
             "Link mode",
             options=PLANNER_LINK_MODES,
             index=PLANNER_LINK_MODES.index(st.session_state.planner_link_mode),
-            key="planner_link_mode_select_v3",
+            key="planner_link_mode_select_v4",
             on_change=_on_planner_link_mode_change,
         )
 
     with control_col3:
         st.selectbox(
-            "Stage focus",
-            options=("Whole world", "Selected stage only"),
-            index=1 if st.session_state.planner_focus_stage_only else 0,
-            key="planner_stage_focus_select_v3",
-            on_change=_on_planner_stage_focus_change,
+            "Planner zoom",
+            options=PLANNER_ZOOM_MODES,
+            index=PLANNER_ZOOM_MODES.index(st.session_state.planner_zoom_mode),
+            key="planner_zoom_mode_select_v4",
+            on_change=_on_planner_zoom_mode_change,
         )
 
     st.markdown(
@@ -687,7 +751,7 @@ def _render_structural_planner(product: int) -> None:
         _world_map_html(
             selected_product=product,
             link_mode=st.session_state.planner_link_mode,
-            focus_stage_only=st.session_state.planner_focus_stage_only,
+            focus_stage_only=focus_stage_only,
         ),
         height=map_height + 36,
         scrolling=True,
@@ -742,7 +806,6 @@ def _render_stage_cards(selected_product: int) -> None:
 
 def _render_product_lab(product: int) -> None:
     record = product_record(product)
-    compare = product_record(st.session_state.compare_product)
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Product Lab</div>', unsafe_allow_html=True)
@@ -751,7 +814,7 @@ def _render_product_lab(product: int) -> None:
         unsafe_allow_html=True,
     )
 
-    control_col1, control_col2 = st.columns(2)
+    control_col1, control_col2, control_col3 = st.columns(3)
 
     with control_col1:
         st.selectbox(
@@ -759,7 +822,7 @@ def _render_product_lab(product: int) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="lab_product_select_v3",
+            key="lab_product_select_v4",
             on_change=_on_lab_product_change,
         )
 
@@ -773,8 +836,18 @@ def _render_product_lab(product: int) -> None:
             options=compare_options,
             index=compare_options.index(st.session_state.compare_product),
             format_func=_product_option_label,
-            key="lab_compare_select_v3",
+            key="lab_compare_select_v4",
             on_change=_on_lab_compare_change,
+        )
+
+    with control_col3:
+        st.radio(
+            "Route view",
+            options=ROUTE_VIEW_MODES,
+            index=ROUTE_VIEW_MODES.index(st.session_state.route_view_mode),
+            horizontal=True,
+            key="lab_route_view_mode_v4",
+            on_change=_on_lab_route_view_mode_change,
         )
 
     st.markdown("</div>", unsafe_allow_html=True)
@@ -796,15 +869,18 @@ def _render_product_lab(product: int) -> None:
     st.markdown(
         """
         <div class="tmk-note">
-            Entry routes point inward. Exit routes point outward.
+            Entry routes sit above the hub. Exit routes sit below the hub. A compact mobile layout is included automatically.
         </div>
         """,
         unsafe_allow_html=True,
     )
     st.markdown('<div class="tmk-card-dark">', unsafe_allow_html=True)
-    components.html(_radial_hub_html(record.product), height=620, scrolling=True)
+    components.html(_radial_hub_html(record.product), height=660, scrolling=True)
     st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('<div class="tmk-mobile-note">Mobile layout switches to stacked route cards below 720px width.</div>', unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
+
+    _render_route_inspector(record)
 
     radial_col1, radial_col2 = st.columns(2)
 
@@ -879,6 +955,72 @@ def _render_product_lab(product: int) -> None:
     st.markdown("</div>", unsafe_allow_html=True)
 
 
+def _render_route_inspector(record) -> None:
+    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-subhead">Route inspector</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="tmk-note">Use the route buttons to inspect the currently selected {st.session_state.route_view_mode.lower()} for {record.product}.</div>',
+        unsafe_allow_html=True,
+    )
+
+    items = _route_inspector_items(record, st.session_state.route_view_mode)
+    if not items:
+        st.markdown('<div class="tmk-note">No routes available.</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+        return
+
+    if st.session_state.selected_route_index >= len(items):
+        st.session_state.selected_route_index = 0
+
+    button_cols = st.columns(min(len(items), 4))
+    for index, item in enumerate(items):
+        col = button_cols[index % len(button_cols)]
+        button_type = "primary" if index == st.session_state.selected_route_index else "secondary"
+        if col.button(
+            item["label"],
+            key=f"route_inspector_button_v4_{st.session_state.route_view_mode}_{index}",
+            use_container_width=True,
+            type=button_type,
+        ):
+            st.session_state.selected_route_index = index
+            st.rerun()
+
+    selected_item = items[st.session_state.selected_route_index]
+
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown(f'<div class="tmk-small-label">{escape(st.session_state.route_view_mode[:-1]) if st.session_state.route_view_mode.endswith("s") else escape(st.session_state.route_view_mode)}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="tmk-value">{escape(selected_item["headline"])}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="tmk-note" style="margin-top:0.55rem;">{escape(selected_item["explanation"])}</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def _route_inspector_items(record, mode: str) -> list[dict[str, str]]:
+    if mode == "Entry routes":
+        items: list[dict[str, str]] = []
+        for a, b in _entry_routes_for_radial(record):
+            items.append(
+                {
+                    "label": _format_route((a, b)),
+                    "headline": f"{a} × {b} = {record.product}",
+                    "explanation": f"This entry route makes {record.product} by combining {a} and {b}.",
+                }
+            )
+        return items
+
+    items = []
+    for divisor, quotient in record.ways_out[:4]:
+        items.append(
+            {
+                "label": f"{record.product}÷{divisor}={quotient}",
+                "headline": f"{record.product} ÷ {divisor} = {quotient}",
+                "explanation": f"This exit route recovers the factor {quotient} from {record.product} using divisor {divisor}.",
+            }
+        )
+    return items
+
+
 def _render_worksheet_studio(product: int, tier: str) -> None:
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Worksheet Studio</div>', unsafe_allow_html=True)
@@ -895,7 +1037,7 @@ def _render_worksheet_studio(product: int, tier: str) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="worksheet_product_select_v3",
+            key="worksheet_product_select_v4",
             on_change=_on_worksheet_product_change,
         )
 
@@ -905,7 +1047,7 @@ def _render_worksheet_studio(product: int, tier: str) -> None:
             options=TIERS,
             index=TIERS.index(st.session_state.selected_tier),
             horizontal=True,
-            key="worksheet_tier_radio_v3",
+            key="worksheet_tier_radio_v4",
             on_change=_on_worksheet_tier_change,
         )
 
@@ -929,7 +1071,7 @@ def _render_worksheet_studio(product: int, tier: str) -> None:
             f"""
             <div class="tmk-answer-box">
                 <div class="tmk-small-label">Q{_question_number(question, index)}</div>
-                <div style="font-size:1.02rem;font-weight:700;color:#22304f;line-height:1.5;">{escape(_render_question_text(question))}</div>
+                <div style="font-size:1.02rem;font-weight:700;color:inherit;line-height:1.5;">{escape(_render_question_text(question))}</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -995,7 +1137,7 @@ def _render_visible_products_grid(product: int) -> None:
             button_type = "primary" if visible_product == product else "secondary"
             if cols[offset].button(
                 str(visible_product),
-                key=f"visible_product_button_v3_{visible_product}",
+                key=f"visible_product_button_v4_{visible_product}",
                 use_container_width=True,
                 type=button_type,
             ):
@@ -1026,17 +1168,25 @@ def _render_pattern_links(product: int) -> None:
     )
 
 
-def _world_map_dimensions() -> tuple[int, int]:
+def _world_map_dimensions(focus_stage_only: bool, selected_stage: str) -> tuple[int, int]:
     lane_x = 26
     lane_w = 1268
     lane_h = 130
     lane_gap = 28
     top = 24
     bottom_padding = 28
-    stage_count = len([stage for stage in STAGE_ORDER if stage in STAGES])
+    visible_stages = _visible_world_stages(focus_stage_only, selected_stage)
+    stage_count = len(visible_stages)
     total_height = top + stage_count * lane_h + max(stage_count - 1, 0) * lane_gap + bottom_padding
     total_width = lane_x + lane_w + 26
     return total_width, total_height
+
+
+def _visible_world_stages(focus_stage_only: bool, selected_stage: str) -> list[str]:
+    stages = [stage for stage in STAGE_ORDER if stage in STAGES]
+    if focus_stage_only:
+        return [stage for stage in stages if stage == selected_stage]
+    return stages
 
 
 def _world_map_html(
@@ -1053,7 +1203,8 @@ def _world_map_html(
     left_label_space = 260
     bottom_padding = 28
 
-    stages = [stage for stage in STAGE_ORDER if stage in STAGES]
+    selected_record = product_record(selected_product)
+    stages = _visible_world_stages(focus_stage_only, selected_record.stage)
     y_positions = {stage: top + index * (lane_h + lane_gap) for index, stage in enumerate(stages)}
     positions = _world_positions(
         lane_x=lane_x,
@@ -1063,9 +1214,9 @@ def _world_map_html(
         top=top,
         header_band_h=header_band_h,
         left_label_space=left_label_space,
+        stages=stages,
     )
-    selected_record = product_record(selected_product)
-    total_width, total_height = _world_map_dimensions()
+    total_width, total_height = _world_map_dimensions(focus_stage_only, selected_record.stage)
 
     lane_rects: list[str] = []
     lane_labels: list[str] = []
@@ -1078,7 +1229,7 @@ def _world_map_html(
             f'<rect x="{lane_x}" y="{y}" width="{lane_w}" height="{lane_h}" rx="24" fill="{fill}" stroke="{stroke}" stroke-width="2"></rect>'
         )
         lane_labels.append(
-            f'<text x="{lane_x + 18}" y="{y + 28}" font-size="18" font-weight="800" fill="#22304f">{escape(stage_record.label)}</text>'
+            f'<text x="{lane_x + 18}" y="{y + 28}" font-size="18" font-weight="800" fill="var(--tmk-text, #22304f)">{escape(stage_record.label)}</text>'
         )
 
     background_lines: list[str] = []
@@ -1087,8 +1238,7 @@ def _world_map_html(
     if link_mode == "All links":
         for product in ALL_PRODUCTS:
             record = product_record(product)
-
-            if focus_stage_only and record.stage != selected_record.stage:
+            if record.stage not in stages:
                 continue
 
             end = positions.get(product)
@@ -1112,7 +1262,7 @@ def _world_map_html(
     nodes: list[str] = []
     for product in ALL_PRODUCTS:
         record = product_record(product)
-        if focus_stage_only and record.stage != selected_record.stage:
+        if record.stage not in stages:
             continue
 
         x, y = positions[product]
@@ -1131,7 +1281,7 @@ def _world_map_html(
 
     svg = f"""
     <svg viewBox="0 0 {total_width} {total_height}" width="{total_width}" height="{total_height}" xmlns="http://www.w3.org/2000/svg">
-        <rect x="0" y="0" width="{total_width}" height="{total_height}" fill="#f5f3ef"></rect>
+        <rect x="0" y="0" width="{total_width}" height="{total_height}" fill="transparent"></rect>
         {''.join(lane_rects)}
         {''.join(background_lines)}
         {''.join(selected_lines)}
@@ -1141,7 +1291,7 @@ def _world_map_html(
     """
 
     return f"""
-    <div style="background:#f5f3ef;border-radius:24px;overflow:auto;max-width:100%;padding-bottom:{bottom_padding}px;">
+    <div style="background:transparent;border-radius:24px;overflow:auto;max-width:100%;padding-bottom:{bottom_padding}px;">
         {svg}
     </div>
     """
@@ -1155,11 +1305,12 @@ def _world_positions(
     top: int,
     header_band_h: int,
     left_label_space: int,
+    stages: list[str],
 ) -> dict[int, tuple[float, float]]:
     positions: dict[int, tuple[float, float]] = {}
     usable_x = lane_w - left_label_space - 76
 
-    for row_index, stage in enumerate([stage for stage in STAGE_ORDER if stage in STAGES]):
+    for row_index, stage in enumerate(stages):
         products = STAGES[stage].products
         row_top = top + row_index * (lane_h + lane_gap)
         y = row_top + header_band_h + (lane_h - header_band_h) / 2 + 10
@@ -1179,41 +1330,94 @@ def _world_positions(
 
 def _radial_hub_html(product: int) -> str:
     record = product_record(product)
+    desktop_svg = _desktop_radial_svg(record)
+    mobile_svg = _mobile_radial_svg(record)
+
+    return f"""
+    <html>
+    <head>
+        <style>
+            :root {{
+                color-scheme: light dark;
+            }}
+
+            body {{
+                margin: 0;
+                padding: 0;
+                background: transparent;
+                color: #eef4ff;
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            }}
+
+            .tmk-radial-shell {{
+                width: 100%;
+            }}
+
+            .tmk-radial-desktop {{
+                display: block;
+            }}
+
+            .tmk-radial-mobile {{
+                display: none;
+            }}
+
+            svg {{
+                width: 100%;
+                height: auto;
+                display: block;
+            }}
+
+            @media (max-width: 720px) {{
+                .tmk-radial-desktop {{
+                    display: none;
+                }}
+
+                .tmk-radial-mobile {{
+                    display: block;
+                }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="tmk-radial-shell">
+            <div class="tmk-radial-desktop">{desktop_svg}</div>
+            <div class="tmk-radial-mobile">{mobile_svg}</div>
+        </div>
+    </body>
+    </html>
+    """
+
+
+def _desktop_radial_svg(record) -> str:
+    product = record.product
     cx = 420
-    cy = 260
-    r = 84
+    cy = 270
+    radius = 86
 
     entry_routes = _entry_routes_for_radial(record)[:4]
     exit_routes = _exit_routes_for_radial(record)[:4]
 
-    entry_positions = [
-        (210, 70),
-        (420, 32),
-        (630, 70),
-        (140, 170),
-    ]
-    exit_positions = [
-        (140, 400),
-        (420, 455),
-        (700, 400),
-        (630, 170),
-    ]
+    entry_angles = [225, 255, 285, 315][: len(entry_routes)]
+    exit_angles = [140, 110, 70, 40][: len(exit_routes)]
+
+    entry_points = [_point_on_circle(cx, cy, 210, angle) for angle in entry_angles]
+    exit_points = [_point_on_circle(cx, cy, 220, angle) for angle in exit_angles]
 
     lines: list[str] = []
     boxes: list[str] = []
 
-    for route, (bx, by) in zip(entry_routes, entry_positions):
-        x2, y2 = _edge_point_toward(cx, cy, bx, by, r + 8)
-        lines.append(_svg_arrow(bx, by + 26, x2, y2, "#dbe4f4", 4))
-        boxes.append(_svg_info_box(bx - 58, by, 116, 42, _format_route(route), "#0e223f", "#dbe4f4"))
+    for route, (bx, by) in zip(entry_routes, entry_points):
+        ex, ey = _edge_point_toward(cx, cy, bx, by, radius + 14)
+        lines.append(_svg_arrow(bx, by + 24, ex, ey, "#dbe4f4", 4))
+        boxes.append(_svg_info_box(bx - 64, by, 128, 42, _format_route(route), "#163154", "#dbe4f4", "#ffffff", 18))
 
-    for label, (bx, by) in zip(exit_routes, exit_positions):
-        x1, y1 = _edge_point_toward(cx, cy, bx, by, r + 8)
-        lines.append(_svg_arrow(x1, y1, bx, by + 20, "#9c7cff", 4))
-        boxes.append(_svg_info_box(bx - 70, by, 140, 42, label, "#241448", "#d9c4ff"))
+    for label, (bx, by) in zip(exit_routes, exit_points):
+        sx, sy = _edge_point_toward(cx, cy, bx, by, radius + 14)
+        lines.append(_svg_arrow(sx, sy, bx, by + 20, "#9c7cff", 4))
+        boxes.append(_svg_info_box(bx - 72, by, 144, 42, label, "#2f1a59", "#d9c4ff", "#ffffff", 18))
 
-    svg = f"""
-    <svg viewBox="0 0 840 520" width="840" height="520" xmlns="http://www.w3.org/2000/svg">
+    return f"""
+    <svg viewBox="0 0 840 560" xmlns="http://www.w3.org/2000/svg">
         <defs>
             <marker id="arrow-end-light" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="#dbe4f4"></path>
@@ -1222,20 +1426,57 @@ def _radial_hub_html(product: int) -> str:
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="#9c7cff"></path>
             </marker>
         </defs>
-        <rect x="0" y="0" width="840" height="520" rx="28" fill="#031026"></rect>
+        <rect x="0" y="0" width="840" height="560" rx="28" fill="#071426"></rect>
         <text x="18" y="28" font-size="18" font-weight="800" fill="#ffffff">Radial Hub View</text>
-        <text x="18" y="52" font-size="15" font-weight="500" fill="#d4def1">Entry routes point inward. Exit routes point outward.</text>
+        <text x="18" y="52" font-size="15" font-weight="500" fill="#d4def1">Entry routes above. Exit routes below. Arrowheads kept clear of the hub.</text>
+        <text x="{cx}" y="98" text-anchor="middle" font-size="24" font-weight="800" fill="#ffffff">Entry routes</text>
+        <text x="{cx}" y="468" text-anchor="middle" font-size="24" font-weight="800" fill="#ffffff">Exit routes</text>
         {''.join(lines)}
-        <circle cx="{cx}" cy="{cy}" r="{r}" fill="#9ba4b5" stroke="#f5f7fb" stroke-width="5"></circle>
-        <text x="{cx}" y="{cy + 14}" text-anchor="middle" font-size="44" font-weight="900" fill="#ffffff">{product}</text>
-        <text x="{cx}" y="98" text-anchor="middle" font-size="20" font-weight="800" fill="#ffffff">Entry routes</text>
-        <text x="{cx}" y="430" text-anchor="middle" font-size="20" font-weight="800" fill="#ffffff">Exit routes</text>
+        <circle cx="{cx}" cy="{cy}" r="{radius}" fill="#9ba4b5" stroke="#f5f7fb" stroke-width="5"></circle>
+        <text x="{cx}" y="{cy + 14}" text-anchor="middle" font-size="48" font-weight="900" fill="#ffffff">{product}</text>
         {''.join(boxes)}
     </svg>
-    """
-    return svg.replace('marker-end="LIGHT"', 'marker-end="url(#arrow-end-light)"').replace(
+    """.replace('marker-end="LIGHT"', 'marker-end="url(#arrow-end-light)"').replace(
         'marker-end="PURPLE"', 'marker-end="url(#arrow-end-purple)"'
     )
+
+
+def _mobile_radial_svg(record) -> str:
+    product = record.product
+    entry_routes = _entry_routes_for_radial(record)[:4]
+    exit_routes = _exit_routes_for_radial(record)[:4]
+
+    entry_cards = []
+    exit_cards = []
+
+    entry_y = 90
+    for route in entry_routes:
+        entry_cards.append(_svg_info_box(40, entry_y, 280, 44, _format_route(route), "#163154", "#dbe4f4", "#ffffff", 18))
+        entry_y += 58
+
+    exit_y = 380
+    for label in exit_routes:
+        exit_cards.append(_svg_info_box(40, exit_y, 280, 44, label, "#2f1a59", "#d9c4ff", "#ffffff", 18))
+        exit_y += 58
+
+    return f"""
+    <svg viewBox="0 0 360 660" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="360" height="660" rx="28" fill="#071426"></rect>
+        <text x="20" y="30" font-size="18" font-weight="800" fill="#ffffff">Radial Hub View</text>
+        <text x="20" y="58" font-size="15" font-weight="500" fill="#d4def1">Mobile stacked view</text>
+        <text x="40" y="82" font-size="18" font-weight="800" fill="#ffffff">Entry routes</text>
+        {''.join(entry_cards)}
+        <circle cx="180" cy="322" r="62" fill="#9ba4b5" stroke="#f5f7fb" stroke-width="5"></circle>
+        <text x="180" y="336" text-anchor="middle" font-size="38" font-weight="900" fill="#ffffff">{product}</text>
+        <text x="40" y="368" font-size="18" font-weight="800" fill="#ffffff">Exit routes</text>
+        {''.join(exit_cards)}
+    </svg>
+    """
+
+
+def _point_on_circle(cx: float, cy: float, radius: float, angle_degrees: float) -> tuple[float, float]:
+    angle_radians = angle_degrees * pi / 180
+    return cx + radius * cos(angle_radians), cy + radius * sin(angle_radians)
 
 
 def _entry_routes_for_radial(record) -> list[tuple[int, int]]:
@@ -1316,11 +1557,21 @@ def _svg_arrow(
     )
 
 
-def _svg_info_box(x: float, y: float, w: float, h: float, text: str, fill: str, stroke: str) -> str:
+def _svg_info_box(
+    x: float,
+    y: float,
+    w: float,
+    h: float,
+    text: str,
+    fill: str,
+    stroke: str,
+    text_fill: str,
+    font_size: int,
+) -> str:
     return f"""
         <g>
             <rect x="{x}" y="{y}" width="{w}" height="{h}" rx="14" fill="{fill}" stroke="{stroke}" stroke-width="2"></rect>
-            <text x="{x + w / 2}" y="{y + 26}" text-anchor="middle" font-size="18" font-weight="800" fill="#ffffff">{escape(text)}</text>
+            <text x="{x + w / 2}" y="{y + h / 2 + 6}" text-anchor="middle" font-size="{font_size}" font-weight="800" fill="{text_fill}">{escape(text)}</text>
         </g>
     """
 
