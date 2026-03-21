@@ -12,7 +12,6 @@ from products import (
     STAGE_ORDER,
     STAGES,
     product_record,
-    stage_color,
     stage_label,
     visible_products,
 )
@@ -31,6 +30,48 @@ TIERS = ("Support", "Core", "Extension")
 PLANNER_LINK_MODES = ("Selected links", "All links", "No links")
 PLANNER_ZOOM_MODES = ("Whole world", "Selected stage lane only")
 ROUTE_VIEW_MODES = ("Entry routes", "Exit routes")
+
+LIGHT_THEME = {
+    "bg": "#FAF7F2",
+    "surface": "#FFFFFF",
+    "surface_strong": "#F3ECE3",
+    "border": "#DED3C5",
+    "text": "#1F2937",
+    "text_soft": "#667085",
+    "accent": "#C76412",
+    "accent_soft": "#E89A3A",
+    "map_link_selected": "#C76412",
+    "map_link_overlay": "rgba(199, 100, 18, 0.14)",
+    "map_link_background": "#F9EBDD",
+    "map_node_outline": "#D8CCBD",
+    "map_node_selected": "#C76412",
+    "map_stage_tint": "#F6EFE6",
+    "stage_a": "#C76412",
+    "stage_b": "#4F6D8A",
+    "stage_c": "#3F7C85",
+    "stage_d": "#6C5B7B",
+}
+
+DARK_THEME = {
+    "bg": "#10151C",
+    "surface": "#18212B",
+    "surface_strong": "#121922",
+    "border": "#2D3948",
+    "text": "#F3F6FB",
+    "text_soft": "#B7C2D0",
+    "accent": "#E89A3A",
+    "accent_soft": "#C76412",
+    "map_link_selected": "#E89A3A",
+    "map_link_overlay": "rgba(232, 154, 58, 0.18)",
+    "map_link_background": "#2C2118",
+    "map_node_outline": "#364454",
+    "map_node_selected": "#E89A3A",
+    "map_stage_tint": "#1C2430",
+    "stage_a": "#E89A3A",
+    "stage_b": "#7F9BB6",
+    "stage_c": "#73A9A7",
+    "stage_d": "#9A88AD",
+}
 
 
 st.set_page_config(
@@ -122,329 +163,328 @@ def _set_surface(surface: str) -> None:
         st.query_params["surface"] = surface
 
 
+def _css_theme_vars(theme: dict[str, str]) -> str:
+    return "\n".join(
+        [
+            f"                --tmk-bg: {theme['bg']};",
+            f"                --tmk-surface: {theme['surface']};",
+            f"                --tmk-surface-strong: {theme['surface_strong']};",
+            f"                --tmk-border: {theme['border']};",
+            f"                --tmk-text: {theme['text']};",
+            f"                --tmk-text-soft: {theme['text_soft']};",
+            f"                --tmk-accent: {theme['accent']};",
+            f"                --tmk-accent-soft: {theme['accent_soft']};",
+            f"                --tmk-map-link-selected: {theme['map_link_selected']};",
+            f"                --tmk-map-link-overlay: {theme['map_link_overlay']};",
+            f"                --tmk-map-link-background: {theme['map_link_background']};",
+            f"                --tmk-map-node-outline: {theme['map_node_outline']};",
+            f"                --tmk-map-node-selected: {theme['map_node_selected']};",
+            f"                --tmk-map-stage-tint: {theme['map_stage_tint']};",
+            f"                --tmk-stage-a: {theme['stage_a']};",
+            f"                --tmk-stage-b: {theme['stage_b']};",
+            f"                --tmk-stage-c: {theme['stage_c']};",
+            f"                --tmk-stage-d: {theme['stage_d']};",
+        ]
+    )
+
+
 def _apply_styles() -> None:
+    light_vars = _css_theme_vars(LIGHT_THEME)
+    dark_vars = _css_theme_vars(DARK_THEME)
+
     st.markdown(
-        """
+        f"""
         <style>
-            :root {
-                --tmk-bg: #f5f3ef;
-                --tmk-surface: rgba(255, 255, 255, 0.74);
-                --tmk-surface-strong: #fffaf2;
-                --tmk-border: #eadfd0;
-                --tmk-text: #1f2a44;
-                --tmk-text-soft: #59667f;
-                --tmk-accent: #c8ab7a;
-                --tmk-accent-soft: #f2e3c8;
-                --tmk-pill: #f3ede4;
-                --tmk-pill-border: #e4d6c2;
-                --tmk-dark-card: #08172f;
-                --tmk-dark-border: #243b5e;
-                --tmk-dark-text: #eef4ff;
-                --tmk-dark-muted: #c4d2e6;
-            }
+            :root {{
+{light_vars}
+            }}
 
-            @media (prefers-color-scheme: dark) {
-                :root {
-                    --tmk-bg: #10161f;
-                    --tmk-surface: rgba(25, 34, 47, 0.88);
-                    --tmk-surface-strong: #172130;
-                    --tmk-border: #2d4058;
-                    --tmk-text: #eef4ff;
-                    --tmk-text-soft: #c4d2e6;
-                    --tmk-accent: #d8b77b;
-                    --tmk-accent-soft: #3a2f1f;
-                    --tmk-pill: #1b2738;
-                    --tmk-pill-border: #334860;
-                    --tmk-dark-card: #08172f;
-                    --tmk-dark-border: #36527b;
-                    --tmk-dark-text: #eef4ff;
-                    --tmk-dark-muted: #c4d2e6;
-                }
-            }
+            @media (prefers-color-scheme: dark) {{
+                :root {{
+{dark_vars}
+                }}
+            }}
 
-            .stApp {
+            .stApp {{
                 background: var(--tmk-bg);
                 color: var(--tmk-text);
-            }
+            }}
 
-            .block-container {
+            .block-container {{
                 padding-top: 1rem;
                 padding-bottom: 2rem;
-            }
+            }}
 
-            .tmk-shell {
+            .tmk-shell {{
                 max-width: 1240px;
                 margin: 0 auto;
                 padding-bottom: 2rem;
-            }
+            }}
 
-            .tmk-header {
-                background: linear-gradient(180deg, var(--tmk-surface-strong) 0%, var(--tmk-surface) 100%);
+            .tmk-header {{
+                background: linear-gradient(180deg, var(--tmk-surface) 0%, var(--tmk-surface-strong) 100%);
                 border: 1px solid var(--tmk-border);
                 border-radius: 24px;
                 padding: 1.35rem 1.4rem 1.1rem 1.4rem;
                 box-shadow: 0 8px 24px rgba(34, 46, 75, 0.06);
                 margin-bottom: 1rem;
-            }
+            }}
 
-            .tmk-kicker {
+            .tmk-kicker {{
                 font-size: 0.78rem;
                 font-weight: 800;
                 letter-spacing: 0.12em;
                 text-transform: uppercase;
                 color: var(--tmk-accent);
                 margin-bottom: 0.25rem;
-            }
+            }}
 
-            .tmk-header h1 {
+            .tmk-header h1 {{
                 margin: 0;
                 font-size: 2rem;
                 line-height: 1.08;
                 color: var(--tmk-text);
-            }
+            }}
 
-            .tmk-header p {
+            .tmk-header p {{
                 margin: 0.45rem 0 0 0;
                 color: var(--tmk-text-soft);
                 font-size: 1rem;
                 line-height: 1.45;
-            }
+            }}
 
-            .tmk-nav-strip {
+            .tmk-nav-strip {{
                 display: flex;
                 gap: 0.6rem;
                 flex-wrap: wrap;
                 margin-bottom: 1rem;
-            }
+            }}
 
-            .tmk-nav-link {
+            .tmk-nav-link {{
                 display: inline-flex;
                 align-items: center;
                 padding: 0.6rem 0.95rem;
                 border-radius: 999px;
-                border: 1px solid var(--tmk-accent);
-                background: var(--tmk-surface-strong);
+                border: 1px solid var(--tmk-border);
+                background: var(--tmk-surface);
                 color: var(--tmk-text);
                 font-weight: 800;
                 font-size: 0.95rem;
                 text-decoration: none;
-            }
+            }}
 
-            .tmk-nav-link:hover {
+            .tmk-nav-link:hover {{
                 border-color: var(--tmk-accent);
                 color: var(--tmk-text);
-            }
+            }}
 
-            .tmk-nav-link-active {
+            .tmk-nav-link-active {{
                 background: var(--tmk-accent-soft);
-            }
+                border-color: var(--tmk-accent);
+                color: #ffffff;
+            }}
 
-            .tmk-panel {
+            .tmk-panel {{
                 background: var(--tmk-surface);
                 border: 1px solid var(--tmk-border);
                 border-radius: 24px;
                 padding: 1rem;
                 box-shadow: 0 10px 30px rgba(34, 46, 75, 0.05);
                 margin-bottom: 1rem;
-            }
+            }}
 
-            .tmk-section-title {
+            .tmk-section-title {{
                 font-size: 2rem;
                 line-height: 1.1;
                 font-weight: 800;
                 color: var(--tmk-text);
                 margin-bottom: 0.2rem;
-            }
+            }}
 
-            .tmk-section-subtitle {
+            .tmk-section-subtitle {{
                 color: var(--tmk-text-soft);
                 margin-bottom: 0.8rem;
                 font-size: 1rem;
                 line-height: 1.45;
-            }
+            }}
 
-            .tmk-card {
-                background: linear-gradient(180deg, var(--tmk-surface-strong) 0%, var(--tmk-surface) 100%);
+            .tmk-card {{
+                background: linear-gradient(180deg, var(--tmk-surface) 0%, var(--tmk-surface-strong) 100%);
                 border: 1px solid var(--tmk-border);
                 border-radius: 18px;
                 padding: 0.95rem 1rem;
                 height: 100%;
                 margin-bottom: 0.75rem;
-            }
+            }}
 
-            .tmk-card-dark {
-                background: var(--tmk-dark-card);
-                border: 1px solid var(--tmk-dark-border);
+            .tmk-card-dark {{
+                background: linear-gradient(180deg, rgba(8, 23, 47, 0.98) 0%, rgba(13, 28, 50, 0.98) 100%);
+                border: 1px solid var(--tmk-border);
                 border-radius: 24px;
                 padding: 0.75rem;
                 height: 100%;
                 margin-bottom: 0.75rem;
-            }
+            }}
 
-            .tmk-small-label {
+            .tmk-small-label {{
                 font-size: 0.74rem;
                 font-weight: 800;
                 letter-spacing: 0.08em;
                 text-transform: uppercase;
                 color: var(--tmk-text-soft);
                 margin-bottom: 0.3rem;
-            }
+            }}
 
-            .tmk-value {
+            .tmk-value {{
                 font-size: 1.35rem;
                 font-weight: 800;
                 color: var(--tmk-text);
                 line-height: 1.2;
                 word-break: break-word;
-            }
+            }}
 
-            .tmk-soft-list {
+            .tmk-soft-list {{
                 display: flex;
                 flex-wrap: wrap;
                 gap: 0.45rem;
                 margin-top: 0.5rem;
-            }
+            }}
 
-            .tmk-pill {
+            .tmk-pill {{
                 display: inline-flex;
                 align-items: center;
                 padding: 0.46rem 0.72rem;
                 border-radius: 999px;
-                background: var(--tmk-pill);
-                border: 1px solid var(--tmk-pill-border);
+                background: var(--tmk-surface-strong);
+                border: 1px solid var(--tmk-border);
                 color: var(--tmk-text);
                 font-size: 0.95rem;
                 font-weight: 700;
                 line-height: 1.2;
-            }
+            }}
 
-            .tmk-pill-accent {
+            .tmk-pill-accent {{
                 background: var(--tmk-accent-soft);
                 border-color: var(--tmk-accent);
-            }
+                color: #ffffff;
+            }}
 
-            .tmk-note {
+            .tmk-note {{
                 color: var(--tmk-text-soft);
                 font-size: 0.98rem;
                 line-height: 1.55;
-            }
+            }}
 
-            .tmk-subhead {
+            .tmk-subhead {{
                 font-size: 1.18rem;
                 font-weight: 800;
                 color: var(--tmk-text);
                 margin-bottom: 0.5rem;
-            }
+            }}
 
-            .tmk-stage-card {
+            .tmk-stage-card {{
                 border-radius: 20px;
                 border: 1px solid var(--tmk-border);
                 padding: 0.9rem;
                 margin-bottom: 0.8rem;
                 background: var(--tmk-surface);
-            }
+            }}
 
-            .tmk-stage-title {
+            .tmk-stage-title {{
                 font-size: 1.05rem;
                 font-weight: 800;
                 color: var(--tmk-text);
                 margin-bottom: 0.55rem;
-            }
+            }}
 
-            .tmk-map-wrap {
+            .tmk-map-wrap {{
                 overflow-x: auto;
                 overflow-y: hidden;
                 -webkit-overflow-scrolling: touch;
                 border-radius: 20px;
                 margin-top: 0.8rem;
-            }
+            }}
 
-            .tmk-legend-box {
+            .tmk-legend-box {{
                 background: var(--tmk-surface-strong);
                 border: 1px solid var(--tmk-border);
                 border-radius: 16px;
                 padding: 0.8rem 0.95rem;
                 margin-top: 0.8rem;
-            }
+            }}
 
-            .tmk-legend-row {
+            .tmk-legend-row {{
                 display: flex;
                 flex-wrap: wrap;
                 gap: 0.9rem;
                 align-items: center;
-            }
+            }}
 
-            .tmk-legend-item {
+            .tmk-legend-item {{
                 display: inline-flex;
                 align-items: center;
                 gap: 0.45rem;
                 color: var(--tmk-text-soft);
                 font-size: 0.94rem;
                 font-weight: 700;
-            }
+            }}
 
-            .tmk-line-swatch {
+            .tmk-line-swatch {{
                 width: 36px;
                 height: 0;
-                border-top: 4px solid #ff9f43;
+                border-top: 4px solid var(--tmk-map-link-selected);
                 position: relative;
-            }
+            }}
 
-            .tmk-line-swatch-purple {
+            .tmk-line-swatch-purple {{
                 width: 36px;
                 height: 0;
-                border-top: 2px dashed #7c3aed;
+                border-top: 6px solid transparent;
+                background: linear-gradient(180deg, transparent 0%, transparent 35%, var(--tmk-map-link-overlay) 35%, var(--tmk-map-link-overlay) 75%, transparent 75%, transparent 100%);
                 position: relative;
-            }
+            }}
 
-            .tmk-line-swatch-grey {
+            .tmk-line-swatch-grey {{
                 width: 36px;
                 height: 0;
-                border-top: 3px solid rgba(125, 139, 162, 0.95);
+                border-top: 3px solid var(--tmk-map-link-background);
                 position: relative;
-            }
+            }}
 
-            .tmk-worksheet-frame {
-                background: linear-gradient(180deg, var(--tmk-surface-strong) 0%, var(--tmk-surface) 100%);
+            .tmk-worksheet-frame {{
+                background: linear-gradient(180deg, var(--tmk-surface) 0%, var(--tmk-surface-strong) 100%);
                 border: 1px solid var(--tmk-border);
                 border-radius: 22px;
                 padding: 1rem;
                 margin-bottom: 0.9rem;
-            }
+            }}
 
-            .tmk-answer-box {
-                background: rgba(255,255,255,0.08);
+            .tmk-answer-box {{
+                background: var(--tmk-surface);
                 border: 1px solid var(--tmk-border);
                 border-radius: 16px;
                 padding: 0.9rem 0.95rem;
                 margin-bottom: 0.7rem;
                 color: var(--tmk-text);
-            }
+            }}
 
-            .tmk-control-caption {
+            .tmk-control-caption {{
                 font-size: 0.92rem;
                 color: var(--tmk-text-soft);
                 line-height: 1.45;
                 margin-top: 0.25rem;
-            }
+            }}
 
-            .tmk-route-button-row {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.55rem;
-                margin-top: 0.75rem;
-            }
-
-            .tmk-mobile-note {
+            .tmk-mobile-note {{
                 color: var(--tmk-text-soft);
                 font-size: 0.9rem;
                 margin-top: 0.25rem;
-            }
+            }}
 
-            .stButton > button {
+            .stButton > button {{
                 border-radius: 999px;
                 border: 1px solid var(--tmk-border);
-                background: var(--tmk-surface-strong);
+                background: var(--tmk-surface);
                 color: var(--tmk-text);
                 font-weight: 800;
                 min-height: 2.9rem;
@@ -452,123 +492,123 @@ def _apply_styles() -> None:
                 font-size: 0.98rem;
                 line-height: 1.2;
                 white-space: normal;
-            }
+            }}
 
-            .stButton > button:hover {
+            .stButton > button:hover {{
                 border-color: var(--tmk-accent);
                 color: var(--tmk-text);
-            }
+            }}
 
-            [data-testid="stSidebar"] {
+            [data-testid="stSidebar"] {{
                 background: var(--tmk-surface-strong);
                 border-left: 1px solid var(--tmk-border);
-            }
+            }}
 
-            [data-testid="stSidebar"] * {
+            [data-testid="stSidebar"] * {{
                 color: var(--tmk-text);
-            }
+            }}
 
             .stSelectbox label,
             .stRadio label,
             .stCheckbox label,
             .stMarkdown,
             .stCaption,
-            .stText {
+            .stText {{
                 color: var(--tmk-text);
-            }
+            }}
 
-            @media (max-width: 900px) {
-                .tmk-shell {
+            @media (max-width: 900px) {{
+                .tmk-shell {{
                     max-width: 100%;
-                }
+                }}
 
-                .tmk-header {
+                .tmk-header {{
                     border-radius: 18px;
                     padding: 1rem 0.95rem 0.9rem 0.95rem;
-                }
+                }}
 
-                .tmk-header h1 {
+                .tmk-header h1 {{
                     font-size: 1.6rem;
-                }
+                }}
 
-                .tmk-panel {
+                .tmk-panel {{
                     border-radius: 18px;
                     padding: 0.85rem;
-                }
+                }}
 
-                .tmk-section-title {
+                .tmk-section-title {{
                     font-size: 1.55rem;
-                }
+                }}
 
-                .tmk-value {
+                .tmk-value {{
                     font-size: 1.18rem;
-                }
-            }
+                }}
+            }}
 
-            @media (max-width: 640px) {
-                .block-container {
+            @media (max-width: 640px) {{
+                .block-container {{
                     padding-left: 0.65rem;
                     padding-right: 0.65rem;
-                }
+                }}
 
-                .tmk-header {
+                .tmk-header {{
                     padding: 0.9rem 0.85rem 0.85rem 0.85rem;
                     margin-bottom: 0.8rem;
-                }
+                }}
 
-                .tmk-kicker {
+                .tmk-kicker {{
                     font-size: 0.68rem;
-                }
+                }}
 
-                .tmk-header h1 {
+                .tmk-header h1 {{
                     font-size: 1.36rem;
-                }
+                }}
 
-                .tmk-header p {
+                .tmk-header p {{
                     font-size: 0.93rem;
                     line-height: 1.45;
-                }
+                }}
 
-                .tmk-panel {
+                .tmk-panel {{
                     padding: 0.75rem;
                     border-radius: 16px;
-                }
+                }}
 
-                .tmk-section-title {
+                .tmk-section-title {{
                     font-size: 1.3rem;
-                }
+                }}
 
                 .tmk-section-subtitle,
                 .tmk-note,
                 .tmk-control-caption,
-                .tmk-mobile-note {
+                .tmk-mobile-note {{
                     font-size: 0.92rem;
                     line-height: 1.5;
-                }
+                }}
 
-                .tmk-subhead {
+                .tmk-subhead {{
                     font-size: 1.02rem;
-                }
+                }}
 
-                .tmk-small-label {
+                .tmk-small-label {{
                     font-size: 0.66rem;
-                }
+                }}
 
-                .tmk-value {
+                .tmk-value {{
                     font-size: 1.06rem;
                     line-height: 1.25;
-                }
+                }}
 
-                .tmk-pill {
+                .tmk-pill {{
                     font-size: 0.88rem;
                     padding: 0.38rem 0.58rem;
-                }
+                }}
 
-                .stButton > button {
+                .stButton > button {{
                     min-height: 2.8rem;
                     font-size: 0.94rem;
-                }
-            }
+                }}
+            }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -586,20 +626,20 @@ def _render_nav() -> None:
 
 
 def _on_planner_product_change() -> None:
-    st.session_state.selected_product = st.session_state.planner_product_select_v4
+    st.session_state.selected_product = st.session_state.planner_product_select_v5
     st.rerun()
 
 
 def _on_planner_link_mode_change() -> None:
-    st.session_state.planner_link_mode = st.session_state.planner_link_mode_select_v4
+    st.session_state.planner_link_mode = st.session_state.planner_link_mode_select_v5
 
 
 def _on_planner_zoom_mode_change() -> None:
-    st.session_state.planner_zoom_mode = st.session_state.planner_zoom_mode_select_v4
+    st.session_state.planner_zoom_mode = st.session_state.planner_zoom_mode_select_v5
 
 
 def _on_lab_product_change() -> None:
-    st.session_state.selected_product = st.session_state.lab_product_select_v4
+    st.session_state.selected_product = st.session_state.lab_product_select_v5
     if st.session_state.compare_product == st.session_state.selected_product and len(ALL_PRODUCTS) > 1:
         st.session_state.compare_product = next(
             product for product in ALL_PRODUCTS if product != st.session_state.selected_product
@@ -609,21 +649,21 @@ def _on_lab_product_change() -> None:
 
 
 def _on_lab_compare_change() -> None:
-    st.session_state.compare_product = st.session_state.lab_compare_select_v4
+    st.session_state.compare_product = st.session_state.lab_compare_select_v5
 
 
 def _on_lab_route_view_mode_change() -> None:
-    st.session_state.route_view_mode = st.session_state.lab_route_view_mode_v4
+    st.session_state.route_view_mode = st.session_state.lab_route_view_mode_v5
     st.session_state.selected_route_index = 0
 
 
 def _on_worksheet_product_change() -> None:
-    st.session_state.selected_product = st.session_state.worksheet_product_select_v4
+    st.session_state.selected_product = st.session_state.worksheet_product_select_v5
     st.rerun()
 
 
 def _on_worksheet_tier_change() -> None:
-    st.session_state.selected_tier = st.session_state.worksheet_tier_radio_v4
+    st.session_state.selected_tier = st.session_state.worksheet_tier_radio_v5
 
 
 def _render_sidebar() -> None:
@@ -677,7 +717,7 @@ def _render_structural_planner(product: int) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="planner_product_select_v4",
+            key="planner_product_select_v5",
             on_change=_on_planner_product_change,
         )
 
@@ -686,7 +726,7 @@ def _render_structural_planner(product: int) -> None:
             "Link mode",
             options=PLANNER_LINK_MODES,
             index=PLANNER_LINK_MODES.index(st.session_state.planner_link_mode),
-            key="planner_link_mode_select_v4",
+            key="planner_link_mode_select_v5",
             on_change=_on_planner_link_mode_change,
         )
 
@@ -695,7 +735,7 @@ def _render_structural_planner(product: int) -> None:
             "Planner zoom",
             options=PLANNER_ZOOM_MODES,
             index=PLANNER_ZOOM_MODES.index(st.session_state.planner_zoom_mode),
-            key="planner_zoom_mode_select_v4",
+            key="planner_zoom_mode_select_v5",
             on_change=_on_planner_zoom_mode_change,
         )
 
@@ -703,7 +743,7 @@ def _render_structural_planner(product: int) -> None:
         """
         <div class="tmk-control-caption">
             Selected links shows only the selected product’s intro route.
-            All links shows the wider world network in grey behind the highlighted route.
+            All links shows the wider world network in the background behind the highlighted route.
             No links shows stage layout only.
         </div>
         """,
@@ -763,7 +803,7 @@ def _render_structural_planner(product: int) -> None:
         <div class="tmk-legend-box">
             <div class="tmk-legend-row">
                 <div class="tmk-legend-item"><span class="tmk-line-swatch"></span> selected intro link</div>
-                <div class="tmk-legend-item"><span class="tmk-line-swatch-purple"></span> selected intro link overlay</div>
+                <div class="tmk-legend-item"><span class="tmk-line-swatch-purple"></span> link overlay</div>
                 <div class="tmk-legend-item"><span class="tmk-line-swatch-grey"></span> wider world links</div>
             </div>
         </div>
@@ -786,6 +826,7 @@ def _render_structural_planner(product: int) -> None:
 def _render_stage_cards(selected_product: int) -> None:
     for stage in [stage for stage in STAGE_ORDER if stage in STAGES]:
         stage_record = STAGES[stage]
+        stage_color = _theme_stage_color(stage)
         products = stage_record.products
 
         pills: list[str] = []
@@ -795,7 +836,7 @@ def _render_stage_cards(selected_product: int) -> None:
 
         st.markdown(
             f"""
-            <div class="tmk-stage-card" style="background:{_hex_to_rgba(stage_record.color, 0.10)}; border-color:{_hex_to_rgba(stage_record.color, 0.28)};">
+            <div class="tmk-stage-card" style="background:{_hex_to_rgba(stage_color, 0.08)}; border-color:{_hex_to_rgba(stage_color, 0.30)};">
                 <div class="tmk-stage-title">{escape(stage_record.label)}</div>
                 <div class="tmk-soft-list">{''.join(pills)}</div>
             </div>
@@ -822,7 +863,7 @@ def _render_product_lab(product: int) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="lab_product_select_v4",
+            key="lab_product_select_v5",
             on_change=_on_lab_product_change,
         )
 
@@ -836,7 +877,7 @@ def _render_product_lab(product: int) -> None:
             options=compare_options,
             index=compare_options.index(st.session_state.compare_product),
             format_func=_product_option_label,
-            key="lab_compare_select_v4",
+            key="lab_compare_select_v5",
             on_change=_on_lab_compare_change,
         )
 
@@ -846,7 +887,7 @@ def _render_product_lab(product: int) -> None:
             options=ROUTE_VIEW_MODES,
             index=ROUTE_VIEW_MODES.index(st.session_state.route_view_mode),
             horizontal=True,
-            key="lab_route_view_mode_v4",
+            key="lab_route_view_mode_v5",
             on_change=_on_lab_route_view_mode_change,
         )
 
@@ -978,7 +1019,7 @@ def _render_route_inspector(record) -> None:
         button_type = "primary" if index == st.session_state.selected_route_index else "secondary"
         if col.button(
             item["label"],
-            key=f"route_inspector_button_v4_{st.session_state.route_view_mode}_{index}",
+            key=f"route_inspector_button_v5_{st.session_state.route_view_mode}_{index}",
             use_container_width=True,
             type=button_type,
         ):
@@ -988,9 +1029,15 @@ def _render_route_inspector(record) -> None:
     selected_item = items[st.session_state.selected_route_index]
 
     st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-    st.markdown(f'<div class="tmk-small-label">{escape(st.session_state.route_view_mode[:-1]) if st.session_state.route_view_mode.endswith("s") else escape(st.session_state.route_view_mode)}</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="tmk-small-label">{escape(st.session_state.route_view_mode[:-1]) if st.session_state.route_view_mode.endswith("s") else escape(st.session_state.route_view_mode)}</div>',
+        unsafe_allow_html=True,
+    )
     st.markdown(f'<div class="tmk-value">{escape(selected_item["headline"])}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="tmk-note" style="margin-top:0.55rem;">{escape(selected_item["explanation"])}</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="tmk-note" style="margin-top:0.55rem;">{escape(selected_item["explanation"])}</div>',
+        unsafe_allow_html=True,
+    )
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
@@ -1037,7 +1084,7 @@ def _render_worksheet_studio(product: int, tier: str) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="worksheet_product_select_v4",
+            key="worksheet_product_select_v5",
             on_change=_on_worksheet_product_change,
         )
 
@@ -1047,7 +1094,7 @@ def _render_worksheet_studio(product: int, tier: str) -> None:
             options=TIERS,
             index=TIERS.index(st.session_state.selected_tier),
             horizontal=True,
-            key="worksheet_tier_radio_v4",
+            key="worksheet_tier_radio_v5",
             on_change=_on_worksheet_tier_change,
         )
 
@@ -1137,7 +1184,7 @@ def _render_visible_products_grid(product: int) -> None:
             button_type = "primary" if visible_product == product else "secondary"
             if cols[offset].button(
                 str(visible_product),
-                key=f"visible_product_button_v4_{visible_product}",
+                key=f"visible_product_button_v5_{visible_product}",
                 use_container_width=True,
                 type=button_type,
             ):
@@ -1218,18 +1265,21 @@ def _world_map_html(
     )
     total_width, total_height = _world_map_dimensions(focus_stage_only, selected_record.stage)
 
+    light_vars = _embed_theme_vars(LIGHT_THEME)
+    dark_vars = _embed_theme_vars(DARK_THEME)
+
     lane_rects: list[str] = []
     lane_labels: list[str] = []
     for stage in stages:
         y = y_positions[stage]
-        stage_record = STAGES[stage]
-        fill = _hex_to_rgba(stage_record.color, 0.10)
-        stroke = _hex_to_rgba(stage_record.color, 0.26)
+        stage_color = _theme_stage_color(stage)
+        fill = _hex_to_rgba(stage_color, 0.08)
+        stroke = _hex_to_rgba(stage_color, 0.26)
         lane_rects.append(
             f'<rect x="{lane_x}" y="{y}" width="{lane_w}" height="{lane_h}" rx="24" fill="{fill}" stroke="{stroke}" stroke-width="2"></rect>'
         )
         lane_labels.append(
-            f'<text x="{lane_x + 18}" y="{y + 28}" font-size="18" font-weight="800" fill="var(--tmk-text, #22304f)">{escape(stage_record.label)}</text>'
+            f'<text x="{lane_x + 18}" y="{y + 28}" font-size="18" font-weight="800" fill="var(--tmk-text)">{escape(STAGES[stage].label)}</text>'
         )
 
     background_lines: list[str] = []
@@ -1246,9 +1296,31 @@ def _world_map_html(
             factor_b = positions.get(record.intro_route[1])
 
             if factor_a and end:
-                background_lines.append(_svg_line(factor_a[0], factor_a[1], end[0], end[1], "#7d8ba2", 2.8, 0.58, ""))
+                background_lines.append(
+                    _svg_line(
+                        factor_a[0],
+                        factor_a[1],
+                        end[0],
+                        end[1],
+                        "var(--tmk-map-link-background)",
+                        3.2,
+                        0.95,
+                        "",
+                    )
+                )
             if factor_b and end:
-                background_lines.append(_svg_line(factor_b[0], factor_b[1], end[0], end[1], "#7d8ba2", 2.8, 0.58, ""))
+                background_lines.append(
+                    _svg_line(
+                        factor_b[0],
+                        factor_b[1],
+                        end[0],
+                        end[1],
+                        "var(--tmk-map-link-background)",
+                        3.2,
+                        0.95,
+                        "",
+                    )
+                )
 
     if link_mode in ("Selected links", "All links"):
         selected_end = positions[selected_product]
@@ -1256,8 +1328,30 @@ def _world_map_html(
             if factor in positions:
                 sx, sy = positions[factor]
                 ex, ey = selected_end
-                selected_lines.append(_svg_line(sx, sy, ex, ey, "#ff9f43", 4.0, 0.96, "8 6"))
-                selected_lines.append(_svg_line(sx, sy, ex, ey, "#7c3aed", 1.6, 0.96, "2 8"))
+                selected_lines.append(
+                    _svg_line(
+                        sx,
+                        sy,
+                        ex,
+                        ey,
+                        "var(--tmk-map-link-selected)",
+                        4.2,
+                        1.0,
+                        "8 6",
+                    )
+                )
+                selected_lines.append(
+                    _svg_line(
+                        sx,
+                        sy,
+                        ex,
+                        ey,
+                        "var(--tmk-map-link-overlay)",
+                        8.0,
+                        1.0,
+                        "",
+                    )
+                )
 
     nodes: list[str] = []
     for product in ALL_PRODUCTS:
@@ -1266,35 +1360,57 @@ def _world_map_html(
             continue
 
         x, y = positions[product]
-        fill = stage_color(record.stage)
+        fill = _theme_stage_color(record.stage)
         is_selected = product == selected_product
         radius = 36 if is_selected else 24
         outer_radius = radius + 6 if is_selected else radius + 3
-        outer_fill = "#ff9f43" if is_selected else _hex_to_rgba(fill, 0.14)
-        stroke = "#fff7ee" if is_selected else "#f8fafc"
+        outer_fill = "var(--tmk-map-node-selected)" if is_selected else _hex_to_rgba(fill, 0.14)
 
         nodes.append(f'<circle cx="{x}" cy="{y}" r="{outer_radius}" fill="{outer_fill}" opacity="0.95"></circle>')
-        nodes.append(f'<circle cx="{x}" cy="{y}" r="{radius}" fill="{fill}" stroke="{stroke}" stroke-width="4"></circle>')
+        nodes.append(
+            f'<circle cx="{x}" cy="{y}" r="{radius}" fill="{fill}" stroke="var(--tmk-map-node-outline)" stroke-width="4"></circle>'
+        )
         nodes.append(
             f'<text x="{x}" y="{y + 7}" text-anchor="middle" font-size="{22 if is_selected else 16}" font-weight="900" fill="#ffffff">{product}</text>'
         )
 
     svg = f"""
-    <svg viewBox="0 0 {total_width} {total_height}" width="{total_width}" height="{total_height}" xmlns="http://www.w3.org/2000/svg">
-        <rect x="0" y="0" width="{total_width}" height="{total_height}" fill="transparent"></rect>
-        {''.join(lane_rects)}
-        {''.join(background_lines)}
-        {''.join(selected_lines)}
-        {''.join(lane_labels)}
-        {''.join(nodes)}
-    </svg>
-    """
+    <html>
+    <head>
+        <style>
+            :root {{
+{light_vars}
+            }}
 
-    return f"""
-    <div style="background:transparent;border-radius:24px;overflow:auto;max-width:100%;padding-bottom:{bottom_padding}px;">
-        {svg}
-    </div>
+            @media (prefers-color-scheme: dark) {{
+                :root {{
+{dark_vars}
+                }}
+            }}
+
+            body {{
+                margin: 0;
+                background: transparent;
+                color: var(--tmk-text);
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            }}
+        </style>
+    </head>
+    <body>
+        <div style="background:transparent;border-radius:24px;overflow:auto;max-width:100%;padding-bottom:{bottom_padding}px;">
+            <svg viewBox="0 0 {total_width} {total_height}" width="{total_width}" height="{total_height}" xmlns="http://www.w3.org/2000/svg">
+                <rect x="0" y="0" width="{total_width}" height="{total_height}" fill="transparent"></rect>
+                {''.join(lane_rects)}
+                {''.join(background_lines)}
+                {''.join(selected_lines)}
+                {''.join(lane_labels)}
+                {''.join(nodes)}
+            </svg>
+        </div>
+    </body>
+    </html>
     """
+    return svg
 
 
 def _world_positions(
@@ -1332,20 +1448,28 @@ def _radial_hub_html(product: int) -> str:
     record = product_record(product)
     desktop_svg = _desktop_radial_svg(record)
     mobile_svg = _mobile_radial_svg(record)
+    light_vars = _embed_theme_vars(LIGHT_THEME)
+    dark_vars = _embed_theme_vars(DARK_THEME)
 
     return f"""
     <html>
     <head>
         <style>
             :root {{
-                color-scheme: light dark;
+{light_vars}
+            }}
+
+            @media (prefers-color-scheme: dark) {{
+                :root {{
+{dark_vars}
+                }}
             }}
 
             body {{
                 margin: 0;
                 padding: 0;
                 background: transparent;
-                color: #eef4ff;
+                color: var(--tmk-text);
                 font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             }}
 
@@ -1408,36 +1532,60 @@ def _desktop_radial_svg(record) -> str:
 
     for route, (bx, by) in zip(entry_routes, entry_points):
         ex, ey = _edge_point_toward(cx, cy, bx, by, radius + 14)
-        lines.append(_svg_arrow(bx, by + 24, ex, ey, "#dbe4f4", 4))
-        boxes.append(_svg_info_box(bx - 64, by, 128, 42, _format_route(route), "#163154", "#dbe4f4", "#ffffff", 18))
+        lines.append(_svg_arrow(bx, by + 24, ex, ey, "var(--tmk-stage-b)", 4))
+        boxes.append(
+            _svg_info_box(
+                bx - 64,
+                by,
+                128,
+                42,
+                _format_route(route),
+                "var(--tmk-surface)",
+                "var(--tmk-border)",
+                "var(--tmk-text)",
+                18,
+            )
+        )
 
     for label, (bx, by) in zip(exit_routes, exit_points):
         sx, sy = _edge_point_toward(cx, cy, bx, by, radius + 14)
-        lines.append(_svg_arrow(sx, sy, bx, by + 20, "#9c7cff", 4))
-        boxes.append(_svg_info_box(bx - 72, by, 144, 42, label, "#2f1a59", "#d9c4ff", "#ffffff", 18))
+        lines.append(_svg_arrow(sx, sy, bx, by + 20, "var(--tmk-stage-d)", 4))
+        boxes.append(
+            _svg_info_box(
+                bx - 72,
+                by,
+                144,
+                42,
+                label,
+                "var(--tmk-surface)",
+                "var(--tmk-border)",
+                "var(--tmk-text)",
+                18,
+            )
+        )
 
     return f"""
     <svg viewBox="0 0 840 560" xmlns="http://www.w3.org/2000/svg">
         <defs>
-            <marker id="arrow-end-light" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#dbe4f4"></path>
+            <marker id="arrow-end-entry" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--tmk-stage-b)"></path>
             </marker>
-            <marker id="arrow-end-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#9c7cff"></path>
+            <marker id="arrow-end-exit" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--tmk-stage-d)"></path>
             </marker>
         </defs>
-        <rect x="0" y="0" width="840" height="560" rx="28" fill="#071426"></rect>
-        <text x="18" y="28" font-size="18" font-weight="800" fill="#ffffff">Radial Hub View</text>
-        <text x="18" y="52" font-size="15" font-weight="500" fill="#d4def1">Entry routes above. Exit routes below. Arrowheads kept clear of the hub.</text>
-        <text x="{cx}" y="98" text-anchor="middle" font-size="24" font-weight="800" fill="#ffffff">Entry routes</text>
-        <text x="{cx}" y="468" text-anchor="middle" font-size="24" font-weight="800" fill="#ffffff">Exit routes</text>
+        <rect x="0" y="0" width="840" height="560" rx="28" fill="var(--tmk-surface-strong)"></rect>
+        <text x="18" y="28" font-size="18" font-weight="800" fill="var(--tmk-text)">Radial Hub View</text>
+        <text x="18" y="52" font-size="15" font-weight="500" fill="var(--tmk-text-soft)">Entry routes above. Exit routes below. Arrowheads kept clear of the hub.</text>
+        <text x="{cx}" y="98" text-anchor="middle" font-size="24" font-weight="800" fill="var(--tmk-text)">Entry routes</text>
+        <text x="{cx}" y="468" text-anchor="middle" font-size="24" font-weight="800" fill="var(--tmk-text)">Exit routes</text>
         {''.join(lines)}
-        <circle cx="{cx}" cy="{cy}" r="{radius}" fill="#9ba4b5" stroke="#f5f7fb" stroke-width="5"></circle>
+        <circle cx="{cx}" cy="{cy}" r="{radius}" fill="var(--tmk-accent)" stroke="var(--tmk-map-node-outline)" stroke-width="5"></circle>
         <text x="{cx}" y="{cy + 14}" text-anchor="middle" font-size="48" font-weight="900" fill="#ffffff">{product}</text>
         {''.join(boxes)}
     </svg>
-    """.replace('marker-end="LIGHT"', 'marker-end="url(#arrow-end-light)"').replace(
-        'marker-end="PURPLE"', 'marker-end="url(#arrow-end-purple)"'
+    """.replace('marker-end="ENTRY"', 'marker-end="url(#arrow-end-entry)"').replace(
+        'marker-end="EXIT"', 'marker-end="url(#arrow-end-exit)"'
     )
 
 
@@ -1451,27 +1599,76 @@ def _mobile_radial_svg(record) -> str:
 
     entry_y = 90
     for route in entry_routes:
-        entry_cards.append(_svg_info_box(40, entry_y, 280, 44, _format_route(route), "#163154", "#dbe4f4", "#ffffff", 18))
+        entry_cards.append(
+            _svg_info_box(
+                40,
+                entry_y,
+                280,
+                44,
+                _format_route(route),
+                "var(--tmk-surface)",
+                "var(--tmk-border)",
+                "var(--tmk-text)",
+                18,
+            )
+        )
         entry_y += 58
 
     exit_y = 380
     for label in exit_routes:
-        exit_cards.append(_svg_info_box(40, exit_y, 280, 44, label, "#2f1a59", "#d9c4ff", "#ffffff", 18))
+        exit_cards.append(
+            _svg_info_box(
+                40,
+                exit_y,
+                280,
+                44,
+                label,
+                "var(--tmk-surface)",
+                "var(--tmk-border)",
+                "var(--tmk-text)",
+                18,
+            )
+        )
         exit_y += 58
 
     return f"""
     <svg viewBox="0 0 360 660" xmlns="http://www.w3.org/2000/svg">
-        <rect x="0" y="0" width="360" height="660" rx="28" fill="#071426"></rect>
-        <text x="20" y="30" font-size="18" font-weight="800" fill="#ffffff">Radial Hub View</text>
-        <text x="20" y="58" font-size="15" font-weight="500" fill="#d4def1">Mobile stacked view</text>
-        <text x="40" y="82" font-size="18" font-weight="800" fill="#ffffff">Entry routes</text>
+        <rect x="0" y="0" width="360" height="660" rx="28" fill="var(--tmk-surface-strong)"></rect>
+        <text x="20" y="30" font-size="18" font-weight="800" fill="var(--tmk-text)">Radial Hub View</text>
+        <text x="20" y="58" font-size="15" font-weight="500" fill="var(--tmk-text-soft)">Mobile stacked view</text>
+        <text x="40" y="82" font-size="18" font-weight="800" fill="var(--tmk-text)">Entry routes</text>
         {''.join(entry_cards)}
-        <circle cx="180" cy="322" r="62" fill="#9ba4b5" stroke="#f5f7fb" stroke-width="5"></circle>
+        <circle cx="180" cy="322" r="62" fill="var(--tmk-accent)" stroke="var(--tmk-map-node-outline)" stroke-width="5"></circle>
         <text x="180" y="336" text-anchor="middle" font-size="38" font-weight="900" fill="#ffffff">{product}</text>
-        <text x="40" y="368" font-size="18" font-weight="800" fill="#ffffff">Exit routes</text>
+        <text x="40" y="368" font-size="18" font-weight="800" fill="var(--tmk-text)">Exit routes</text>
         {''.join(exit_cards)}
     </svg>
     """
+
+
+def _embed_theme_vars(theme: dict[str, str]) -> str:
+    return "\n".join(
+        [
+            f"                --tmk-bg: {theme['bg']};",
+            f"                --tmk-surface: {theme['surface']};",
+            f"                --tmk-surface-strong: {theme['surface_strong']};",
+            f"                --tmk-border: {theme['border']};",
+            f"                --tmk-text: {theme['text']};",
+            f"                --tmk-text-soft: {theme['text_soft']};",
+            f"                --tmk-accent: {theme['accent']};",
+            f"                --tmk-accent-soft: {theme['accent_soft']};",
+            f"                --tmk-map-link-selected: {theme['map_link_selected']};",
+            f"                --tmk-map-link-overlay: {theme['map_link_overlay']};",
+            f"                --tmk-map-link-background: {theme['map_link_background']};",
+            f"                --tmk-map-node-outline: {theme['map_node_outline']};",
+            f"                --tmk-map-node-selected: {theme['map_node_selected']};",
+            f"                --tmk-map-stage-tint: {theme['map_stage_tint']};",
+            f"                --tmk-stage-a: {theme['stage_a']};",
+            f"                --tmk-stage-b: {theme['stage_b']};",
+            f"                --tmk-stage-c: {theme['stage_c']};",
+            f"                --tmk-stage-d: {theme['stage_d']};",
+        ]
+    )
 
 
 def _point_on_circle(cx: float, cy: float, radius: float, angle_degrees: float) -> tuple[float, float]:
@@ -1550,7 +1747,7 @@ def _svg_arrow(
     color: str,
     width: float,
 ) -> str:
-    marker = "LIGHT" if color == "#dbe4f4" else "PURPLE"
+    marker = "ENTRY" if "stage-b" in color else "EXIT"
     return (
         f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{color}" '
         f'stroke-width="{width}" stroke-linecap="round" marker-end="{marker}"></line>'
@@ -1592,6 +1789,14 @@ def _hex_to_rgba(hex_color: str, alpha: float) -> str:
     green = int(hex_value[2:4], 16)
     blue = int(hex_value[4:6], 16)
     return f"rgba({red}, {green}, {blue}, {alpha})"
+
+
+def _theme_stage_color(stage: str) -> str:
+    stage_keys = ("stage_a", "stage_b", "stage_c", "stage_d")
+    visible_order = [item for item in STAGE_ORDER if item in STAGES]
+    index = visible_order.index(stage) if stage in visible_order else 0
+    key = stage_keys[min(index, len(stage_keys) - 1)]
+    return LIGHT_THEME[key]
 
 
 def _product_option_label(product: int) -> str:
