@@ -138,6 +138,30 @@ def _apply_styles() -> None:
                 line-height: 1.45;
             }
 
+            .tmk-nav-strip {
+                display: flex;
+                gap: 0.6rem;
+                flex-wrap: wrap;
+                margin-bottom: 1rem;
+            }
+
+            .tmk-nav-pill {
+                display: inline-flex;
+                align-items: center;
+                padding: 0.55rem 0.9rem;
+                border-radius: 999px;
+                border: 1px solid #dfd2bf;
+                background: #fffaf2;
+                color: #233250;
+                font-weight: 800;
+                font-size: 0.95rem;
+            }
+
+            .tmk-nav-pill-active {
+                background: #f2e3c8;
+                border-color: #c8ab7a;
+            }
+
             .tmk-panel {
                 background: rgba(255, 255, 255, 0.74);
                 border: 1px solid #eadfd0;
@@ -447,28 +471,31 @@ def _apply_styles() -> None:
 
 
 def _render_nav() -> None:
-    selected_surface = st.selectbox(
-        "Navigation",
-        options=SURFACES,
-        index=SURFACES.index(st.session_state.surface),
-        key="tmk_unique_surface_nav_selectbox_v1",
-        label_visibility="collapsed",
-    )
-
-    if selected_surface != st.session_state.surface:
-        st.session_state.surface = selected_surface
-        st.rerun()
+    pills: list[str] = []
+    for surface in SURFACES:
+        active_class = " tmk-nav-pill-active" if surface == st.session_state.surface else ""
+        pills.append(f'<span class="tmk-nav-pill{active_class}">{escape(surface)}</span>')
+    st.markdown(f'<div class="tmk-nav-strip">{"".join(pills)}</div>', unsafe_allow_html=True)
 
 
 def _render_sidebar() -> None:
     with st.sidebar:
         st.markdown("## Controls")
 
+        surface = st.selectbox(
+            "Surface",
+            options=SURFACES,
+            index=SURFACES.index(st.session_state.surface),
+            key="sidebar_surface_select_v1",
+        )
+        st.session_state.surface = surface
+
         product = st.selectbox(
             "Selected product",
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
+            key="sidebar_selected_product_v1",
         )
         if product != st.session_state.selected_product:
             st.session_state.selected_product = product
@@ -479,6 +506,7 @@ def _render_sidebar() -> None:
             options=TIERS,
             index=TIERS.index(st.session_state.selected_tier),
             horizontal=True,
+            key="sidebar_tier_radio_v1",
         )
         st.session_state.selected_tier = tier
 
@@ -487,6 +515,7 @@ def _render_sidebar() -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.compare_product),
             format_func=_product_option_label,
+            key="sidebar_compare_product_v1",
         )
         st.session_state.compare_product = compare_product
 
@@ -496,11 +525,13 @@ def _render_sidebar() -> None:
             "Link mode",
             options=PLANNER_LINK_MODES,
             index=PLANNER_LINK_MODES.index(st.session_state.planner_link_mode),
+            key="sidebar_link_mode_v1",
         )
         st.session_state.planner_link_mode = link_mode
         st.session_state.planner_focus_stage_only = st.checkbox(
             "Focus selected stage only",
             value=st.session_state.planner_focus_stage_only,
+            key="sidebar_focus_stage_only_v1",
         )
 
         record = product_record(st.session_state.selected_product)
@@ -533,7 +564,7 @@ def _render_structural_planner(product: int) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="planner_product_select",
+            key="planner_product_select_v1",
         )
     if selected != st.session_state.selected_product:
         st.session_state.selected_product = selected
@@ -544,7 +575,7 @@ def _render_structural_planner(product: int) -> None:
             "Link mode",
             options=PLANNER_LINK_MODES,
             index=PLANNER_LINK_MODES.index(st.session_state.planner_link_mode),
-            key="planner_link_mode_select",
+            key="planner_link_mode_select_v1",
         )
     st.session_state.planner_link_mode = link_mode
 
@@ -553,7 +584,7 @@ def _render_structural_planner(product: int) -> None:
             "Stage focus",
             options=("Whole world", "Selected stage only"),
             index=1 if st.session_state.planner_focus_stage_only else 0,
-            key="planner_stage_focus_select",
+            key="planner_stage_focus_select_v1",
         )
     st.session_state.planner_focus_stage_only = stage_focus == "Selected stage only"
 
@@ -860,11 +891,11 @@ def _render_visible_products_grid(product: int) -> None:
 
     for row_start in range(0, len(products), cols_per_row):
         cols = st.columns(cols_per_row)
-        for offset, visible_product in enumerate(products[row_start : row_start + cols_per_row]):
+        for offset, visible_product in enumerate(products[row_start: row_start + cols_per_row]):
             button_type = "primary" if visible_product == product else "secondary"
             if cols[offset].button(
                 str(visible_product),
-                key=f"visible_{visible_product}",
+                key=f"visible_product_button_v1_{visible_product}",
                 use_container_width=True,
                 type=button_type,
             ):
@@ -1217,9 +1248,6 @@ def _stringify(value) -> str:
         return _format_route(value)
     return str(value)
 
-
-if __name__ == "__main__":
-    main()
 
 if __name__ == "__main__":
     main()
