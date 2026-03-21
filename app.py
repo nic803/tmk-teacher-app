@@ -356,7 +356,7 @@ def _apply_styles() -> None:
             .tmk-line-swatch-grey {
                 width: 36px;
                 height: 0;
-                border-top: 2px solid rgba(170,181,197,0.8);
+                border-top: 3px solid rgba(125, 139, 162, 0.95);
                 position: relative;
             }
 
@@ -514,47 +514,49 @@ def _render_nav() -> None:
 
 
 def _on_sidebar_surface_change() -> None:
-    _set_surface(st.session_state.sidebar_surface_select_v2)
+    _set_surface(st.session_state.sidebar_surface_select_v3)
     st.rerun()
-
-
-def _on_sidebar_product_change() -> None:
-    st.session_state.selected_product = st.session_state.sidebar_selected_product_v2
-    st.rerun()
-
-
-def _on_sidebar_compare_product_change() -> None:
-    st.session_state.compare_product = st.session_state.sidebar_compare_product_v2
-
-
-def _on_sidebar_tier_change() -> None:
-    st.session_state.selected_tier = st.session_state.sidebar_tier_radio_v2
-
-
-def _on_sidebar_link_mode_change() -> None:
-    st.session_state.planner_link_mode = st.session_state.sidebar_link_mode_v2
-
-
-def _on_sidebar_focus_stage_change() -> None:
-    st.session_state.planner_focus_stage_only = st.session_state.sidebar_focus_stage_only_v2
 
 
 def _on_planner_product_change() -> None:
-    st.session_state.selected_product = st.session_state.planner_product_select_v2
+    st.session_state.selected_product = st.session_state.planner_product_select_v3
     st.rerun()
 
 
 def _on_planner_link_mode_change() -> None:
-    st.session_state.planner_link_mode = st.session_state.planner_link_mode_select_v2
+    st.session_state.planner_link_mode = st.session_state.planner_link_mode_select_v3
 
 
 def _on_planner_stage_focus_change() -> None:
     st.session_state.planner_focus_stage_only = (
-        st.session_state.planner_stage_focus_select_v2 == "Selected stage only"
+        st.session_state.planner_stage_focus_select_v3 == "Selected stage only"
     )
 
 
+def _on_lab_product_change() -> None:
+    st.session_state.selected_product = st.session_state.lab_product_select_v3
+    if st.session_state.compare_product == st.session_state.selected_product and len(ALL_PRODUCTS) > 1:
+        fallback = next(product for product in ALL_PRODUCTS if product != st.session_state.selected_product)
+        st.session_state.compare_product = fallback
+    st.rerun()
+
+
+def _on_lab_compare_change() -> None:
+    st.session_state.compare_product = st.session_state.lab_compare_select_v3
+
+
+def _on_worksheet_product_change() -> None:
+    st.session_state.selected_product = st.session_state.worksheet_product_select_v3
+    st.rerun()
+
+
+def _on_worksheet_tier_change() -> None:
+    st.session_state.selected_tier = st.session_state.worksheet_tier_radio_v3
+
+
 def _render_sidebar() -> None:
+    record = product_record(st.session_state.selected_product)
+
     with st.sidebar:
         st.markdown("## Controls")
 
@@ -562,69 +564,38 @@ def _render_sidebar() -> None:
             "Surface",
             options=SURFACES,
             index=SURFACES.index(st.session_state.surface),
-            key="sidebar_surface_select_v2",
+            key="sidebar_surface_select_v3",
             on_change=_on_sidebar_surface_change,
         )
 
-        st.selectbox(
-            "Selected product",
-            options=ALL_PRODUCTS,
-            index=ALL_PRODUCTS.index(st.session_state.selected_product),
-            format_func=_product_option_label,
-            key="sidebar_selected_product_v2",
-            on_change=_on_sidebar_product_change,
-        )
-
-        st.radio(
-            "Worksheet tier",
-            options=TIERS,
-            index=TIERS.index(st.session_state.selected_tier),
-            horizontal=True,
-            key="sidebar_tier_radio_v2",
-            on_change=_on_sidebar_tier_change,
-        )
-
-        st.selectbox(
-            "Compare with",
-            options=ALL_PRODUCTS,
-            index=ALL_PRODUCTS.index(st.session_state.compare_product),
-            format_func=_product_option_label,
-            key="sidebar_compare_product_v2",
-            on_change=_on_sidebar_compare_product_change,
-        )
-
         st.markdown("---")
-        st.markdown("### Planner display")
-
-        st.radio(
-            "Link mode",
-            options=PLANNER_LINK_MODES,
-            index=PLANNER_LINK_MODES.index(st.session_state.planner_link_mode),
-            key="sidebar_link_mode_v2",
-            on_change=_on_sidebar_link_mode_change,
-        )
-
-        st.checkbox(
-            "Focus selected stage only",
-            value=st.session_state.planner_focus_stage_only,
-            key="sidebar_focus_stage_only_v2",
-            on_change=_on_sidebar_focus_stage_change,
-        )
-
-        record = product_record(st.session_state.selected_product)
-
-        st.markdown("---")
-        st.markdown("### Current hub")
+        st.markdown("### Current selection")
         st.write(f"**Product:** {record.product}")
         st.write(f"**Stage:** {stage_label(record.stage)}")
         st.write(f"**Intro route:** {_format_route(record.intro_route)}")
+
+        if st.session_state.surface == "Structural Planner":
+            st.write(f"**Link mode:** {st.session_state.planner_link_mode}")
+            st.write(
+                f"**Stage focus:** {'Selected stage only' if st.session_state.planner_focus_stage_only else 'Whole world'}"
+            )
+
+        if st.session_state.surface == "Product Lab":
+            compare = product_record(st.session_state.compare_product)
+            st.write(f"**Compare with:** {compare.product}")
+
+        if st.session_state.surface == "Worksheet Studio":
+            st.write(f"**Tier:** {st.session_state.selected_tier}")
+
+        st.markdown("---")
+        st.markdown("### Hub summary")
         st.write(f"**Routes:** {len(record.factor_families)}")
         st.write(f"**Role:** {record.structural_role}")
 
 
 def _render_structural_planner(product: int) -> None:
     record = product_record(product)
-    map_width, map_height = _world_map_dimensions()
+    _, map_height = _world_map_dimensions()
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Structural Planner</div>', unsafe_allow_html=True)
@@ -642,7 +613,7 @@ def _render_structural_planner(product: int) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="planner_product_select_v2",
+            key="planner_product_select_v3",
             on_change=_on_planner_product_change,
         )
 
@@ -651,7 +622,7 @@ def _render_structural_planner(product: int) -> None:
             "Link mode",
             options=PLANNER_LINK_MODES,
             index=PLANNER_LINK_MODES.index(st.session_state.planner_link_mode),
-            key="planner_link_mode_select_v2",
+            key="planner_link_mode_select_v3",
             on_change=_on_planner_link_mode_change,
         )
 
@@ -660,16 +631,16 @@ def _render_structural_planner(product: int) -> None:
             "Stage focus",
             options=("Whole world", "Selected stage only"),
             index=1 if st.session_state.planner_focus_stage_only else 0,
-            key="planner_stage_focus_select_v2",
+            key="planner_stage_focus_select_v3",
             on_change=_on_planner_stage_focus_change,
         )
 
     st.markdown(
         """
         <div class="tmk-control-caption">
-            Selected links = only the selected product’s entry links are highlighted.
-            All links = the wider network appears faintly behind.
-            No links = stage layout only.
+            Selected links shows only the selected product’s intro route.
+            All links shows the wider world network in grey behind the highlighted route.
+            No links shows stage layout only.
         </div>
         """,
         unsafe_allow_html=True,
@@ -779,7 +750,37 @@ def _render_product_lab(product: int) -> None:
         '<div class="tmk-section-subtitle">Hub overview, readable radial map, route lists, inverse field, pattern links, and comparisons.</div>',
         unsafe_allow_html=True,
     )
+
+    control_col1, control_col2 = st.columns(2)
+
+    with control_col1:
+        st.selectbox(
+            "Selected product",
+            options=ALL_PRODUCTS,
+            index=ALL_PRODUCTS.index(st.session_state.selected_product),
+            format_func=_product_option_label,
+            key="lab_product_select_v3",
+            on_change=_on_lab_product_change,
+        )
+
+    compare_options = [item for item in ALL_PRODUCTS if item != st.session_state.selected_product]
+    if st.session_state.compare_product not in compare_options:
+        st.session_state.compare_product = compare_options[0]
+
+    with control_col2:
+        st.selectbox(
+            "Compare with",
+            options=compare_options,
+            index=compare_options.index(st.session_state.compare_product),
+            format_func=_product_option_label,
+            key="lab_compare_select_v3",
+            on_change=_on_lab_compare_change,
+        )
+
     st.markdown("</div>", unsafe_allow_html=True)
+
+    record = product_record(st.session_state.selected_product)
+    compare = product_record(st.session_state.compare_product)
 
     _metric_card_row(
         [
@@ -801,7 +802,7 @@ def _render_product_lab(product: int) -> None:
         unsafe_allow_html=True,
     )
     st.markdown('<div class="tmk-card-dark">', unsafe_allow_html=True)
-    components.html(_radial_hub_html(product), height=620, scrolling=True)
+    components.html(_radial_hub_html(record.product), height=620, scrolling=True)
     st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -843,12 +844,12 @@ def _render_product_lab(product: int) -> None:
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-subhead">Inverse field</div>', unsafe_allow_html=True)
-    st.markdown(_pill_cloud(_inverse_labels(product), accent=False), unsafe_allow_html=True)
+    st.markdown(_pill_cloud(_inverse_labels(record.product), accent=False), unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-subhead">Pattern links</div>', unsafe_allow_html=True)
-    _render_pattern_links(product)
+    _render_pattern_links(record.product)
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
@@ -879,15 +880,38 @@ def _render_product_lab(product: int) -> None:
 
 
 def _render_worksheet_studio(product: int, tier: str) -> None:
-    worksheet = generate_worksheet(product, tier)
-
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Worksheet Studio</div>', unsafe_allow_html=True)
     st.markdown(
         '<div class="tmk-section-subtitle">Choose product, choose Support/Core/Extension, generate worksheet, review teacher key.</div>',
         unsafe_allow_html=True,
     )
+
+    control_col1, control_col2 = st.columns(2)
+
+    with control_col1:
+        st.selectbox(
+            "Selected product",
+            options=ALL_PRODUCTS,
+            index=ALL_PRODUCTS.index(st.session_state.selected_product),
+            format_func=_product_option_label,
+            key="worksheet_product_select_v3",
+            on_change=_on_worksheet_product_change,
+        )
+
+    with control_col2:
+        st.radio(
+            "Worksheet tier",
+            options=TIERS,
+            index=TIERS.index(st.session_state.selected_tier),
+            horizontal=True,
+            key="worksheet_tier_radio_v3",
+            on_change=_on_worksheet_tier_change,
+        )
+
     st.markdown("</div>", unsafe_allow_html=True)
+
+    worksheet = generate_worksheet(st.session_state.selected_product, st.session_state.selected_tier)
 
     _metric_card_row(
         [
@@ -971,7 +995,7 @@ def _render_visible_products_grid(product: int) -> None:
             button_type = "primary" if visible_product == product else "secondary"
             if cols[offset].button(
                 str(visible_product),
-                key=f"visible_product_button_v2_{visible_product}",
+                key=f"visible_product_button_v3_{visible_product}",
                 use_container_width=True,
                 type=button_type,
             ):
@@ -1043,32 +1067,6 @@ def _world_map_html(
     selected_record = product_record(selected_product)
     total_width, total_height = _world_map_dimensions()
 
-    lines: list[str] = []
-
-    if link_mode == "All links":
-        for product in ALL_PRODUCTS:
-            record = product_record(product)
-
-            if focus_stage_only and record.stage != selected_record.stage:
-                continue
-
-            start = positions.get(record.intro_route[0])
-            end = positions.get(product)
-            if start and end:
-                lines.append(_svg_line(start[0], start[1], end[0], end[1], "#aab5c5", 2.2, 0.30, ""))
-            alt = positions.get(record.intro_route[1])
-            if alt and end:
-                lines.append(_svg_line(alt[0], alt[1], end[0], end[1], "#aab5c5", 2.2, 0.30, ""))
-
-    if link_mode in ("Selected links", "All links"):
-        selected_end = positions[selected_product]
-        for factor in selected_record.intro_route:
-            if factor in positions:
-                sx, sy = positions[factor]
-                ex, ey = selected_end
-                lines.append(_svg_line(sx, sy, ex, ey, "#ff9f43", 4.0, 0.96, "8 6"))
-                lines.append(_svg_line(sx, sy, ex, ey, "#7c3aed", 1.6, 0.96, "2 8"))
-
     lane_rects: list[str] = []
     lane_labels: list[str] = []
     for stage in stages:
@@ -1082,6 +1080,34 @@ def _world_map_html(
         lane_labels.append(
             f'<text x="{lane_x + 18}" y="{y + 28}" font-size="18" font-weight="800" fill="#22304f">{escape(stage_record.label)}</text>'
         )
+
+    background_lines: list[str] = []
+    selected_lines: list[str] = []
+
+    if link_mode == "All links":
+        for product in ALL_PRODUCTS:
+            record = product_record(product)
+
+            if focus_stage_only and record.stage != selected_record.stage:
+                continue
+
+            end = positions.get(product)
+            factor_a = positions.get(record.intro_route[0])
+            factor_b = positions.get(record.intro_route[1])
+
+            if factor_a and end:
+                background_lines.append(_svg_line(factor_a[0], factor_a[1], end[0], end[1], "#7d8ba2", 2.8, 0.58, ""))
+            if factor_b and end:
+                background_lines.append(_svg_line(factor_b[0], factor_b[1], end[0], end[1], "#7d8ba2", 2.8, 0.58, ""))
+
+    if link_mode in ("Selected links", "All links"):
+        selected_end = positions[selected_product]
+        for factor in selected_record.intro_route:
+            if factor in positions:
+                sx, sy = positions[factor]
+                ex, ey = selected_end
+                selected_lines.append(_svg_line(sx, sy, ex, ey, "#ff9f43", 4.0, 0.96, "8 6"))
+                selected_lines.append(_svg_line(sx, sy, ex, ey, "#7c3aed", 1.6, 0.96, "2 8"))
 
     nodes: list[str] = []
     for product in ALL_PRODUCTS:
@@ -1107,7 +1133,8 @@ def _world_map_html(
     <svg viewBox="0 0 {total_width} {total_height}" width="{total_width}" height="{total_height}" xmlns="http://www.w3.org/2000/svg">
         <rect x="0" y="0" width="{total_width}" height="{total_height}" fill="#f5f3ef"></rect>
         {''.join(lane_rects)}
-        {''.join(lines)}
+        {''.join(background_lines)}
+        {''.join(selected_lines)}
         {''.join(lane_labels)}
         {''.join(nodes)}
     </svg>
