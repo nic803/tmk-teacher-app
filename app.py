@@ -102,6 +102,11 @@ STAGE_NODE_SEQUENCE = (
     "#C76412",
 )
 
+MAP_NODE_OFFSETS = {
+    25: (-26.0, -10.0),
+    35: (20.0, -14.0),
+}
+
 
 st.set_page_config(
     page_title=APP_TITLE,
@@ -642,20 +647,20 @@ def _render_nav() -> None:
 
 
 def _on_planner_product_change() -> None:
-    st.session_state.selected_product = st.session_state.planner_product_select_v10
+    st.session_state.selected_product = st.session_state.planner_product_select_v11
     st.rerun()
 
 
 def _on_planner_link_mode_change() -> None:
-    st.session_state.planner_link_mode = st.session_state.planner_link_mode_select_v10
+    st.session_state.planner_link_mode = st.session_state.planner_link_mode_select_v11
 
 
 def _on_planner_zoom_mode_change() -> None:
-    st.session_state.planner_zoom_mode = st.session_state.planner_zoom_mode_select_v10
+    st.session_state.planner_zoom_mode = st.session_state.planner_zoom_mode_select_v11
 
 
 def _on_lab_product_change() -> None:
-    st.session_state.selected_product = st.session_state.lab_product_select_v10
+    st.session_state.selected_product = st.session_state.lab_product_select_v11
     if st.session_state.compare_product == st.session_state.selected_product and len(ALL_PRODUCTS) > 1:
         st.session_state.compare_product = next(
             item for item in ALL_PRODUCTS if item != st.session_state.selected_product
@@ -665,21 +670,21 @@ def _on_lab_product_change() -> None:
 
 
 def _on_lab_compare_change() -> None:
-    st.session_state.compare_product = st.session_state.lab_compare_select_v10
+    st.session_state.compare_product = st.session_state.lab_compare_select_v11
 
 
 def _on_lab_route_view_mode_change() -> None:
-    st.session_state.route_view_mode = st.session_state.lab_route_view_mode_v10
+    st.session_state.route_view_mode = st.session_state.lab_route_view_mode_v11
     st.session_state.selected_route_index = 0
 
 
 def _on_worksheet_product_change() -> None:
-    st.session_state.selected_product = st.session_state.worksheet_product_select_v10
+    st.session_state.selected_product = st.session_state.worksheet_product_select_v11
     st.rerun()
 
 
 def _on_worksheet_tier_change() -> None:
-    st.session_state.selected_tier = st.session_state.worksheet_tier_radio_v10
+    st.session_state.selected_tier = st.session_state.worksheet_tier_radio_v11
 
 
 def _render_sidebar() -> None:
@@ -706,7 +711,7 @@ def _render_sidebar() -> None:
 
         st.markdown("---")
         st.markdown("### Structural summary")
-        st.write(f"**Full routes:** {len(record.factor_families)}")
+        st.write(f"**Full routes:** {len(_distinct_factor_routes(record))}")
         st.write(f"**Division exits:** {len(record.ways_out)}")
         st.write(f"**Role:** {record.structural_role}")
 
@@ -717,6 +722,7 @@ def _render_structural_planner(product: int) -> None:
     _, map_height = _world_map_dimensions(focus_stage_only, record.stage)
     selected_stage_products = STAGES[record.stage].products
     visible_stage_order = [stage_label(stage) for stage in _visible_world_stages(False, record.stage)]
+    admissible_routes = _distinct_factor_routes(record)
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Structural Planner</div>', unsafe_allow_html=True)
@@ -734,7 +740,7 @@ def _render_structural_planner(product: int) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="planner_product_select_v10",
+            key="planner_product_select_v11",
             on_change=_on_planner_product_change,
         )
 
@@ -743,7 +749,7 @@ def _render_structural_planner(product: int) -> None:
             "Link mode",
             options=PLANNER_LINK_MODES,
             index=PLANNER_LINK_MODES.index(st.session_state.planner_link_mode),
-            key="planner_link_mode_select_v10",
+            key="planner_link_mode_select_v11",
             on_change=_on_planner_link_mode_change,
         )
 
@@ -752,7 +758,7 @@ def _render_structural_planner(product: int) -> None:
             "Planner zoom",
             options=PLANNER_ZOOM_MODES,
             index=PLANNER_ZOOM_MODES.index(st.session_state.planner_zoom_mode),
-            key="planner_zoom_mode_select_v10",
+            key="planner_zoom_mode_select_v11",
             on_change=_on_planner_zoom_mode_change,
         )
 
@@ -770,7 +776,7 @@ def _render_structural_planner(product: int) -> None:
         [
             ("Selected stage", stage_label(record.stage)),
             ("Introduced here", str(len(selected_stage_products))),
-            ("Full routes", str(len(record.factor_families))),
+            ("Full routes", str(len(admissible_routes))),
             ("Division exits", str(len(record.ways_out))),
         ]
     )
@@ -817,6 +823,21 @@ def _render_structural_planner(product: int) -> None:
         exit_labels = "<br>".join(escape(f"{record.product}÷{a}={b}") for a, b in record.ways_out[:6])
         st.markdown(f'<div class="tmk-note">{exit_labels}</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-subhead">Full admissible routes</div>', unsafe_allow_html=True)
+    route_labels = "<br>".join(escape(_format_route(route)) for route in admissible_routes)
+    st.markdown(
+        f"""
+        <div class="tmk-note">
+            These are the admissible multiplication pairings around the selected product.<br>
+            The intro route above remains the pedagogical first entry.
+        </div>
+        <div class="tmk-note" style="margin-top:0.55rem;">{route_labels}</div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
 
     _render_stage_cards(product)
 
@@ -897,7 +918,7 @@ def _render_product_lab(product: int) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="lab_product_select_v10",
+            key="lab_product_select_v11",
             on_change=_on_lab_product_change,
         )
 
@@ -911,7 +932,7 @@ def _render_product_lab(product: int) -> None:
             options=compare_options,
             index=compare_options.index(st.session_state.compare_product),
             format_func=_product_option_label,
-            key="lab_compare_select_v10",
+            key="lab_compare_select_v11",
             on_change=_on_lab_compare_change,
         )
 
@@ -921,7 +942,7 @@ def _render_product_lab(product: int) -> None:
             options=ROUTE_VIEW_MODES,
             index=ROUTE_VIEW_MODES.index(st.session_state.route_view_mode),
             horizontal=True,
-            key="lab_route_view_mode_v10",
+            key="lab_route_view_mode_v11",
             on_change=_on_lab_route_view_mode_change,
         )
 
@@ -934,7 +955,7 @@ def _render_product_lab(product: int) -> None:
         [
             ("Product", str(record.product)),
             ("Stage", stage_label(record.stage)),
-            ("Routes", str(len(record.factor_families))),
+            ("Routes", str(len(_distinct_factor_routes(record)))),
             ("Role", record.structural_role),
         ]
     )
@@ -944,7 +965,7 @@ def _render_product_lab(product: int) -> None:
     st.markdown(
         """
         <div class="tmk-note">
-            Entry routes sit above the hub. Exit routes sit below the hub. A compact mobile layout is included automatically.
+            Entry routes sit above the hub. Exit routes sit below the hub. Only distinct factor pairings are shown, not mirrored duplicates.
         </div>
         """,
         unsafe_allow_html=True,
@@ -979,7 +1000,7 @@ def _render_product_lab(product: int) -> None:
         f"""
         <div class="tmk-note">
             The centre circle is <strong>{record.product}</strong>.<br>
-            The inward routes are multiplication routes that make the product.<br>
+            The inward routes are distinct multiplication routes that make the product.<br>
             The outward routes are division routes that recover factors from the product.<br>
             The intro route stays fixed as <strong>{_format_route(record.intro_route)}</strong>.
         </div>
@@ -990,7 +1011,7 @@ def _render_product_lab(product: int) -> None:
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-subhead">Truth set</div>', unsafe_allow_html=True)
-    st.markdown(_pill_cloud(record.ways_in, accent=True), unsafe_allow_html=True)
+    st.markdown(_pill_cloud(_distinct_factor_routes(record), accent=True), unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
@@ -1023,7 +1044,7 @@ def _render_product_lab(product: int) -> None:
         <div class="tmk-note"><strong>{record.product}</strong> · {stage_label(record.stage)} · {_format_route(record.intro_route)}</div>
         <div class="tmk-note"><strong>{compare.product}</strong> · {stage_label(compare.stage)} · {_format_route(compare.intro_route)}</div>
         <div class="tmk-note">Shared factors: {_shared_factors(record.product, compare.product)}</div>
-        <div class="tmk-note">Route counts: {len(record.factor_families)} vs {len(compare.factor_families)}</div>
+        <div class="tmk-note">Route counts: {len(_distinct_factor_routes(record))} vs {len(_distinct_factor_routes(compare))}</div>
         """,
         unsafe_allow_html=True,
     )
@@ -1053,7 +1074,7 @@ def _render_route_inspector(record) -> None:
         button_type = "primary" if index == st.session_state.selected_route_index else "secondary"
         if col.button(
             item["label"],
-            key=f"route_inspector_button_v10_{st.session_state.route_view_mode}_{index}",
+            key=f"route_inspector_button_v11_{st.session_state.route_view_mode}_{index}",
             use_container_width=True,
             type=button_type,
         ):
@@ -1079,7 +1100,7 @@ def _route_inspector_items(record, mode: str) -> list[dict[str, str]]:
                 {
                     "label": _format_route((a, b)),
                     "headline": f"{a} × {b} = {record.product}",
-                    "explanation": f"This entry route makes {record.product} by combining {a} and {b}.",
+                    "explanation": f"This distinct entry route makes {record.product} by combining {a} and {b}.",
                 }
             )
         return items
@@ -1112,7 +1133,7 @@ def _render_worksheet_studio(product: int, tier: str) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="worksheet_product_select_v10",
+            key="worksheet_product_select_v11",
             on_change=_on_worksheet_product_change,
         )
 
@@ -1122,7 +1143,7 @@ def _render_worksheet_studio(product: int, tier: str) -> None:
             options=TIERS,
             index=TIERS.index(st.session_state.selected_tier),
             horizontal=True,
-            key="worksheet_tier_radio_v10",
+            key="worksheet_tier_radio_v11",
             on_change=_on_worksheet_tier_change,
         )
 
@@ -1216,7 +1237,7 @@ def _render_visible_products_grid(product: int, only_stage: str | None = None) -
             button_type = "primary" if visible_product == product else "secondary"
             if cols[offset].button(
                 str(visible_product),
-                key=f"visible_product_button_v10_{only_stage}_{visible_product}",
+                key=f"visible_product_button_v11_{only_stage}_{visible_product}",
                 use_container_width=True,
                 type=button_type,
             ):
@@ -1331,7 +1352,7 @@ def _world_map_html(
             for product in stage_products:
                 record = product_record(product)
                 end_x, end_y = positions[product]
-                for factor in record.intro_route:
+                for factor in _factor_route_highlight_sources(record):
                     if factor in positions:
                         start_x, start_y = positions[factor]
                         background_lines.append(
@@ -1438,14 +1459,17 @@ def _world_positions(
         y = row_top + header_band_h + (lane_h - header_band_h) / 2 + 10
 
         if len(products) == 1:
-            positions[products[0]] = (lane_x + left_label_space + usable_x / 2, y)
+            base_x = lane_x + left_label_space + usable_x / 2
+            dx, dy = MAP_NODE_OFFSETS.get(products[0], (0.0, 0.0))
+            positions[products[0]] = (base_x + dx, y + dy)
             continue
 
         step = usable_x / (len(products) - 1)
         start_x = lane_x + left_label_space
         for index, product in enumerate(products):
-            x = start_x + index * step
-            positions[product] = (x, y)
+            base_x = start_x + index * step
+            dx, dy = MAP_NODE_OFFSETS.get(product, (0.0, 0.0))
+            positions[product] = (base_x + dx, y + dy)
 
     return positions
 
@@ -1583,7 +1607,7 @@ def _desktop_radial_svg(record) -> str:
         </defs>
         <rect x="0" y="0" width="840" height="560" rx="28" fill="var(--tmk-surface-strong)"></rect>
         <text x="18" y="28" font-size="18" font-weight="800" fill="var(--tmk-text)">Radial Hub View</text>
-        <text x="18" y="52" font-size="15" font-weight="500" fill="var(--tmk-text-soft)">Entry routes above. Exit routes below. Arrowheads kept clear of the hub.</text>
+        <text x="18" y="52" font-size="15" font-weight="500" fill="var(--tmk-text-soft)">Entry routes above. Exit routes below. Distinct factor pairings only.</text>
         <text x="{cx}" y="98" text-anchor="middle" font-size="24" font-weight="800" fill="var(--tmk-text)">Entry routes</text>
         <text x="{cx}" y="468" text-anchor="middle" font-size="24" font-weight="800" fill="var(--tmk-text)">Exit routes</text>
         {''.join(lines)}
@@ -1682,21 +1706,39 @@ def _point_on_circle(cx: float, cy: float, radius: float, angle_degrees: float) 
     return cx + radius * cos(angle_radians), cy + radius * sin(angle_radians)
 
 
-def _entry_routes_for_radial(record) -> list[tuple[int, int]]:
+def _canonical_route(route: tuple[int, int]) -> tuple[int, int]:
+    a, b = route
+    return (a, b) if a <= b else (b, a)
+
+
+def _distinct_factor_routes(record) -> list[tuple[int, int]]:
+    seen: set[tuple[int, int]] = set()
     routes: list[tuple[int, int]] = []
-    intro = record.intro_route
+
+    intro = _canonical_route(record.intro_route)
+    seen.add(intro)
     routes.append(intro)
-    if intro[0] != intro[1]:
-        routes.append((intro[1], intro[0]))
+
     for route in record.factor_families:
-        if route not in routes:
-            routes.append(route)
-        reversed_route = (route[1], route[0])
-        if reversed_route not in routes and reversed_route != route:
-            routes.append(reversed_route)
-        if len(routes) >= 4:
-            break
-    return routes[:4]
+        canonical = _canonical_route(route)
+        if canonical not in seen:
+            seen.add(canonical)
+            routes.append(canonical)
+
+    return routes
+
+
+def _factor_route_highlight_sources(record) -> tuple[int, ...]:
+    sources: list[int] = []
+    for route in _distinct_factor_routes(record):
+        for factor in route:
+            if factor not in sources:
+                sources.append(factor)
+    return tuple(sources)
+
+
+def _entry_routes_for_radial(record) -> list[tuple[int, int]]:
+    return _distinct_factor_routes(record)[:4]
 
 
 def _exit_routes_for_radial(record) -> list[str]:
@@ -1709,8 +1751,8 @@ def _exit_routes_for_radial(record) -> list[str]:
 
 
 def _shared_factors(product_a: int, product_b: int) -> str:
-    factors_a = {n for route in product_record(product_a).ways_in for n in route}
-    factors_b = {n for route in product_record(product_b).ways_in for n in route}
+    factors_a = {n for route in _distinct_factor_routes(product_record(product_a)) for n in route}
+    factors_b = {n for route in _distinct_factor_routes(product_record(product_b)) for n in route}
     shared = sorted(factors_a.intersection(factors_b))
     return ", ".join(str(n) for n in shared) if shared else "none"
 
