@@ -27,8 +27,8 @@ except Exception:
 APP_TITLE = "TMK Teacher App"
 SURFACES = ("Structural Planner", "Product Lab", "Worksheet Studio")
 TIERS = ("Support", "Core", "Extension")
-PLANNER_LINK_MODES = ("Selected links", "All links", "No links")
-PLANNER_ZOOM_MODES = ("Whole world", "Selected stage lane only")
+PLANNER_LINK_MODES = ("Selected links", "Show selected atlas", "No links")
+PLANNER_ZOOM_MODES = ("Whole world", "Selected stage only")
 ROUTE_VIEW_MODES = ("Entry routes", "Exit routes")
 
 LIGHT_THEME = {
@@ -41,13 +41,9 @@ LIGHT_THEME = {
     "accent": "#C76412",
     "accent_soft": "#E89A3A",
     "map_link_selected": "#C76412",
-    "map_link_future": "rgba(199, 100, 18, 0.35)",
+    "map_link_atlas": "rgba(199, 100, 18, 0.30)",
     "map_node_outline": "#E3D6C6",
     "map_node_selected": "#C76412",
-    "stage_a": "#C76412",
-    "stage_b": "#4F6D8A",
-    "stage_c": "#3F7C85",
-    "stage_d": "#6C5B7B",
 }
 
 DARK_THEME = {
@@ -60,13 +56,9 @@ DARK_THEME = {
     "accent": "#E89A3A",
     "accent_soft": "#C76412",
     "map_link_selected": "#E89A3A",
-    "map_link_future": "rgba(232, 154, 58, 0.35)",
+    "map_link_atlas": "rgba(232, 154, 58, 0.28)",
     "map_node_outline": "#364454",
     "map_node_selected": "#E89A3A",
-    "stage_a": "#E89A3A",
-    "stage_b": "#7F9BB6",
-    "stage_c": "#73A9A7",
-    "stage_d": "#9A88AD",
 }
 
 STAGE_BACKGROUND_SEQUENCE = (
@@ -102,9 +94,9 @@ STAGE_NODE_SEQUENCE = (
     "#C76412",
 )
 
-MAP_NODE_OFFSETS = {
-    25: (-26.0, -10.0),
-    35: (20.0, -14.0),
+MAP_NODE_OFFSETS: dict[int, tuple[float, float]] = {
+    25: (-30.0, -12.0),
+    35: (24.0, -14.0),
 }
 
 
@@ -137,16 +129,12 @@ def main() -> None:
     _render_nav()
     _render_sidebar()
 
-    surface = st.session_state.surface
-    product = st.session_state.selected_product
-    tier = st.session_state.selected_tier
-
-    if surface == "Structural Planner":
-        _render_structural_planner(product)
-    elif surface == "Product Lab":
-        _render_product_lab(product)
+    if st.session_state.surface == "Structural Planner":
+        _render_structural_planner(st.session_state.selected_product)
+    elif st.session_state.surface == "Product Lab":
+        _render_product_lab(st.session_state.selected_product)
     else:
-        _render_worksheet_studio(product, tier)
+        _render_worksheet_studio(st.session_state.selected_product, st.session_state.selected_tier)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -154,69 +142,36 @@ def main() -> None:
 def _ensure_state() -> None:
     if "surface" not in st.session_state:
         st.session_state.surface = "Structural Planner"
-
     if "selected_product" not in st.session_state:
         st.session_state.selected_product = 36 if 36 in ALL_PRODUCTS else ALL_PRODUCTS[0]
-
     if "selected_tier" not in st.session_state:
         st.session_state.selected_tier = "Core"
-
     if "compare_product" not in st.session_state:
-        default_compare = 24 if 24 in ALL_PRODUCTS else ALL_PRODUCTS[0]
-        if default_compare == st.session_state.selected_product and len(ALL_PRODUCTS) > 1:
-            default_compare = ALL_PRODUCTS[1]
-        st.session_state.compare_product = default_compare
-
+        fallback = 24 if 24 in ALL_PRODUCTS else ALL_PRODUCTS[0]
+        if fallback == st.session_state.selected_product and len(ALL_PRODUCTS) > 1:
+            fallback = ALL_PRODUCTS[1]
+        st.session_state.compare_product = fallback
     if "planner_link_mode" not in st.session_state:
         st.session_state.planner_link_mode = "Selected links"
-
     if "planner_zoom_mode" not in st.session_state:
         st.session_state.planner_zoom_mode = "Whole world"
-
     if "route_view_mode" not in st.session_state:
         st.session_state.route_view_mode = "Entry routes"
-
     if "selected_route_index" not in st.session_state:
         st.session_state.selected_route_index = 0
 
 
 def _sync_surface_from_query_params() -> None:
-    params = st.query_params
-    requested_surface = params.get("surface")
-
+    requested_surface = st.query_params.get("surface")
     if isinstance(requested_surface, list):
         requested_surface = requested_surface[0] if requested_surface else None
-
     if requested_surface in SURFACES and requested_surface != st.session_state.surface:
         st.session_state.surface = requested_surface
 
 
-def _css_theme_vars(theme: dict[str, str]) -> str:
-    return "\n".join(
-        [
-            f"                --tmk-bg: {theme['bg']};",
-            f"                --tmk-surface: {theme['surface']};",
-            f"                --tmk-surface-strong: {theme['surface_strong']};",
-            f"                --tmk-border: {theme['border']};",
-            f"                --tmk-text: {theme['text']};",
-            f"                --tmk-text-soft: {theme['text_soft']};",
-            f"                --tmk-accent: {theme['accent']};",
-            f"                --tmk-accent-soft: {theme['accent_soft']};",
-            f"                --tmk-map-link-selected: {theme['map_link_selected']};",
-            f"                --tmk-map-link-future: {theme['map_link_future']};",
-            f"                --tmk-map-node-outline: {theme['map_node_outline']};",
-            f"                --tmk-map-node-selected: {theme['map_node_selected']};",
-            f"                --tmk-stage-a: {theme['stage_a']};",
-            f"                --tmk-stage-b: {theme['stage_b']};",
-            f"                --tmk-stage-c: {theme['stage_c']};",
-            f"                --tmk-stage-d: {theme['stage_d']};",
-        ]
-    )
-
-
 def _apply_styles() -> None:
-    light_vars = _css_theme_vars(LIGHT_THEME)
-    dark_vars = _css_theme_vars(DARK_THEME)
+    light_vars = _theme_css_vars(LIGHT_THEME)
+    dark_vars = _theme_css_vars(DARK_THEME)
 
     st.markdown(
         f"""
@@ -299,11 +254,6 @@ def _apply_styles() -> None:
                 text-decoration: none;
             }}
 
-            .tmk-nav-link:hover {{
-                border-color: var(--tmk-accent);
-                color: var(--tmk-text);
-            }}
-
             .tmk-nav-link-active {{
                 background: var(--tmk-accent-soft);
                 border-color: var(--tmk-accent);
@@ -317,6 +267,23 @@ def _apply_styles() -> None:
                 padding: 1rem;
                 box-shadow: 0 10px 30px rgba(34, 46, 75, 0.05);
                 margin-bottom: 1rem;
+            }}
+
+            .tmk-card {{
+                background: linear-gradient(180deg, var(--tmk-surface) 0%, var(--tmk-surface-strong) 100%);
+                border: 1px solid var(--tmk-border);
+                border-radius: 18px;
+                padding: 0.95rem 1rem;
+                height: 100%;
+                margin-bottom: 0.75rem;
+            }}
+
+            .tmk-card-dark {{
+                background: linear-gradient(180deg, rgba(8, 23, 47, 0.98) 0%, rgba(13, 28, 50, 0.98) 100%);
+                border: 1px solid var(--tmk-border);
+                border-radius: 24px;
+                padding: 0.75rem;
+                margin-bottom: 0.75rem;
             }}
 
             .tmk-section-title {{
@@ -334,22 +301,11 @@ def _apply_styles() -> None:
                 line-height: 1.45;
             }}
 
-            .tmk-card {{
-                background: linear-gradient(180deg, var(--tmk-surface) 0%, var(--tmk-surface-strong) 100%);
-                border: 1px solid var(--tmk-border);
-                border-radius: 18px;
-                padding: 0.95rem 1rem;
-                height: 100%;
-                margin-bottom: 0.75rem;
-            }}
-
-            .tmk-card-dark {{
-                background: linear-gradient(180deg, rgba(8, 23, 47, 0.98) 0%, rgba(13, 28, 50, 0.98) 100%);
-                border: 1px solid var(--tmk-border);
-                border-radius: 24px;
-                padding: 0.75rem;
-                height: 100%;
-                margin-bottom: 0.75rem;
+            .tmk-subhead {{
+                font-size: 1.18rem;
+                font-weight: 800;
+                color: var(--tmk-text);
+                margin-bottom: 0.5rem;
             }}
 
             .tmk-small-label {{
@@ -362,11 +318,16 @@ def _apply_styles() -> None:
             }}
 
             .tmk-value {{
-                font-size: 1.35rem;
+                font-size: 1.3rem;
                 font-weight: 800;
                 color: var(--tmk-text);
                 line-height: 1.2;
-                word-break: break-word;
+            }}
+
+            .tmk-note {{
+                color: var(--tmk-text-soft);
+                font-size: 0.98rem;
+                line-height: 1.55;
             }}
 
             .tmk-soft-list {{
@@ -393,19 +354,6 @@ def _apply_styles() -> None:
                 background: var(--tmk-accent-soft);
                 border-color: var(--tmk-accent);
                 color: #ffffff;
-            }}
-
-            .tmk-note {{
-                color: var(--tmk-text-soft);
-                font-size: 0.98rem;
-                line-height: 1.55;
-            }}
-
-            .tmk-subhead {{
-                font-size: 1.18rem;
-                font-weight: 800;
-                color: var(--tmk-text);
-                margin-bottom: 0.5rem;
             }}
 
             .tmk-stage-card {{
@@ -464,7 +412,7 @@ def _apply_styles() -> None:
             .tmk-line-swatch-purple {{
                 width: 36px;
                 height: 0;
-                border-top: 3px solid var(--tmk-map-link-future);
+                border-top: 3px solid var(--tmk-map-link-atlas);
             }}
 
             .tmk-line-swatch-grey {{
@@ -490,13 +438,6 @@ def _apply_styles() -> None:
                 color: var(--tmk-text);
             }}
 
-            .tmk-control-caption {{
-                font-size: 0.92rem;
-                color: var(--tmk-text-soft);
-                line-height: 1.45;
-                margin-top: 0.25rem;
-            }}
-
             .tmk-mobile-note {{
                 color: var(--tmk-text-soft);
                 font-size: 0.9rem;
@@ -516,11 +457,6 @@ def _apply_styles() -> None:
                 white-space: normal;
             }}
 
-            .stButton > button:hover {{
-                border-color: var(--tmk-accent);
-                color: var(--tmk-text);
-            }}
-
             [data-testid="stSidebar"] {{
                 background: var(--tmk-surface-strong);
                 border-left: 1px solid var(--tmk-border);
@@ -530,110 +466,41 @@ def _apply_styles() -> None:
                 color: var(--tmk-text);
             }}
 
-            .stSelectbox label,
-            .stRadio label,
-            .stCheckbox label,
-            .stMarkdown,
-            .stCaption,
-            .stText {{
-                color: var(--tmk-text);
-            }}
-
-            @media (max-width: 900px) {{
-                .tmk-shell {{
-                    max-width: 100%;
-                }}
-
-                .tmk-header {{
-                    border-radius: 18px;
-                    padding: 1rem 0.95rem 0.9rem 0.95rem;
-                }}
-
-                .tmk-header h1 {{
-                    font-size: 1.6rem;
-                }}
-
-                .tmk-panel {{
-                    border-radius: 18px;
-                    padding: 0.85rem;
-                }}
-
-                .tmk-section-title {{
-                    font-size: 1.55rem;
-                }}
-
-                .tmk-value {{
-                    font-size: 1.18rem;
-                }}
-            }}
-
             @media (max-width: 640px) {{
-                .block-container {{
-                    padding-left: 0.65rem;
-                    padding-right: 0.65rem;
-                }}
-
-                .tmk-header {{
-                    padding: 0.9rem 0.85rem 0.85rem 0.85rem;
-                    margin-bottom: 0.8rem;
-                }}
-
-                .tmk-kicker {{
-                    font-size: 0.68rem;
-                }}
-
                 .tmk-header h1 {{
                     font-size: 1.36rem;
-                }}
-
-                .tmk-header p {{
-                    font-size: 0.93rem;
-                    line-height: 1.45;
-                }}
-
-                .tmk-panel {{
-                    padding: 0.75rem;
-                    border-radius: 16px;
                 }}
 
                 .tmk-section-title {{
                     font-size: 1.3rem;
                 }}
 
-                .tmk-section-subtitle,
-                .tmk-note,
-                .tmk-control-caption,
-                .tmk-mobile-note {{
+                .tmk-note {{
                     font-size: 0.92rem;
-                    line-height: 1.5;
-                }}
-
-                .tmk-subhead {{
-                    font-size: 1.02rem;
-                }}
-
-                .tmk-small-label {{
-                    font-size: 0.66rem;
-                }}
-
-                .tmk-value {{
-                    font-size: 1.06rem;
-                    line-height: 1.25;
-                }}
-
-                .tmk-pill {{
-                    font-size: 0.88rem;
-                    padding: 0.38rem 0.58rem;
-                }}
-
-                .stButton > button {{
-                    min-height: 2.8rem;
-                    font-size: 0.94rem;
                 }}
             }}
         </style>
         """,
         unsafe_allow_html=True,
+    )
+
+
+def _theme_css_vars(theme: dict[str, str]) -> str:
+    return "\n".join(
+        [
+            f"                --tmk-bg: {theme['bg']};",
+            f"                --tmk-surface: {theme['surface']};",
+            f"                --tmk-surface-strong: {theme['surface_strong']};",
+            f"                --tmk-border: {theme['border']};",
+            f"                --tmk-text: {theme['text']};",
+            f"                --tmk-text-soft: {theme['text_soft']};",
+            f"                --tmk-accent: {theme['accent']};",
+            f"                --tmk-accent-soft: {theme['accent_soft']};",
+            f"                --tmk-map-link-selected: {theme['map_link_selected']};",
+            f"                --tmk-map-link-atlas: {theme['map_link_atlas']};",
+            f"                --tmk-map-node-outline: {theme['map_node_outline']};",
+            f"                --tmk-map-node-selected: {theme['map_node_selected']};",
+        ]
     )
 
 
@@ -646,47 +513,6 @@ def _render_nav() -> None:
     st.markdown(f'<div class="tmk-nav-strip">{"".join(links)}</div>', unsafe_allow_html=True)
 
 
-def _on_planner_product_change() -> None:
-    st.session_state.selected_product = st.session_state.planner_product_select_v11
-    st.rerun()
-
-
-def _on_planner_link_mode_change() -> None:
-    st.session_state.planner_link_mode = st.session_state.planner_link_mode_select_v11
-
-
-def _on_planner_zoom_mode_change() -> None:
-    st.session_state.planner_zoom_mode = st.session_state.planner_zoom_mode_select_v11
-
-
-def _on_lab_product_change() -> None:
-    st.session_state.selected_product = st.session_state.lab_product_select_v11
-    if st.session_state.compare_product == st.session_state.selected_product and len(ALL_PRODUCTS) > 1:
-        st.session_state.compare_product = next(
-            item for item in ALL_PRODUCTS if item != st.session_state.selected_product
-        )
-    st.session_state.selected_route_index = 0
-    st.rerun()
-
-
-def _on_lab_compare_change() -> None:
-    st.session_state.compare_product = st.session_state.lab_compare_select_v11
-
-
-def _on_lab_route_view_mode_change() -> None:
-    st.session_state.route_view_mode = st.session_state.lab_route_view_mode_v11
-    st.session_state.selected_route_index = 0
-
-
-def _on_worksheet_product_change() -> None:
-    st.session_state.selected_product = st.session_state.worksheet_product_select_v11
-    st.rerun()
-
-
-def _on_worksheet_tier_change() -> None:
-    st.session_state.selected_tier = st.session_state.worksheet_tier_radio_v11
-
-
 def _render_sidebar() -> None:
     record = product_record(st.session_state.selected_product)
 
@@ -695,10 +521,12 @@ def _render_sidebar() -> None:
         st.write(f"**Product:** {record.product}")
         st.write(f"**Stage:** {stage_label(record.stage)}")
         st.write(f"**Intro route:** {_format_route(record.intro_route)}")
+        st.write(f"**Full routes:** {len(_distinct_factor_routes(record))}")
+        st.write(f"**Division exits:** {len(record.ways_out)}")
+        st.write(f"**Role:** {record.structural_role}")
 
         st.markdown("---")
         st.markdown("### Current surface")
-
         if st.session_state.surface == "Structural Planner":
             st.write(f"**Link mode:** {st.session_state.planner_link_mode}")
             st.write(f"**Zoom:** {st.session_state.planner_zoom_mode}")
@@ -709,135 +537,111 @@ def _render_sidebar() -> None:
         else:
             st.write(f"**Tier:** {st.session_state.selected_tier}")
 
-        st.markdown("---")
-        st.markdown("### Structural summary")
-        st.write(f"**Full routes:** {len(_distinct_factor_routes(record))}")
-        st.write(f"**Division exits:** {len(record.ways_out)}")
-        st.write(f"**Role:** {record.structural_role}")
-
 
 def _render_structural_planner(product: int) -> None:
     record = product_record(product)
-    focus_stage_only = st.session_state.planner_zoom_mode == "Selected stage lane only"
-    _, map_height = _world_map_dimensions(focus_stage_only, record.stage)
-    selected_stage_products = STAGES[record.stage].products
-    visible_stage_order = [stage_label(stage) for stage in _visible_world_stages(False, record.stage)]
     admissible_routes = _distinct_factor_routes(record)
+    focus_stage_only = st.session_state.planner_zoom_mode == "Selected stage only"
+    map_height = _world_map_height(focus_stage_only, record.stage)
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Structural Planner</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="tmk-section-subtitle">The planner shows structural curriculum logic: fixed stage order, stage introductions, selected intro route, wider route atlas, division exits, and structural reason.</div>',
+        '<div class="tmk-section-subtitle">Fixed stage order, stage introductions, pedagogical intro route, wider admissible atlas, division exits, and structural role.</div>',
         unsafe_allow_html=True,
     )
 
-    st.markdown("### Planner controls")
     control_col1, control_col2, control_col3 = st.columns(3)
 
     with control_col1:
-        st.selectbox(
+        selected = st.selectbox(
             "Selected product",
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="planner_product_select_v11",
-            on_change=_on_planner_product_change,
+            key="planner_product_select_v12",
         )
+        if selected != st.session_state.selected_product:
+            st.session_state.selected_product = selected
+            st.rerun()
 
     with control_col2:
-        st.selectbox(
+        mode = st.selectbox(
             "Link mode",
             options=PLANNER_LINK_MODES,
             index=PLANNER_LINK_MODES.index(st.session_state.planner_link_mode),
-            key="planner_link_mode_select_v11",
-            on_change=_on_planner_link_mode_change,
+            key="planner_link_mode_select_v12",
         )
+        if mode != st.session_state.planner_link_mode:
+            st.session_state.planner_link_mode = mode
+            st.rerun()
 
     with control_col3:
-        st.selectbox(
+        zoom = st.selectbox(
             "Planner zoom",
             options=PLANNER_ZOOM_MODES,
             index=PLANNER_ZOOM_MODES.index(st.session_state.planner_zoom_mode),
-            key="planner_zoom_mode_select_v11",
-            on_change=_on_planner_zoom_mode_change,
+            key="planner_zoom_mode_select_v12",
         )
-
-    st.markdown(
-        """
-        <div class="tmk-control-caption">
-            Curriculum sequence, intro-route dependency, and later lesson-delivery pedagogy are separate layers.
-            This planner only shows the structural curriculum layer.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+        if zoom != st.session_state.planner_zoom_mode:
+            st.session_state.planner_zoom_mode = zoom
+            st.rerun()
 
     _metric_card_row(
         [
             ("Selected stage", stage_label(record.stage)),
-            ("Introduced here", str(len(selected_stage_products))),
+            ("Introduced here", str(len(STAGES[record.stage].products))),
             ("Full routes", str(len(admissible_routes))),
             ("Division exits", str(len(record.ways_out))),
         ]
     )
 
-    stage_col, intro_col = st.columns(2)
+    top_col1, top_col2 = st.columns(2)
 
-    with stage_col:
+    with top_col1:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
         st.markdown('<div class="tmk-subhead">Fixed stage unlock order</div>', unsafe_allow_html=True)
-        st.markdown(
-            f'<div class="tmk-note">{" → ".join(escape(item) for item in visible_stage_order)}</div>',
-            unsafe_allow_html=True,
-        )
+        ordered = " → ".join(stage_label(stage) for stage in STAGE_ORDER if stage in STAGES)
+        st.markdown(f'<div class="tmk-note">{escape(ordered)}</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    with intro_col:
+    with top_col2:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
         st.markdown('<div class="tmk-subhead">Pedagogical intro route</div>', unsafe_allow_html=True)
         st.markdown(
             f"""
             <div class="tmk-note">
                 {record.product} is introduced through <strong>{_format_route(record.intro_route)}</strong>.<br>
-                This is the pedagogical entry route, not the full admissible route atlas.
+                This is the pedagogical entry route, not the full route atlas.
             </div>
             """,
             unsafe_allow_html=True,
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
-    reason_col, exits_col = st.columns(2)
+    lower_col1, lower_col2 = st.columns(2)
 
-    with reason_col:
+    with lower_col1:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-subhead">Why this stage occurs here</div>', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-subhead">Full admissible routes</div>', unsafe_allow_html=True)
+        lines = "<br>".join(escape(_format_route(route)) for route in admissible_routes)
+        st.markdown(f'<div class="tmk-note">{lines}</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with lower_col2:
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-subhead">Division exits</div>', unsafe_allow_html=True)
+        exits = "<br>".join(escape(f"{record.product}÷{a}={b}") for a, b in record.ways_out[:8])
         st.markdown(
-            f'<div class="tmk-note">{escape(str(record.structural_role))}</div>',
+            f"""
+            <div class="tmk-note">
+                {exits}<br><br>
+                Structural role: <strong>{escape(str(record.structural_role))}</strong>
+            </div>
+            """,
             unsafe_allow_html=True,
         )
         st.markdown("</div>", unsafe_allow_html=True)
-
-    with exits_col:
-        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-subhead">Division exits</div>', unsafe_allow_html=True)
-        exit_labels = "<br>".join(escape(f"{record.product}÷{a}={b}") for a, b in record.ways_out[:6])
-        st.markdown(f'<div class="tmk-note">{exit_labels}</div>', unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-subhead">Full admissible routes</div>', unsafe_allow_html=True)
-    route_labels = "<br>".join(escape(_format_route(route)) for route in admissible_routes)
-    st.markdown(
-        f"""
-        <div class="tmk-note">
-            These are the admissible multiplication pairings around the selected product.<br>
-            The intro route above remains the pedagogical first entry.
-        </div>
-        <div class="tmk-note" style="margin-top:0.55rem;">{route_labels}</div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
 
     _render_stage_cards(product)
 
@@ -848,7 +652,7 @@ def _render_structural_planner(product: int) -> None:
             link_mode=st.session_state.planner_link_mode,
             focus_stage_only=focus_stage_only,
         ),
-        height=map_height + 36,
+        height=map_height,
         scrolling=True,
     )
     st.markdown("</div>", unsafe_allow_html=True)
@@ -857,9 +661,9 @@ def _render_structural_planner(product: int) -> None:
         """
         <div class="tmk-legend-box">
             <div class="tmk-legend-row">
-                <div class="tmk-legend-item"><span class="tmk-line-swatch"></span> selected intro route</div>
-                <div class="tmk-legend-item"><span class="tmk-line-swatch-purple"></span> wider route atlas</div>
-                <div class="tmk-legend-item"><span class="tmk-line-swatch-grey"></span> stage structure</div>
+                <div class="tmk-legend-item"><span class="tmk-line-swatch"></span> pedagogical intro route</div>
+                <div class="tmk-legend-item"><span class="tmk-line-swatch-purple"></span> selected product admissible atlas</div>
+                <div class="tmk-legend-item"><span class="tmk-line-swatch-grey"></span> stage row structure</div>
             </div>
         </div>
         """,
@@ -871,7 +675,7 @@ def _render_structural_planner(product: int) -> None:
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Products introduced at this stage</div>', unsafe_allow_html=True)
     st.markdown(
-        f'<div class="tmk-section-subtitle">{stage_label(record.stage)} introduces {len(selected_stage_products)} products.</div>',
+        f'<div class="tmk-section-subtitle">{stage_label(record.stage)} introduces {len(STAGES[record.stage].products)} products.</div>',
         unsafe_allow_html=True,
     )
     _render_visible_products_grid(product, only_stage=record.stage)
@@ -882,13 +686,10 @@ def _render_stage_cards(selected_product: int) -> None:
     for stage in [stage for stage in STAGE_ORDER if stage in STAGES]:
         style = _stage_palette(stage)
         stage_record = STAGES[stage]
-        products = stage_record.products
-
         pills: list[str] = []
-        for product in products:
-            pill_class = "tmk-pill tmk-pill-accent" if product == selected_product else "tmk-pill"
-            pills.append(f'<span class="{pill_class}">{product}</span>')
-
+        for product in stage_record.products:
+            cls = "tmk-pill tmk-pill-accent" if product == selected_product else "tmk-pill"
+            pills.append(f'<span class="{cls}">{product}</span>')
         st.markdown(
             f"""
             <div class="tmk-stage-card" style="background:{style['background']}; border-color:{style['border']};">
@@ -906,49 +707,53 @@ def _render_product_lab(product: int) -> None:
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Product Lab</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="tmk-section-subtitle">Hub overview, readable radial map, route lists, inverse field, pattern links, and comparisons.</div>',
+        '<div class="tmk-section-subtitle">Hub overview, distinct entry routes, division exits, inverse field, patterns, and comparisons.</div>',
         unsafe_allow_html=True,
     )
 
     control_col1, control_col2, control_col3 = st.columns(3)
 
     with control_col1:
-        st.selectbox(
+        selected = st.selectbox(
             "Selected product",
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="lab_product_select_v11",
-            on_change=_on_lab_product_change,
+            key="lab_product_select_v12",
         )
+        if selected != st.session_state.selected_product:
+            st.session_state.selected_product = selected
+            st.rerun()
 
     compare_options = [item for item in ALL_PRODUCTS if item != st.session_state.selected_product]
     if st.session_state.compare_product not in compare_options:
         st.session_state.compare_product = compare_options[0]
 
     with control_col2:
-        st.selectbox(
+        compare_value = st.selectbox(
             "Compare with",
             options=compare_options,
             index=compare_options.index(st.session_state.compare_product),
             format_func=_product_option_label,
-            key="lab_compare_select_v11",
-            on_change=_on_lab_compare_change,
+            key="lab_compare_select_v12",
         )
+        if compare_value != st.session_state.compare_product:
+            st.session_state.compare_product = compare_value
+            st.rerun()
 
     with control_col3:
-        st.radio(
+        mode = st.radio(
             "Route view",
             options=ROUTE_VIEW_MODES,
             index=ROUTE_VIEW_MODES.index(st.session_state.route_view_mode),
             horizontal=True,
-            key="lab_route_view_mode_v11",
-            on_change=_on_lab_route_view_mode_change,
+            key="lab_route_view_mode_v12",
         )
+        if mode != st.session_state.route_view_mode:
+            st.session_state.route_view_mode = mode
+            st.session_state.selected_route_index = 0
+            st.rerun()
 
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    record = product_record(st.session_state.selected_product)
     compare = product_record(st.session_state.compare_product)
 
     _metric_card_row(
@@ -963,942 +768,20 @@ def _render_product_lab(product: int) -> None:
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-subhead">Radial hub view</div>', unsafe_allow_html=True)
     st.markdown(
-        """
-        <div class="tmk-note">
-            Entry routes sit above the hub. Exit routes sit below the hub. Only distinct factor pairings are shown, not mirrored duplicates.
-        </div>
-        """,
+        '<div class="tmk-note">Only distinct multiplication pairings are shown as entry routes. Mirrored duplicates are removed.</div>',
         unsafe_allow_html=True,
     )
     st.markdown('<div class="tmk-card-dark">', unsafe_allow_html=True)
-    components.html(_radial_hub_html(record.product), height=660, scrolling=True)
+    components.html(_radial_hub_html(record.product), height=720, scrolling=True)
     st.markdown("</div>", unsafe_allow_html=True)
     st.markdown('<div class="tmk-mobile-note">Mobile layout switches to stacked route cards below 720px width.</div>', unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
     _render_route_inspector(record)
 
-    radial_col1, radial_col2 = st.columns(2)
+    left, right = st.columns(2)
 
-    with radial_col1:
+    with left:
         st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-subhead">Entry routes</div>', unsafe_allow_html=True)
-        for route in _entry_routes_for_radial(record):
-            st.markdown(f'<div class="tmk-note">{escape(_format_route(route))}</div>', unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with radial_col2:
-        st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-subhead">Exit routes</div>', unsafe_allow_html=True)
-        for label in _exit_routes_for_radial(record):
-            st.markdown(f'<div class="tmk-note">{escape(label)}</div>', unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-subhead">Hub explanation</div>', unsafe_allow_html=True)
-    st.markdown(
-        f"""
-        <div class="tmk-note">
-            The centre circle is <strong>{record.product}</strong>.<br>
-            The inward routes are distinct multiplication routes that make the product.<br>
-            The outward routes are division routes that recover factors from the product.<br>
-            The intro route stays fixed as <strong>{_format_route(record.intro_route)}</strong>.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-subhead">Truth set</div>', unsafe_allow_html=True)
-    st.markdown(_pill_cloud(_distinct_factor_routes(record), accent=True), unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-subhead">Inverse field</div>', unsafe_allow_html=True)
-    st.markdown(_pill_cloud(_inverse_labels(record.product), accent=False), unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-subhead">Pattern links</div>', unsafe_allow_html=True)
-    _render_pattern_links(record.product)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-subhead">Stage relations</div>', unsafe_allow_html=True)
-    st.markdown(
-        f"""
-        <div class="tmk-note">Current stage: {stage_label(record.stage)}</div>
-        <div class="tmk-note">Visible products up to this stage: {len(visible_products(record.stage))}</div>
-        <div class="tmk-note">Related products sharing factors: {len(record.related_products)}</div>
-        <div class="tmk-note">Intro-route rule stays fixed: {record.product} enters through {_format_route(record.intro_route)}.</div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-subhead">Compare products</div>', unsafe_allow_html=True)
-    st.markdown(
-        f"""
-        <div class="tmk-note"><strong>{record.product}</strong> · {stage_label(record.stage)} · {_format_route(record.intro_route)}</div>
-        <div class="tmk-note"><strong>{compare.product}</strong> · {stage_label(compare.stage)} · {_format_route(compare.intro_route)}</div>
-        <div class="tmk-note">Shared factors: {_shared_factors(record.product, compare.product)}</div>
-        <div class="tmk-note">Route counts: {len(_distinct_factor_routes(record))} vs {len(_distinct_factor_routes(compare))}</div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
-def _render_route_inspector(record) -> None:
-    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-subhead">Route inspector</div>', unsafe_allow_html=True)
-    st.markdown(
-        f'<div class="tmk-note">Use the route buttons to inspect the currently selected {st.session_state.route_view_mode.lower()} for {record.product}.</div>',
-        unsafe_allow_html=True,
-    )
-
-    items = _route_inspector_items(record, st.session_state.route_view_mode)
-    if not items:
-        st.markdown('<div class="tmk-note">No routes available.</div>', unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-        return
-
-    if st.session_state.selected_route_index >= len(items):
-        st.session_state.selected_route_index = 0
-
-    button_cols = st.columns(min(len(items), 4))
-    for index, item in enumerate(items):
-        col = button_cols[index % len(button_cols)]
-        button_type = "primary" if index == st.session_state.selected_route_index else "secondary"
-        if col.button(
-            item["label"],
-            key=f"route_inspector_button_v11_{st.session_state.route_view_mode}_{index}",
-            use_container_width=True,
-            type=button_type,
-        ):
-            st.session_state.selected_route_index = index
-            st.rerun()
-
-    selected_item = items[st.session_state.selected_route_index]
-
-    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-    label = st.session_state.route_view_mode[:-1] if st.session_state.route_view_mode.endswith("s") else st.session_state.route_view_mode
-    st.markdown(f'<div class="tmk-small-label">{escape(label)}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="tmk-value">{escape(selected_item["headline"])}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="tmk-note" style="margin-top:0.55rem;">{escape(selected_item["explanation"])}</div>', unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
-def _route_inspector_items(record, mode: str) -> list[dict[str, str]]:
-    if mode == "Entry routes":
-        items: list[dict[str, str]] = []
-        for a, b in _entry_routes_for_radial(record):
-            items.append(
-                {
-                    "label": _format_route((a, b)),
-                    "headline": f"{a} × {b} = {record.product}",
-                    "explanation": f"This distinct entry route makes {record.product} by combining {a} and {b}.",
-                }
-            )
-        return items
-
-    items = []
-    for divisor, quotient in record.ways_out[:4]:
-        items.append(
-            {
-                "label": f"{record.product}÷{divisor}={quotient}",
-                "headline": f"{record.product} ÷ {divisor} = {quotient}",
-                "explanation": f"This exit route recovers the factor {quotient} from {record.product} using divisor {divisor}.",
-            }
-        )
-    return items
-
-
-def _render_worksheet_studio(product: int, tier: str) -> None:
-    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-section-title">Worksheet Studio</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="tmk-section-subtitle">Choose product, choose Support/Core/Extension, generate worksheet, review teacher key.</div>',
-        unsafe_allow_html=True,
-    )
-
-    control_col1, control_col2 = st.columns(2)
-
-    with control_col1:
-        st.selectbox(
-            "Selected product",
-            options=ALL_PRODUCTS,
-            index=ALL_PRODUCTS.index(st.session_state.selected_product),
-            format_func=_product_option_label,
-            key="worksheet_product_select_v11",
-            on_change=_on_worksheet_product_change,
-        )
-
-    with control_col2:
-        st.radio(
-            "Worksheet tier",
-            options=TIERS,
-            index=TIERS.index(st.session_state.selected_tier),
-            horizontal=True,
-            key="worksheet_tier_radio_v11",
-            on_change=_on_worksheet_tier_change,
-        )
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    worksheet = generate_worksheet(st.session_state.selected_product, st.session_state.selected_tier)
-
-    _metric_card_row(
-        [
-            ("Product", str(worksheet.product)),
-            ("Stage", str(worksheet.stage)),
-            ("Tier", str(worksheet.tier)),
-            ("Questions", str(len(worksheet.questions))),
-        ]
-    )
-
-    st.markdown('<div class="tmk-worksheet-frame">', unsafe_allow_html=True)
-    st.markdown("### Pupil worksheet")
-    for index, question in enumerate(worksheet.questions, start=1):
-        st.markdown(
-            f"""
-            <div class="tmk-answer-box">
-                <div class="tmk-small-label">Q{_question_number(question, index)}</div>
-                <div style="font-size:1.02rem;font-weight:700;color:inherit;line-height:1.5;">{escape(_render_question_text(question))}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="tmk-worksheet-frame">', unsafe_allow_html=True)
-    st.markdown("### Teacher key")
-    answers = _coerce_sequence(getattr(worksheet.teacher_key, "answers", ()))
-    notes = _coerce_sequence(getattr(worksheet.teacher_key, "notes", ()))
-
-    st.markdown("#### Answers")
-    for index, answer in enumerate(answers, start=1):
-        st.markdown(
-            f"""
-            <div class="tmk-answer-box">
-                <strong>Q{index}.</strong> {escape(_stringify(answer))}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    st.markdown("#### Notes")
-    for note in notes:
-        st.markdown(
-            f"""
-            <div class="tmk-answer-box">
-                {escape(_stringify(note))}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
-def _metric_card_row(items: list[tuple[str, str]]) -> None:
-    cols = st.columns(len(items))
-    for col, (label, value) in zip(cols, items):
-        with col:
-            _metric_card(label, value)
-
-
-def _metric_card(label: str, value: str) -> None:
-    st.markdown(
-        f"""
-        <div class="tmk-card">
-            <div class="tmk-small-label">{escape(label)}</div>
-            <div class="tmk-value">{escape(value)}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-def _render_visible_products_grid(product: int, only_stage: str | None = None) -> None:
-    if only_stage is None:
-        record = product_record(product)
-        products = visible_products(record.stage)
-    else:
-        products = list(STAGES[only_stage].products)
-
-    cols_per_row = 4
-
-    for row_start in range(0, len(products), cols_per_row):
-        cols = st.columns(cols_per_row)
-        for offset, visible_product in enumerate(products[row_start : row_start + cols_per_row]):
-            button_type = "primary" if visible_product == product else "secondary"
-            if cols[offset].button(
-                str(visible_product),
-                key=f"visible_product_button_v11_{only_stage}_{visible_product}",
-                use_container_width=True,
-                type=button_type,
-            ):
-                st.session_state.selected_product = visible_product
-                st.rerun()
-
-
-def _render_pattern_links(product: int) -> None:
-    if product_pattern_ids is None or get_pattern is None:
-        st.markdown('<div class="tmk-note">Pattern library not available in this runtime.</div>', unsafe_allow_html=True)
-        return
-
-    pattern_ids = tuple(product_pattern_ids(product))[:8]
-    if not pattern_ids:
-        st.markdown('<div class="tmk-note">No pattern links attached.</div>', unsafe_allow_html=True)
-        return
-
-    pills: list[str] = []
-    for pattern_id in pattern_ids:
-        pattern = get_pattern(pattern_id)
-        pills.append(f'<span class="tmk-pill">{escape(pattern.name)}</span>')
-    st.markdown(f'<div class="tmk-soft-list">{"".join(pills)}</div>', unsafe_allow_html=True)
-
-    first = get_pattern(pattern_ids[0])
-    st.markdown(
-        f'<div class="tmk-note" style="margin-top:0.65rem;">{escape(first.learner_label)}</div>',
-        unsafe_allow_html=True,
-    )
-
-
-def _world_map_dimensions(focus_stage_only: bool, selected_stage: str) -> tuple[int, int]:
-    lane_x = 26
-    lane_w = 1268
-    lane_h = 132
-    lane_gap = 24
-    top = 24
-    bottom_padding = 28
-    visible_stages = _visible_world_stages(focus_stage_only, selected_stage)
-    stage_count = len(visible_stages)
-    total_height = top + stage_count * lane_h + max(stage_count - 1, 0) * lane_gap + bottom_padding
-    total_width = lane_x + lane_w + 26
-    return total_width, total_height
-
-
-def _visible_world_stages(focus_stage_only: bool, selected_stage: str) -> list[str]:
-    stages = [stage for stage in STAGE_ORDER if stage in STAGES]
-    if focus_stage_only:
-        return [stage for stage in stages if stage == selected_stage]
-    return stages
-
-
-def _world_map_html(
-    selected_product: int,
-    link_mode: str,
-    focus_stage_only: bool,
-) -> str:
-    lane_x = 26
-    lane_w = 1268
-    lane_h = 132
-    lane_gap = 24
-    top = 24
-    header_band_h = 46
-    left_label_space = 250
-    bottom_padding = 28
-
-    selected_record = product_record(selected_product)
-    stages = _visible_world_stages(focus_stage_only, selected_record.stage)
-    positions = _world_positions(
-        lane_x=lane_x,
-        lane_w=lane_w,
-        lane_h=lane_h,
-        lane_gap=lane_gap,
-        top=top,
-        header_band_h=header_band_h,
-        left_label_space=left_label_space,
-        stages=stages,
-    )
-    total_width, total_height = _world_map_dimensions(focus_stage_only, selected_record.stage)
-
-    light_vars = _embed_theme_vars(LIGHT_THEME)
-    dark_vars = _embed_theme_vars(DARK_THEME)
-
-    lane_rects: list[str] = []
-    lane_labels: list[str] = []
-    background_lines: list[str] = []
-    selected_lines: list[str] = []
-    structure_lines: list[str] = []
-
-    for index, stage in enumerate(stages):
-        y = top + index * (lane_h + lane_gap)
-        style = _stage_palette(stage)
-        stage_key_label, stage_name_label = _split_stage_label(stage, STAGES[stage].label)
-        lane_rects.append(
-            f'<rect x="{lane_x}" y="{y}" width="{lane_w}" height="{lane_h}" rx="24" fill="{style["background"]}" stroke="{style["border"]}" stroke-width="2"></rect>'
-        )
-        lane_labels.append(
-            f'<text x="{lane_x + 18}" y="{y + 24}" font-size="12" font-weight="800" letter-spacing="1.4" fill="var(--tmk-text-soft)">{escape(stage_key_label.upper())}</text>'
-        )
-        lane_labels.append(
-            f'<text x="{lane_x + 18}" y="{y + 44}" font-size="15" font-weight="600" fill="var(--tmk-text)">{escape(stage_name_label)}</text>'
-        )
-
-        stage_products = STAGES[stage].products
-        if len(stage_products) > 1:
-            xs = [positions[item][0] for item in stage_products]
-            y_line = positions[stage_products[0]][1]
-            structure_lines.append(
-                _svg_line(min(xs), y_line, max(xs), y_line, "var(--tmk-border)", 2.0, 0.8, "")
-            )
-
-        if link_mode == "All links":
-            for product in stage_products:
-                record = product_record(product)
-                end_x, end_y = positions[product]
-                for factor in _factor_route_highlight_sources(record):
-                    if factor in positions:
-                        start_x, start_y = positions[factor]
-                        background_lines.append(
-                            _svg_line(start_x, start_y, end_x, end_y, "var(--tmk-map-link-future)", 2.6, 1.0, "")
-                        )
-
-    if link_mode in ("Selected links", "All links"):
-        end_x, end_y = positions[selected_product]
-        for factor in selected_record.intro_route:
-            if factor in positions:
-                start_x, start_y = positions[factor]
-                selected_lines.append(
-                    _svg_line(start_x, start_y, end_x, end_y, "var(--tmk-map-link-selected)", 4.0, 1.0, "")
-                )
-
-    nodes: list[str] = []
-    for product in ALL_PRODUCTS:
-        record = product_record(product)
-        if record.stage not in stages:
-            continue
-
-        style = _stage_palette(record.stage)
-        x, y = positions[product]
-        is_selected = product == selected_product
-        radius = 21 if is_selected else 18
-        outer_radius = 24 if is_selected else 20
-
-        if is_selected:
-            nodes.append(f'<circle cx="{x}" cy="{y}" r="{outer_radius}" fill="var(--tmk-map-node-selected)" opacity="0.22"></circle>')
-            nodes.append(
-                f'<circle cx="{x}" cy="{y}" r="{radius}" fill="var(--tmk-map-node-selected)" stroke="#FFFFFF" stroke-width="3" filter="url(#selected-shadow)"></circle>'
-            )
-        else:
-            nodes.append(f'<circle cx="{x}" cy="{y}" r="{outer_radius}" fill="{style["node"]}" opacity="0.14"></circle>')
-            nodes.append(
-                f'<circle cx="{x}" cy="{y}" r="{radius}" fill="{style["node"]}" stroke="var(--tmk-map-node-outline)" stroke-width="2"></circle>'
-            )
-
-        nodes.append(
-            f'<text x="{x}" y="{y + 5}" text-anchor="middle" font-size="{18 if is_selected else 15}" font-weight="900" fill="#ffffff">{product}</text>'
-        )
-
-    svg = f"""
-    <html>
-    <head>
-        <style>
-            :root {{
-{light_vars}
-            }}
-
-            @media (prefers-color-scheme: dark) {{
-                :root {{
-{dark_vars}
-                }}
-            }}
-
-            body {{
-                margin: 0;
-                background: transparent;
-                color: var(--tmk-text);
-                font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            }}
-        </style>
-    </head>
-    <body>
-        <div style="background:transparent;border-radius:24px;overflow:auto;max-width:100%;padding-bottom:{bottom_padding}px;">
-            <svg viewBox="0 0 {total_width} {total_height}" width="{total_width}" height="{total_height}" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <filter id="selected-shadow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="rgba(0,0,0,0.15)"/>
-                    </filter>
-                </defs>
-                <rect x="0" y="0" width="{total_width}" height="{total_height}" fill="transparent"></rect>
-                {''.join(lane_rects)}
-                {''.join(structure_lines)}
-                {''.join(background_lines)}
-                {''.join(selected_lines)}
-                {''.join(lane_labels)}
-                {''.join(nodes)}
-            </svg>
-        </div>
-    </body>
-    </html>
-    """
-    return svg
-
-
-def _world_positions(
-    lane_x: int,
-    lane_w: int,
-    lane_h: int,
-    lane_gap: int,
-    top: int,
-    header_band_h: int,
-    left_label_space: int,
-    stages: list[str],
-) -> dict[int, tuple[float, float]]:
-    positions: dict[int, tuple[float, float]] = {}
-    usable_x = lane_w - left_label_space - 76
-
-    for row_index, stage in enumerate(stages):
-        products = STAGES[stage].products
-        row_top = top + row_index * (lane_h + lane_gap)
-        y = row_top + header_band_h + (lane_h - header_band_h) / 2 + 10
-
-        if len(products) == 1:
-            base_x = lane_x + left_label_space + usable_x / 2
-            dx, dy = MAP_NODE_OFFSETS.get(products[0], (0.0, 0.0))
-            positions[products[0]] = (base_x + dx, y + dy)
-            continue
-
-        step = usable_x / (len(products) - 1)
-        start_x = lane_x + left_label_space
-        for index, product in enumerate(products):
-            base_x = start_x + index * step
-            dx, dy = MAP_NODE_OFFSETS.get(product, (0.0, 0.0))
-            positions[product] = (base_x + dx, y + dy)
-
-    return positions
-
-
-def _radial_hub_html(product: int) -> str:
-    record = product_record(product)
-    desktop_svg = _desktop_radial_svg(record)
-    mobile_svg = _mobile_radial_svg(record)
-    light_vars = _embed_theme_vars(LIGHT_THEME)
-    dark_vars = _embed_theme_vars(DARK_THEME)
-
-    return f"""
-    <html>
-    <head>
-        <style>
-            :root {{
-{light_vars}
-            }}
-
-            @media (prefers-color-scheme: dark) {{
-                :root {{
-{dark_vars}
-                }}
-            }}
-
-            body {{
-                margin: 0;
-                padding: 0;
-                background: transparent;
-                color: var(--tmk-text);
-                font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            }}
-
-            .tmk-radial-shell {{
-                width: 100%;
-            }}
-
-            .tmk-radial-desktop {{
-                display: block;
-            }}
-
-            .tmk-radial-mobile {{
-                display: none;
-            }}
-
-            svg {{
-                width: 100%;
-                height: auto;
-                display: block;
-            }}
-
-            @media (max-width: 720px) {{
-                .tmk-radial-desktop {{
-                    display: none;
-                }}
-
-                .tmk-radial-mobile {{
-                    display: block;
-                }}
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="tmk-radial-shell">
-            <div class="tmk-radial-desktop">{desktop_svg}</div>
-            <div class="tmk-radial-mobile">{mobile_svg}</div>
-        </div>
-    </body>
-    </html>
-    """
-
-
-def _desktop_radial_svg(record) -> str:
-    product = record.product
-    product_style = _stage_palette(record.stage)
-    cx = 420
-    cy = 270
-    radius = 86
-
-    entry_routes = _entry_routes_for_radial(record)[:4]
-    exit_routes = _exit_routes_for_radial(record)[:4]
-
-    entry_angles = [225, 255, 285, 315][: len(entry_routes)]
-    exit_angles = [140, 110, 70, 40][: len(exit_routes)]
-
-    entry_points = [_point_on_circle(cx, cy, 210, angle) for angle in entry_angles]
-    exit_points = [_point_on_circle(cx, cy, 220, angle) for angle in exit_angles]
-
-    lines: list[str] = []
-    boxes: list[str] = []
-
-    for route, (bx, by) in zip(entry_routes, entry_points):
-        ex, ey = _edge_point_toward(cx, cy, bx, by, radius + 14)
-        lines.append(_svg_arrow(bx, by + 24, ex, ey, "var(--tmk-stage-b)", 4))
-        boxes.append(
-            _svg_info_box(
-                bx - 64,
-                by,
-                128,
-                42,
-                _format_route(route),
-                "var(--tmk-surface)",
-                "var(--tmk-border)",
-                "var(--tmk-text)",
-                18,
-            )
-        )
-
-    for label, (bx, by) in zip(exit_routes, exit_points):
-        sx, sy = _edge_point_toward(cx, cy, bx, by, radius + 14)
-        lines.append(_svg_arrow(sx, sy, bx, by + 20, "var(--tmk-stage-d)", 4))
-        boxes.append(
-            _svg_info_box(
-                bx - 72,
-                by,
-                144,
-                42,
-                label,
-                "var(--tmk-surface)",
-                "var(--tmk-border)",
-                "var(--tmk-text)",
-                18,
-            )
-        )
-
-    return f"""
-    <svg viewBox="0 0 840 560" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-            <marker id="arrow-end-entry" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--tmk-stage-b)"></path>
-            </marker>
-            <marker id="arrow-end-exit" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--tmk-stage-d)"></path>
-            </marker>
-        </defs>
-        <rect x="0" y="0" width="840" height="560" rx="28" fill="var(--tmk-surface-strong)"></rect>
-        <text x="18" y="28" font-size="18" font-weight="800" fill="var(--tmk-text)">Radial Hub View</text>
-        <text x="18" y="52" font-size="15" font-weight="500" fill="var(--tmk-text-soft)">Entry routes above. Exit routes below. Distinct factor pairings only.</text>
-        <text x="{cx}" y="98" text-anchor="middle" font-size="24" font-weight="800" fill="var(--tmk-text)">Entry routes</text>
-        <text x="{cx}" y="468" text-anchor="middle" font-size="24" font-weight="800" fill="var(--tmk-text)">Exit routes</text>
-        {''.join(lines)}
-        <circle cx="{cx}" cy="{cy}" r="{radius}" fill="{product_style["node"]}" stroke="#FFFFFF" stroke-width="2"></circle>
-        <text x="{cx}" y="{cy + 14}" text-anchor="middle" font-size="48" font-weight="900" fill="#ffffff">{product}</text>
-        {''.join(boxes)}
-    </svg>
-    """.replace('marker-end="ENTRY"', 'marker-end="url(#arrow-end-entry)"').replace(
-        'marker-end="EXIT"', 'marker-end="url(#arrow-end-exit)"'
-    )
-
-
-def _mobile_radial_svg(record) -> str:
-    product = record.product
-    product_style = _stage_palette(record.stage)
-    entry_routes = _entry_routes_for_radial(record)[:4]
-    exit_routes = _exit_routes_for_radial(record)[:4]
-
-    entry_cards = []
-    exit_cards = []
-
-    entry_y = 90
-    for route in entry_routes:
-        entry_cards.append(
-            _svg_info_box(
-                40,
-                entry_y,
-                280,
-                44,
-                _format_route(route),
-                "var(--tmk-surface)",
-                "var(--tmk-border)",
-                "var(--tmk-text)",
-                18,
-            )
-        )
-        entry_y += 58
-
-    exit_y = 380
-    for label in exit_routes:
-        exit_cards.append(
-            _svg_info_box(
-                40,
-                exit_y,
-                280,
-                44,
-                label,
-                "var(--tmk-surface)",
-                "var(--tmk-border)",
-                "var(--tmk-text)",
-                18,
-            )
-        )
-        exit_y += 58
-
-    return f"""
-    <svg viewBox="0 0 360 660" xmlns="http://www.w3.org/2000/svg">
-        <rect x="0" y="0" width="360" height="660" rx="28" fill="var(--tmk-surface-strong)"></rect>
-        <text x="20" y="30" font-size="18" font-weight="800" fill="var(--tmk-text)">Radial Hub View</text>
-        <text x="20" y="58" font-size="15" font-weight="500" fill="var(--tmk-text-soft)">Mobile stacked view</text>
-        <text x="40" y="82" font-size="18" font-weight="800" fill="var(--tmk-text)">Entry routes</text>
-        {''.join(entry_cards)}
-        <circle cx="180" cy="322" r="62" fill="{product_style["node"]}" stroke="#FFFFFF" stroke-width="2"></circle>
-        <text x="180" y="336" text-anchor="middle" font-size="38" font-weight="900" fill="#ffffff">{product}</text>
-        <text x="40" y="368" font-size="18" font-weight="800" fill="var(--tmk-text)">Exit routes</text>
-        {''.join(exit_cards)}
-    </svg>
-    """
-
-
-def _embed_theme_vars(theme: dict[str, str]) -> str:
-    return "\n".join(
-        [
-            f"                --tmk-bg: {theme['bg']};",
-            f"                --tmk-surface: {theme['surface']};",
-            f"                --tmk-surface-strong: {theme['surface_strong']};",
-            f"                --tmk-border: {theme['border']};",
-            f"                --tmk-text: {theme['text']};",
-            f"                --tmk-text-soft: {theme['text_soft']};",
-            f"                --tmk-accent: {theme['accent']};",
-            f"                --tmk-accent-soft: {theme['accent_soft']};",
-            f"                --tmk-map-link-selected: {theme['map_link_selected']};",
-            f"                --tmk-map-link-future: {theme['map_link_future']};",
-            f"                --tmk-map-node-outline: {theme['map_node_outline']};",
-            f"                --tmk-map-node-selected: {theme['map_node_selected']};",
-            f"                --tmk-stage-a: {theme['stage_a']};",
-            f"                --tmk-stage-b: {theme['stage_b']};",
-            f"                --tmk-stage-c: {theme['stage_c']};",
-            f"                --tmk-stage-d: {theme['stage_d']};",
-        ]
-    )
-
-
-def _point_on_circle(cx: float, cy: float, radius: float, angle_degrees: float) -> tuple[float, float]:
-    angle_radians = angle_degrees * pi / 180
-    return cx + radius * cos(angle_radians), cy + radius * sin(angle_radians)
-
-
-def _canonical_route(route: tuple[int, int]) -> tuple[int, int]:
-    a, b = route
-    return (a, b) if a <= b else (b, a)
-
-
-def _distinct_factor_routes(record) -> list[tuple[int, int]]:
-    seen: set[tuple[int, int]] = set()
-    routes: list[tuple[int, int]] = []
-
-    intro = _canonical_route(record.intro_route)
-    seen.add(intro)
-    routes.append(intro)
-
-    for route in record.factor_families:
-        canonical = _canonical_route(route)
-        if canonical not in seen:
-            seen.add(canonical)
-            routes.append(canonical)
-
-    return routes
-
-
-def _factor_route_highlight_sources(record) -> tuple[int, ...]:
-    sources: list[int] = []
-    for route in _distinct_factor_routes(record):
-        for factor in route:
-            if factor not in sources:
-                sources.append(factor)
-    return tuple(sources)
-
-
-def _entry_routes_for_radial(record) -> list[tuple[int, int]]:
-    return _distinct_factor_routes(record)[:4]
-
-
-def _exit_routes_for_radial(record) -> list[str]:
-    labels: list[str] = []
-    for divisor, quotient in record.ways_out:
-        labels.append(f"{record.product}÷{divisor}={quotient}")
-        if len(labels) == 4:
-            break
-    return labels
-
-
-def _shared_factors(product_a: int, product_b: int) -> str:
-    factors_a = {n for route in _distinct_factor_routes(product_record(product_a)) for n in route}
-    factors_b = {n for route in _distinct_factor_routes(product_record(product_b)) for n in route}
-    shared = sorted(factors_a.intersection(factors_b))
-    return ", ".join(str(n) for n in shared) if shared else "none"
-
-
-def _inverse_labels(product: int) -> tuple[str, ...]:
-    record = product_record(product)
-    return tuple(f"{product}÷{a}={b}" for a, b in record.ways_out)
-
-
-def _pill_cloud(items: Iterable[object], accent: bool) -> str:
-    pills: list[str] = []
-    cls = "tmk-pill tmk-pill-accent" if accent else "tmk-pill"
-    for item in items:
-        pills.append(f'<span class="{cls}">{escape(_stringify(item))}</span>')
-    return f'<div class="tmk-soft-list">{"".join(pills)}</div>'
-
-
-def _svg_line(
-    x1: float,
-    y1: float,
-    x2: float,
-    y2: float,
-    color: str,
-    width: float,
-    opacity: float,
-    dash: str,
-) -> str:
-    dash_attr = f'stroke-dasharray="{dash}"' if dash else ""
-    return (
-        f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{color}" '
-        f'stroke-width="{width}" opacity="{opacity}" stroke-linecap="round" {dash_attr}></line>'
-    )
-
-
-def _svg_arrow(
-    x1: float,
-    y1: float,
-    x2: float,
-    y2: float,
-    color: str,
-    width: float,
-) -> str:
-    marker = "ENTRY" if "stage-b" in color else "EXIT"
-    return (
-        f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{color}" '
-        f'stroke-width="{width}" stroke-linecap="round" marker-end="{marker}"></line>'
-    )
-
-
-def _svg_info_box(
-    x: float,
-    y: float,
-    w: float,
-    h: float,
-    text: str,
-    fill: str,
-    stroke: str,
-    text_fill: str,
-    font_size: int,
-) -> str:
-    return f"""
-        <g>
-            <rect x="{x}" y="{y}" width="{w}" height="{h}" rx="14" fill="{fill}" stroke="{stroke}" stroke-width="2"></rect>
-            <text x="{x + w / 2}" y="{y + h / 2 + 6}" text-anchor="middle" font-size="{font_size}" font-weight="800" fill="{text_fill}">{escape(text)}</text>
-        </g>
-    """
-
-
-def _edge_point_toward(cx: float, cy: float, tx: float, ty: float, radius: float) -> tuple[float, float]:
-    dx = tx - cx
-    dy = ty - cy
-    length = (dx * dx + dy * dy) ** 0.5
-    if length == 0:
-        return cx, cy
-    scale = radius / length
-    return cx + dx * scale, cy + dy * scale
-
-
-def _visible_stage_order() -> list[str]:
-    return [stage for stage in STAGE_ORDER if stage in STAGES]
-
-
-def _stage_palette(stage: str) -> dict[str, str]:
-    order = _visible_stage_order()
-    index = order.index(stage) if stage in order else 0
-    if index >= len(STAGE_BACKGROUND_SEQUENCE):
-        index = index % len(STAGE_BACKGROUND_SEQUENCE)
-
-    return {
-        "background": STAGE_BACKGROUND_SEQUENCE[index],
-        "border": STAGE_BORDER_SEQUENCE[index],
-        "node": STAGE_NODE_SEQUENCE[index],
-    }
-
-
-def _split_stage_label(stage_key: str, label: str) -> tuple[str, str]:
-    clean = label.strip()
-    lowered = clean.lower()
-
-    if lowered.startswith("stage "):
-        parts = clean.split(" ", 2)
-        if len(parts) >= 3:
-            return f"{parts[0]} {parts[1]}", parts[2]
-
-    return f"Stage {stage_key}", clean
-
-
-def _product_option_label(product: int) -> str:
-    record = product_record(product)
-    return f"{product} · {record.stage} · {_format_route(record.intro_route)}"
-
-
-def _question_number(question, fallback: int) -> int:
-    value = getattr(question, "id", None)
-    return value if isinstance(value, int) else fallback
-
-
-def _render_question_text(question) -> str:
-    for field_name in ("pupil_prompt", "prompt", "display_text", "text", "question_text", "body"):
-        value = getattr(question, field_name, None)
-        if value not in (None, ""):
-            return _stringify(value)
-    return _stringify(question)
-
-
-def _coerce_sequence(value) -> tuple:
-    if value is None:
-        return ()
-    if isinstance(value, tuple):
-        return value
-    if isinstance(value, list):
-        return tuple(value)
-    if isinstance(value, str):
-        return (value,)
-    return tuple(value) if isinstance(value, Iterable) else (value,)
-
-
-def _format_route(route: tuple[int, int]) -> str:
-    return f"{route[0]}×{route[1]}"
-
-
-def _stringify(value) -> str:
-    if isinstance(value, tuple) and len(value) == 2:
-        return _format_route(value)
-    return str(value)
-
-
-if __name__ == "__main__":
-    main()
+        st.markdown('<div class="tmk-subhead">Distinct entry routes</div>', unsafe_allow_html=True)
+        for route in
