@@ -832,7 +832,6 @@ def _render_product_lab(product: int) -> None:
     )
     st.markdown("</div>", unsafe_allow_html=True)
 
-Then keep this function after _render_product_lab():
 
 def _route_inspector_items(record, mode: str) -> list[dict[str, str]]:
     items: list[dict[str, str]] = []
