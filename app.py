@@ -774,11 +774,67 @@ def _render_product_lab(product: int) -> None:
     st.markdown('<div class="tmk-card-dark">', unsafe_allow_html=True)
     components.html(_radial_hub_html(record.product), height=720, scrolling=True)
     st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown('<div class="tmk-mobile-note">Mobile layout switches to stacked route cards below 720px width.</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="tmk-mobile-note">Mobile layout switches to stacked route cards below 720px width.</div>',
+        unsafe_allow_html=True,
+    )
     st.markdown("</div>", unsafe_allow_html=True)
 
-def _route_inspector_items(record, mode: str) -> list[dict[str, str]]:
+    _render_route_inspector(record)
 
+    left, right = st.columns(2)
+
+    with left:
+        st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-subhead">Distinct entry routes</div>', unsafe_allow_html=True)
+        for route in _entry_routes_for_radial(record):
+            st.markdown(
+                f'<div class="tmk-note">{escape(_format_route(route))}</div>',
+                unsafe_allow_html=True,
+            )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with right:
+        st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-subhead">Exit routes</div>', unsafe_allow_html=True)
+        for label in _exit_routes_for_radial(record):
+            st.markdown(
+                f'<div class="tmk-note">{escape(label)}</div>',
+                unsafe_allow_html=True,
+            )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-subhead">Truth set</div>', unsafe_allow_html=True)
+    st.markdown(_pill_cloud(_distinct_factor_routes(record), accent=True), unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-subhead">Inverse field</div>', unsafe_allow_html=True)
+    st.markdown(_pill_cloud(_inverse_labels(record.product), accent=False), unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-subhead">Pattern links</div>', unsafe_allow_html=True)
+    _render_pattern_links(record.product)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-subhead">Compare products</div>', unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="tmk-note"><strong>{record.product}</strong> · {stage_label(record.stage)} · {_format_route(record.intro_route)}</div>
+        <div class="tmk-note"><strong>{compare.product}</strong> · {stage_label(compare.stage)} · {_format_route(compare.intro_route)}</div>
+        <div class="tmk-note">Shared factors: {_shared_factors(record.product, compare.product)}</div>
+        <div class="tmk-note">Distinct route counts: {len(_distinct_factor_routes(record))} vs {len(_distinct_factor_routes(compare))}</div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+Then keep this function after _render_product_lab():
+
+def _route_inspector_items(record, mode: str) -> list[dict[str, str]]:
     items: list[dict[str, str]] = []
 
     if mode == "Entry routes":
