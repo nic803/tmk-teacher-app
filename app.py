@@ -784,4 +784,4 @@ def _render_product_lab(product: int) -> None:
     with left:
         st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
         st.markdown('<div class="tmk-subhead">Distinct entry routes</div>', unsafe_allow_html=True)
-        for route in
+        for route in _entry_routes_for_radial(record)
