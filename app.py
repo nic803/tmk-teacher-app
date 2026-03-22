@@ -777,11 +777,28 @@ def _render_product_lab(product: int) -> None:
     st.markdown('<div class="tmk-mobile-note">Mobile layout switches to stacked route cards below 720px width.</div>', unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    _render_route_inspector(record)
+   def _route_inspector_items(record, mode: str) -> list[dict[str, str]]:
 
-    left, right = st.columns(2)
+    items: list[dict[str, str]] = []
 
-    with left:
-        st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-subhead">Distinct entry routes</div>', unsafe_allow_html=True)
-        for route in _entry_routes_for_radial(record)
+    if mode == "Entry routes":
+        for route in _entry_routes_for_radial(record):
+            items.append(
+                {
+                    "label": _format_route(route),
+                    "headline": f"{route[0]} × {route[1]} = {record.product}",
+                    "explanation": f"This distinct multiplication route makes {record.product}.",
+                }
+            )
+        return items
+
+    for divisor, quotient in record.ways_out[:4]:
+        items.append(
+            {
+                "label": f"{record.product}÷{divisor}={quotient}",
+                "headline": f"{record.product} ÷ {divisor} = {quotient}",
+                "explanation": f"This exit route recovers the factor {quotient} from {record.product}.",
+            }
+        )
+
+    return items
