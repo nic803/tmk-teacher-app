@@ -7,6 +7,13 @@ from typing import Iterable
 import streamlit as st
 import streamlit.components.v1 as components
 
+from domain.routes import (
+    distinct_factor_routes,
+    entry_routes,
+    exit_route_labels,
+    inverse_labels,
+    shared_factors,
+)
 from products import (
     ALL_PRODUCTS,
     STAGE_ORDER,
@@ -529,7 +536,7 @@ def _render_sidebar() -> None:
         st.write(f"**Product:** {record.product}")
         st.write(f"**Stage:** {stage_label(record.stage)}")
         st.write(f"**Intro route:** {_format_route(record.intro_route)}")
-        st.write(f"**Full routes:** {len(_distinct_factor_routes(record))}")
+        st.write(f"**Full routes:** {len(distinct_factor_routes(record.product))}")
         st.write(f"**Division exits:** {len(record.ways_out)}")
         st.write(f"**Role:** {record.structural_role}")
 
@@ -548,7 +555,7 @@ def _render_sidebar() -> None:
 
 def _render_structural_planner(product: int) -> None:
     record = product_record(product)
-    admissible_routes = _distinct_factor_routes(record)
+    admissible_routes = distinct_factor_routes(record.product)
     focus_stage_only = st.session_state.planner_zoom_mode == "Selected stage only"
     map_height = _world_map_height(focus_stage_only, record.stage)
 
@@ -567,7 +574,7 @@ def _render_structural_planner(product: int) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="planner_product_select_v13",
+            key="planner_product_select_v14",
         )
         if selected != st.session_state.selected_product:
             st.session_state.selected_product = selected
@@ -578,7 +585,7 @@ def _render_structural_planner(product: int) -> None:
             "Link mode",
             options=PLANNER_LINK_MODES,
             index=PLANNER_LINK_MODES.index(st.session_state.planner_link_mode),
-            key="planner_link_mode_select_v13",
+            key="planner_link_mode_select_v14",
         )
         if mode != st.session_state.planner_link_mode:
             st.session_state.planner_link_mode = mode
@@ -589,7 +596,7 @@ def _render_structural_planner(product: int) -> None:
             "Planner zoom",
             options=PLANNER_ZOOM_MODES,
             index=PLANNER_ZOOM_MODES.index(st.session_state.planner_zoom_mode),
-            key="planner_zoom_mode_select_v13",
+            key="planner_zoom_mode_select_v14",
         )
         if zoom != st.session_state.planner_zoom_mode:
             st.session_state.planner_zoom_mode = zoom
@@ -639,7 +646,7 @@ def _render_structural_planner(product: int) -> None:
     with lower_col2:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
         st.markdown('<div class="tmk-subhead">Division exits</div>', unsafe_allow_html=True)
-        exits = "<br>".join(escape(f"{record.product}÷{a}={b}") for a, b in record.ways_out[:8])
+        exits = "<br>".join(escape(label) for label in exit_route_labels(record.product, limit=8))
         st.markdown(
             f"""
             <div class="tmk-note">
@@ -728,7 +735,7 @@ def _render_product_lab(product: int) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="lab_product_select_v13",
+            key="lab_product_select_v14",
         )
         if selected != st.session_state.selected_product:
             st.session_state.selected_product = selected
@@ -748,7 +755,7 @@ def _render_product_lab(product: int) -> None:
             options=compare_options,
             index=compare_options.index(st.session_state.compare_product),
             format_func=_product_option_label,
-            key="lab_compare_select_v13",
+            key="lab_compare_select_v14",
         )
         if compare_value != st.session_state.compare_product:
             st.session_state.compare_product = compare_value
@@ -760,7 +767,7 @@ def _render_product_lab(product: int) -> None:
             options=ROUTE_VIEW_MODES,
             index=ROUTE_VIEW_MODES.index(st.session_state.route_view_mode),
             horizontal=True,
-            key="lab_route_view_mode_v13",
+            key="lab_route_view_mode_v14",
         )
         if mode != st.session_state.route_view_mode:
             st.session_state.route_view_mode = mode
@@ -774,7 +781,7 @@ def _render_product_lab(product: int) -> None:
         [
             ("Product", str(record.product)),
             ("Stage", stage_label(record.stage)),
-            ("Routes", str(len(_distinct_factor_routes(record)))),
+            ("Routes", str(len(distinct_factor_routes(record.product)))),
             ("Role", record.structural_role),
         ]
     )
@@ -798,7 +805,7 @@ def _render_product_lab(product: int) -> None:
     with left:
         st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
         st.markdown('<div class="tmk-subhead">Distinct entry routes</div>', unsafe_allow_html=True)
-        for route in _entry_routes_for_radial(record):
+        for route in entry_routes(record.product):
             st.markdown(
                 f'<div class="tmk-note">{escape(_format_route(route))}</div>',
                 unsafe_allow_html=True,
@@ -808,7 +815,7 @@ def _render_product_lab(product: int) -> None:
     with right:
         st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
         st.markdown('<div class="tmk-subhead">Exit routes</div>', unsafe_allow_html=True)
-        for label in _exit_routes_for_radial(record):
+        for label in exit_route_labels(record.product, limit=4):
             st.markdown(
                 f'<div class="tmk-note">{escape(label)}</div>',
                 unsafe_allow_html=True,
@@ -817,12 +824,12 @@ def _render_product_lab(product: int) -> None:
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-subhead">Truth set</div>', unsafe_allow_html=True)
-    st.markdown(_pill_cloud(_distinct_factor_routes(record), accent=True), unsafe_allow_html=True)
+    st.markdown(_pill_cloud(distinct_factor_routes(record.product), accent=True), unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-subhead">Inverse field</div>', unsafe_allow_html=True)
-    st.markdown(_pill_cloud(_inverse_labels(record.product), accent=False), unsafe_allow_html=True)
+    st.markdown(_pill_cloud(inverse_labels(record.product), accent=False), unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
@@ -836,8 +843,8 @@ def _render_product_lab(product: int) -> None:
         f"""
         <div class="tmk-note"><strong>{record.product}</strong> · {stage_label(record.stage)} · {_format_route(record.intro_route)}</div>
         <div class="tmk-note"><strong>{compare.product}</strong> · {stage_label(compare.stage)} · {_format_route(compare.intro_route)}</div>
-        <div class="tmk-note">Shared factors: {_shared_factors(record.product, compare.product)}</div>
-        <div class="tmk-note">Distinct route counts: {len(_distinct_factor_routes(record))} vs {len(_distinct_factor_routes(compare))}</div>
+        <div class="tmk-note">Shared factors: {shared_factors(record.product, compare.product)}</div>
+        <div class="tmk-note">Distinct route counts: {len(distinct_factor_routes(record.product))} vs {len(distinct_factor_routes(compare.product))}</div>
         """,
         unsafe_allow_html=True,
     )
@@ -848,7 +855,7 @@ def _route_inspector_items(record, mode: str) -> list[dict[str, str]]:
     items: list[dict[str, str]] = []
 
     if mode == "Entry routes":
-        for route in _entry_routes_for_radial(record):
+        for route in entry_routes(record.product):
             items.append(
                 {
                     "label": _format_route(route),
@@ -889,7 +896,7 @@ def _render_route_inspector(record) -> None:
         button_type = "primary" if index == st.session_state.selected_route_index else "secondary"
         if col.button(
             item["label"],
-            key=f"route_inspector_button_v13_{st.session_state.route_view_mode}_{index}",
+            key=f"route_inspector_button_v14_{st.session_state.route_view_mode}_{index}",
             use_container_width=True,
             type=button_type,
         ):
@@ -923,7 +930,7 @@ def _render_worksheet_studio(product: int, tier: str) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key="worksheet_product_select_v13",
+            key="worksheet_product_select_v14",
         )
         if selected != st.session_state.selected_product:
             st.session_state.selected_product = selected
@@ -935,7 +942,7 @@ def _render_worksheet_studio(product: int, tier: str) -> None:
             options=TIERS,
             index=TIERS.index(st.session_state.selected_tier),
             horizontal=True,
-            key="worksheet_tier_radio_v13",
+            key="worksheet_tier_radio_v14",
         )
         if selected_tier != st.session_state.selected_tier:
             st.session_state.selected_tier = selected_tier
@@ -1025,7 +1032,7 @@ def _render_visible_products_grid(product: int, only_stage: str | None = None) -
             button_type = "primary" if visible_product == product else "secondary"
             if cols[offset].button(
                 str(visible_product),
-                key=f"visible_product_button_v13_{only_stage}_{visible_product}",
+                key=f"visible_product_button_v14_{only_stage}_{visible_product}",
                 use_container_width=True,
                 type=button_type,
             ):
@@ -1128,7 +1135,7 @@ def _world_map_html(
     if link_mode == "Show selected atlas":
         end_x, end_y = positions[selected_product]
         atlas_factors: set[int] = set()
-        for route in _distinct_factor_routes(selected_record):
+        for route in distinct_factor_routes(selected_record.product):
             atlas_factors.update(route)
         for factor in sorted(atlas_factors):
             if factor in positions:
@@ -1327,11 +1334,11 @@ def _desktop_radial_svg(record) -> str:
     cy = 270
     r = 86
 
-    entry_routes = _entry_routes_for_radial(record)[:4]
-    exit_routes = _exit_routes_for_radial(record)[:4]
+    entry_route_list = entry_routes(record.product)[:4]
+    exit_labels = exit_route_labels(record.product, limit=4)
 
-    entry_angles = [225, 255, 285, 315][: len(entry_routes)]
-    exit_angles = [140, 110, 70, 40][: len(exit_routes)]
+    entry_angles = [225, 255, 285, 315][: len(entry_route_list)]
+    exit_angles = [140, 110, 70, 40][: len(exit_labels)]
 
     entry_points = [_point_on_circle(cx, cy, 210, angle) for angle in entry_angles]
     exit_points = [_point_on_circle(cx, cy, 220, angle) for angle in exit_angles]
@@ -1339,12 +1346,12 @@ def _desktop_radial_svg(record) -> str:
     lines: list[str] = []
     boxes: list[str] = []
 
-    for route, (bx, by) in zip(entry_routes, entry_points):
+    for route, (bx, by) in zip(entry_route_list, entry_points):
         x1, y1 = _edge_point_toward(cx, cy, bx, by, r + 10)
         lines.append(_svg_arrow(bx, by + 22, x1, y1, "#dbe4f4", 4))
         boxes.append(_svg_info_box(bx - 64, by, 128, 42, _format_route(route), "#ffffff", "#cfd8e6", "#20304a", 18))
 
-    for label, (bx, by) in zip(exit_routes, exit_points):
+    for label, (bx, by) in zip(exit_labels, exit_points):
         x1, y1 = _edge_point_toward(cx, cy, bx, by, r + 10)
         lines.append(_svg_arrow(x1, y1, bx, by + 20, "#9c7cff", 4))
         boxes.append(_svg_info_box(bx - 70, by, 140, 42, label, "#241448", "#d9c4ff", "#ffffff", 18))
@@ -1377,19 +1384,19 @@ def _desktop_radial_svg(record) -> str:
 def _mobile_radial_svg(record) -> str:
     product = record.product
     style = _stage_palette(record.stage)
-    entry_routes = _entry_routes_for_radial(record)[:4]
-    exit_routes = _exit_routes_for_radial(record)[:4]
+    entry_route_list = entry_routes(record.product)[:4]
+    exit_labels = exit_route_labels(record.product, limit=4)
 
     entry_cards = []
     exit_cards = []
 
     entry_y = 90
-    for route in entry_routes:
+    for route in entry_route_list:
         entry_cards.append(_svg_info_box(40, entry_y, 280, 44, _format_route(route), "#ffffff", "#cfd8e6", "#20304a", 18))
         entry_y += 58
 
     exit_y = 380
-    for label in exit_routes:
+    for label in exit_labels:
         exit_cards.append(_svg_info_box(40, exit_y, 280, 44, label, "#241448", "#d9c4ff", "#ffffff", 18))
         exit_y += 58
 
@@ -1406,59 +1413,6 @@ def _mobile_radial_svg(record) -> str:
         {''.join(exit_cards)}
     </svg>
     """
-
-
-def _canonical_route(route: tuple[int, int]) -> tuple[int, int]:
-    a, b = route
-    return (a, b) if a <= b else (b, a)
-
-
-def _distinct_factor_routes(record) -> list[tuple[int, int]]:
-    seen: set[tuple[int, int]] = set()
-    routes: list[tuple[int, int]] = []
-
-    intro = _canonical_route(record.intro_route)
-    seen.add(intro)
-    routes.append(intro)
-
-    for route in record.factor_families:
-        canonical = _canonical_route(route)
-        if canonical not in seen:
-            seen.add(canonical)
-            routes.append(canonical)
-
-    return routes
-
-
-def _entry_routes_for_radial(record) -> list[tuple[int, int]]:
-    return _distinct_factor_routes(record)
-
-
-def _exit_routes_for_radial(record) -> list[str]:
-    labels: list[str] = []
-    for divisor, quotient in record.ways_out:
-        labels.append(f"{record.product}÷{divisor}={quotient}")
-        if len(labels) == 4:
-            break
-    return labels
-
-
-def _shared_factors(product_a: int, product_b: int) -> str:
-    factors_a = {n for route in _distinct_factor_routes(product_record(product_a)) for n in route}
-    factors_b = {n for route in _distinct_factor_routes(product_record(product_b)) for n in route}
-    shared = sorted(factors_a.intersection(factors_b))
-    return ", ".join(str(n) for n in shared) if shared else "none"
-
-
-def _inverse_labels(product: int) -> tuple[str, ...]:
-    record = product_record(product)
-    return tuple(f"{product}÷{a}={b}" for a, b in record.ways_out)
-
-
-def _pill_cloud(items: Iterable[object], accent: bool) -> str:
-    cls = "tmk-pill tmk-pill-accent" if accent else "tmk-pill"
-    pills = [f'<span class="{cls}">{escape(_stringify(item))}</span>' for item in items]
-    return f'<div class="tmk-soft-list">{"".join(pills)}</div>'
 
 
 def _svg_line(
@@ -1588,6 +1542,9 @@ def _stringify(value) -> str:
         return _format_route(value)
     return str(value)
 
+
+if __name__ == "__main__":
+    main()
 
 if __name__ == "__main__":
     main()
