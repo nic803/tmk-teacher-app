@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+# ✅ FIX: ensure Streamlit can find local modules
+import sys
+import os
+sys.path.append(os.path.dirname(__file__))
+
 from html import escape
 from math import cos, pi, sin
 from typing import Iterable
@@ -7,6 +12,7 @@ from typing import Iterable
 import streamlit as st
 import streamlit.components.v1 as components
 
+# ✅ domain imports (this part was fine)
 from domain.routes import (
     distinct_factor_routes,
     entry_routes,
@@ -14,6 +20,8 @@ from domain.routes import (
     inverse_labels,
     shared_factors,
 )
+
+# ✅ products import (correct)
 from products import (
     ALL_PRODUCTS,
     STAGE_ORDER,
@@ -22,8 +30,12 @@ from products import (
     stage_label,
     visible_products,
 )
-from worksheet_engine import generate_worksheet
 
+# ✅ FIX: correct module name
+from question_form_engine import generate_worksheet
+
+
+# ✅ safe optional import (leave as-is)
 try:
     from patterns import get_pattern, product_pattern_ids
 except Exception:
