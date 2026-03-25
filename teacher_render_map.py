@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from typing import Iterable, Tuple
 
-from route_models import DivisionRoute, MultiplicationRoute
-from route_render import render_division_route, render_multiplication_route
-
+from domain.routes import (
+    DivisionRoute,
+    MultiplicationRoute,
+    render_division_route,
+    render_multiplication_route,
+)
 
 def render_teacher_answer(answer_data: dict) -> str:
     if "value" in answer_data and len(answer_data) == 1:
