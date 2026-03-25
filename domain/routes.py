@@ -5,7 +5,6 @@ from typing import Iterable
 
 from domain.products import product_record
 
-
 @dataclass(frozen=True)
 class MultiplicationRoute:
     left: int
