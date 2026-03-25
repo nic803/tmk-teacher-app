@@ -1,10 +1,5 @@
 from __future__ import annotations
 
-# ✅ FIX: ensure Streamlit can find local modules
-import sys
-import os
-sys.path.append(os.path.dirname(__file__))
-
 from html import escape
 from math import cos, pi, sin
 from typing import Iterable
