@@ -1,6 +1,36 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import Iterable
+
 from products import product_record
+
+
+@dataclass(frozen=True)
+class MultiplicationRoute:
+    left: int
+    right: int
+
+
+@dataclass(frozen=True)
+class DivisionRoute:
+    product: int
+    divisor: int
+    quotient: int
+
+
+def multiplication_route(left: int, right: int) -> MultiplicationRoute:
+    return MultiplicationRoute(left=left, right=right)
+
+
+def division_route(product: int, divisor: int, quotient: int) -> DivisionRoute:
+    return DivisionRoute(product=product, divisor=divisor, quotient=quotient)
+
+
+def multiplication_routes_from_tuples(
+    routes: Iterable[tuple[int, int]],
+) -> tuple[MultiplicationRoute, ...]:
+    return tuple(MultiplicationRoute(left=left, right=right) for left, right in routes)
 
 
 def canonical_route(route: tuple[int, int]) -> tuple[int, int]:
@@ -30,17 +60,23 @@ def entry_routes(product: int) -> list[tuple[int, int]]:
     return distinct_factor_routes(product)
 
 
-def exit_route_labels(product: int, limit: int | None = None) -> list[str]:
+def exit_routes(product: int) -> tuple[DivisionRoute, ...]:
     record = product_record(product)
-    labels = [f"{product}÷{divisor}={quotient}" for divisor, quotient in record.ways_out]
+    return tuple(
+        division_route(product=product, divisor=divisor, quotient=quotient)
+        for divisor, quotient in record.ways_out
+    )
+
+
+def exit_route_labels(product: int, limit: int | None = None) -> list[str]:
+    labels = [f"{route.product}÷{route.divisor}={route.quotient}" for route in exit_routes(product)]
     if limit is None:
         return labels
     return labels[:limit]
 
 
 def inverse_labels(product: int) -> tuple[str, ...]:
-    record = product_record(product)
-    return tuple(f"{product}÷{divisor}={quotient}" for divisor, quotient in record.ways_out)
+    return tuple(f"{route.product}÷{route.divisor}={route.quotient}" for route in exit_routes(product))
 
 
 def shared_factors(product_a: int, product_b: int) -> str:
