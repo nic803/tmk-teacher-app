@@ -1784,6 +1784,18 @@ def _coerce_sequence(value) -> tuple:
 
 
 
+
+def _pill_cloud(items, accent: bool = False) -> str:
+    pills: list[str] = []
+
+    for item in items:
+        text = escape(_stringify(item))
+        css_class = "tmk-pill tmk-pill-accent" if accent else "tmk-pill"
+        pills.append(f'<span class="{css_class}">{text}</span>')
+
+    return f'<div class="tmk-soft-list">{"".join(pills)}</div>'
+
+
 def _format_route(route: tuple[int, int]) -> str:
     return f"{route[0]}×{route[1]}"
 
