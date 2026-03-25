@@ -4,8 +4,7 @@ from dataclasses import dataclass
 
 from domain.memory_cues import memory_cues_for_product
 from domain.routes import distinct_factor_routes
-from products import product_record, stage_label
-
+from domain.products import product_record, stage_label
 
 @dataclass(frozen=True)
 class WorksheetQuestion:
