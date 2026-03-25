@@ -1558,5 +1558,3 @@ def _stringify(value) -> str:
 if __name__ == "__main__":
     main()
 
-if __name__ == "__main__":
-    main()
