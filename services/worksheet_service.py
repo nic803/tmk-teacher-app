@@ -3,8 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from domain.memory_cues import memory_cues_for_product
-from domain.routes import distinct_factor_routes
 from domain.products import product_record, stage_label
+from domain.structure import get_product_structure
+
 
 @dataclass(frozen=True)
 class WorksheetQuestion:
@@ -29,16 +30,12 @@ class Worksheet:
 
 def generate_worksheet(product: int, tier: str) -> Worksheet:
     structure = get_product_structure(product)
+    record = product_record(product)
 
-stage = stage_label(structure["stage"])
-
-intro_route = tuple(structure["intro_route"])
-routes = tuple(structure["routes"])
-
-# temporary compatibility until exits move into structure layer
-from domain.products import product_record
-record = product_record(product)
-exits = tuple(getattr(record, "ways_out", ()))
+    stage = stage_label(structure["stage"])
+    intro_route = tuple(structure["intro_route"])
+    routes = tuple(structure["routes"])
+    exits = tuple(getattr(record, "ways_out", ()))
 
     alt_route = _first_non_intro_route(routes, intro_route)
     third_route = _next_distinct_route(routes, {intro_route, alt_route})
