@@ -1,16 +1,21 @@
 from __future__ import annotations
 
+import inspect
+
 # ✅ FIX: ensure Streamlit can find local modules
 import sys
 import os
 sys.path.append(os.path.dirname(__file__))
 
+
 from html import escape
 from math import cos, pi, sin
 from typing import Iterable
 
+
 import streamlit as st
 import streamlit.components.v1 as components
+
 
 # ✅ domain imports (this part was fine)
 from domain.routes import (
@@ -20,6 +25,7 @@ from domain.routes import (
     inverse_labels,
     shared_factors,
 )
+
 
 # ✅ products import (correct)
 from products import (
@@ -31,8 +37,11 @@ from products import (
     visible_products,
 )
 
+
 # ✅ FIX: correct module name
 from services.worksheet_service import generate_worksheet
+
+
 
 
 # ✅ safe optional import (leave as-is)
@@ -43,12 +52,15 @@ except Exception:
     product_pattern_ids = None
 
 
+
+
 APP_TITLE = "TMK Teacher App"
 SURFACES = ("Structural Planner", "Product Lab", "Worksheet Studio")
 TIERS = ("Support", "Core", "Extension")
 PLANNER_LINK_MODES = ("Selected links", "Show selected atlas", "No links")
 PLANNER_ZOOM_MODES = ("Selected stage only", "Whole world")
 ROUTE_VIEW_MODES = ("Entry routes", "Exit routes")
+
 
 LIGHT_THEME = {
     "bg": "#FAF7F2",
@@ -65,6 +77,7 @@ LIGHT_THEME = {
     "map_node_selected": "#C76412",
 }
 
+
 DARK_THEME = {
     "bg": "#10151C",
     "surface": "#18212B",
@@ -80,6 +93,7 @@ DARK_THEME = {
     "map_node_selected": "#E89A3A",
 }
 
+
 STAGE_BACKGROUND_SEQUENCE = (
     "#FCF1E7",
     "#EEF3F7",
@@ -90,6 +104,7 @@ STAGE_BACKGROUND_SEQUENCE = (
     "#F2EEF5",
     "#FCF1E7",
 )
+
 
 STAGE_BORDER_SEQUENCE = (
     "#F4D4B4",
@@ -102,6 +117,7 @@ STAGE_BORDER_SEQUENCE = (
     "#F4D4B4",
 )
 
+
 STAGE_NODE_SEQUENCE = (
     "#C76412",
     "#4F6D8A",
@@ -113,10 +129,13 @@ STAGE_NODE_SEQUENCE = (
     "#C76412",
 )
 
+
 MAP_NODE_OFFSETS: dict[int, tuple[float, float]] = {
     25: (-30.0, -12.0),
     35: (24.0, -14.0),
 }
+
+
 
 
 st.set_page_config(
@@ -126,10 +145,13 @@ st.set_page_config(
 )
 
 
+
+
 def main() -> None:
     _ensure_state()
     _sync_surface_from_query_params()
     _apply_styles()
+
 
     st.markdown('<div class="tmk-shell">', unsafe_allow_html=True)
     st.markdown(
@@ -145,8 +167,10 @@ def main() -> None:
         unsafe_allow_html=True,
     )
 
+
     _render_nav()
     _render_sidebar()
+
 
     if st.session_state.surface == "Structural Planner":
         _render_structural_planner(st.session_state.selected_product)
@@ -155,18 +179,24 @@ def main() -> None:
     else:
         _render_worksheet_studio(st.session_state.selected_product, st.session_state.selected_tier)
 
+
     st.markdown("</div>", unsafe_allow_html=True)
+
+
 
 
 def _ensure_state() -> None:
     if "surface" not in st.session_state:
         st.session_state.surface = "Structural Planner"
 
+
     if "selected_product" not in st.session_state:
         st.session_state.selected_product = 36 if 36 in ALL_PRODUCTS else ALL_PRODUCTS[0]
 
+
     if "selected_tier" not in st.session_state:
         st.session_state.selected_tier = "Core"
+
 
     if "compare_product" not in st.session_state:
         fallback = 24 if 24 in ALL_PRODUCTS else ALL_PRODUCTS[0]
@@ -174,17 +204,23 @@ def _ensure_state() -> None:
             fallback = ALL_PRODUCTS[1]
         st.session_state.compare_product = fallback
 
+
     if "planner_link_mode" not in st.session_state:
         st.session_state.planner_link_mode = "Selected links"
+
 
     if "planner_zoom_mode" not in st.session_state:
         st.session_state.planner_zoom_mode = "Selected stage only"
 
+
     if "route_view_mode" not in st.session_state:
         st.session_state.route_view_mode = "Entry routes"
 
+
     if "selected_route_index" not in st.session_state:
         st.session_state.selected_route_index = 0
+
+
 
 
 def _sync_surface_from_query_params() -> None:
@@ -192,13 +228,17 @@ def _sync_surface_from_query_params() -> None:
     if isinstance(requested_surface, list):
         requested_surface = requested_surface[0] if requested_surface else None
 
+
     if requested_surface in SURFACES and requested_surface != st.session_state.surface:
         st.session_state.surface = requested_surface
+
+
 
 
 def _apply_styles() -> None:
     light_vars = _theme_css_vars(LIGHT_THEME)
     dark_vars = _theme_css_vars(DARK_THEME)
+
 
     st.markdown(
         f"""
@@ -207,27 +247,32 @@ def _apply_styles() -> None:
 {light_vars}
             }}
 
+
             @media (prefers-color-scheme: dark) {{
                 :root {{
 {dark_vars}
                 }}
             }}
 
+
             .stApp {{
                 background: var(--tmk-bg);
                 color: var(--tmk-text);
             }}
+
 
             .block-container {{
                 padding-top: 1rem;
                 padding-bottom: 2rem;
             }}
 
+
             .tmk-shell {{
                 max-width: 1240px;
                 margin: 0 auto;
                 padding-bottom: 2rem;
             }}
+
 
             .tmk-header {{
                 background: linear-gradient(180deg, var(--tmk-surface) 0%, var(--tmk-surface-strong) 100%);
@@ -238,6 +283,7 @@ def _apply_styles() -> None:
                 margin-bottom: 1rem;
             }}
 
+
             .tmk-kicker {{
                 font-size: 0.78rem;
                 font-weight: 800;
@@ -247,12 +293,14 @@ def _apply_styles() -> None:
                 margin-bottom: 0.25rem;
             }}
 
+
             .tmk-header h1 {{
                 margin: 0;
                 font-size: 2rem;
                 line-height: 1.08;
                 color: var(--tmk-text);
             }}
+
 
             .tmk-header p {{
                 margin: 0.45rem 0 0 0;
@@ -261,12 +309,14 @@ def _apply_styles() -> None:
                 line-height: 1.45;
             }}
 
+
             .tmk-nav-strip {{
                 display: flex;
                 gap: 0.6rem;
                 flex-wrap: wrap;
                 margin-bottom: 1rem;
             }}
+
 
             .tmk-nav-link {{
                 display: inline-flex;
@@ -281,11 +331,13 @@ def _apply_styles() -> None:
                 text-decoration: none;
             }}
 
+
             .tmk-nav-link-active {{
                 background: var(--tmk-accent-soft);
                 border-color: var(--tmk-accent);
                 color: #ffffff;
             }}
+
 
             .tmk-panel {{
                 background: var(--tmk-surface);
@@ -296,6 +348,7 @@ def _apply_styles() -> None:
                 margin-bottom: 1rem;
             }}
 
+
             .tmk-card {{
                 background: linear-gradient(180deg, var(--tmk-surface) 0%, var(--tmk-surface-strong) 100%);
                 border: 1px solid var(--tmk-border);
@@ -305,6 +358,7 @@ def _apply_styles() -> None:
                 margin-bottom: 0.75rem;
             }}
 
+
             .tmk-card-dark {{
                 background: linear-gradient(180deg, rgba(8, 23, 47, 0.98) 0%, rgba(13, 28, 50, 0.98) 100%);
                 border: 1px solid var(--tmk-border);
@@ -312,6 +366,7 @@ def _apply_styles() -> None:
                 padding: 0.75rem;
                 margin-bottom: 0.75rem;
             }}
+
 
             .tmk-section-title {{
                 font-size: 2rem;
@@ -321,6 +376,7 @@ def _apply_styles() -> None:
                 margin-bottom: 0.2rem;
             }}
 
+
             .tmk-section-subtitle {{
                 color: var(--tmk-text-soft);
                 margin-bottom: 0.8rem;
@@ -328,12 +384,14 @@ def _apply_styles() -> None:
                 line-height: 1.45;
             }}
 
+
             .tmk-subhead {{
                 font-size: 1.18rem;
                 font-weight: 800;
                 color: var(--tmk-text);
                 margin-bottom: 0.5rem;
             }}
+
 
             .tmk-small-label {{
                 font-size: 0.74rem;
@@ -344,6 +402,7 @@ def _apply_styles() -> None:
                 margin-bottom: 0.3rem;
             }}
 
+
             .tmk-value {{
                 font-size: 1.3rem;
                 font-weight: 800;
@@ -351,11 +410,13 @@ def _apply_styles() -> None:
                 line-height: 1.2;
             }}
 
+
             .tmk-note {{
                 color: var(--tmk-text-soft);
                 font-size: 0.98rem;
                 line-height: 1.55;
             }}
+
 
             .tmk-soft-list {{
                 display: flex;
@@ -363,6 +424,7 @@ def _apply_styles() -> None:
                 gap: 0.45rem;
                 margin-top: 0.5rem;
             }}
+
 
             .tmk-pill {{
                 display: inline-flex;
@@ -377,11 +439,13 @@ def _apply_styles() -> None:
                 line-height: 1.2;
             }}
 
+
             .tmk-pill-accent {{
                 background: var(--tmk-accent-soft);
                 border-color: var(--tmk-accent);
                 color: #ffffff;
             }}
+
 
             .tmk-stage-card {{
                 border-radius: 20px;
@@ -391,12 +455,14 @@ def _apply_styles() -> None:
                 background: var(--tmk-surface);
             }}
 
+
             .tmk-stage-title {{
                 font-size: 1.05rem;
                 font-weight: 800;
                 color: var(--tmk-text);
                 margin-bottom: 0.55rem;
             }}
+
 
             .tmk-map-wrap {{
                 overflow-x: auto;
@@ -406,6 +472,7 @@ def _apply_styles() -> None:
                 margin-top: 0.8rem;
             }}
 
+
             .tmk-legend-box {{
                 background: var(--tmk-surface-strong);
                 border: 1px solid var(--tmk-border);
@@ -414,12 +481,14 @@ def _apply_styles() -> None:
                 margin-top: 0.8rem;
             }}
 
+
             .tmk-legend-row {{
                 display: flex;
                 flex-wrap: wrap;
                 gap: 0.9rem;
                 align-items: center;
             }}
+
 
             .tmk-legend-item {{
                 display: inline-flex;
@@ -430,11 +499,13 @@ def _apply_styles() -> None:
                 font-weight: 700;
             }}
 
+
             .tmk-line-swatch {{
                 width: 36px;
                 height: 0;
                 border-top: 4px solid var(--tmk-map-link-selected);
             }}
+
 
             .tmk-line-swatch-purple {{
                 width: 36px;
@@ -442,11 +513,13 @@ def _apply_styles() -> None:
                 border-top: 3px solid var(--tmk-map-link-atlas);
             }}
 
+
             .tmk-line-swatch-grey {{
                 width: 36px;
                 height: 0;
                 border-top: 3px solid var(--tmk-border);
             }}
+
 
             .tmk-worksheet-frame {{
                 background: linear-gradient(180deg, var(--tmk-surface) 0%, var(--tmk-surface-strong) 100%);
@@ -455,6 +528,7 @@ def _apply_styles() -> None:
                 padding: 1rem;
                 margin-bottom: 0.9rem;
             }}
+
 
             .tmk-answer-box {{
                 background: var(--tmk-surface);
@@ -465,11 +539,13 @@ def _apply_styles() -> None:
                 color: var(--tmk-text);
             }}
 
+
             .tmk-mobile-note {{
                 color: var(--tmk-text-soft);
                 font-size: 0.9rem;
                 margin-top: 0.25rem;
             }}
+
 
             .stButton > button {{
                 border-radius: 999px;
@@ -484,23 +560,28 @@ def _apply_styles() -> None:
                 white-space: normal;
             }}
 
+
             [data-testid="stSidebar"] {{
                 background: var(--tmk-surface-strong);
                 border-left: 1px solid var(--tmk-border);
             }}
 
+
             [data-testid="stSidebar"] * {{
                 color: var(--tmk-text);
             }}
+
 
             @media (max-width: 640px) {{
                 .tmk-header h1 {{
                     font-size: 1.36rem;
                 }}
 
+
                 .tmk-section-title {{
                     font-size: 1.3rem;
                 }}
+
 
                 .tmk-note {{
                     font-size: 0.92rem;
@@ -510,6 +591,8 @@ def _apply_styles() -> None:
         """,
         unsafe_allow_html=True,
     )
+
+
 
 
 def _theme_css_vars(theme: dict[str, str]) -> str:
@@ -531,6 +614,8 @@ def _theme_css_vars(theme: dict[str, str]) -> str:
     )
 
 
+
+
 def _render_nav() -> None:
     links: list[str] = []
     for surface in SURFACES:
@@ -540,8 +625,11 @@ def _render_nav() -> None:
     st.markdown(f'<div class="tmk-nav-strip">{"".join(links)}</div>', unsafe_allow_html=True)
 
 
+
+
 def _render_sidebar() -> None:
     record = product_record(st.session_state.selected_product)
+
 
     with st.sidebar:
         st.markdown("## Current selection")
@@ -551,6 +639,7 @@ def _render_sidebar() -> None:
         st.write(f"**Full routes:** {len(distinct_factor_routes(record.product))}")
         st.write(f"**Division exits:** {len(record.ways_out)}")
         st.write(f"**Role:** {record.structural_role}")
+
 
         st.markdown("---")
         st.markdown("### Current surface")
@@ -565,11 +654,14 @@ def _render_sidebar() -> None:
             st.write(f"**Tier:** {st.session_state.selected_tier}")
 
 
+
+
 def _render_structural_planner(product: int) -> None:
     record = product_record(product)
     admissible_routes = distinct_factor_routes(record.product)
     focus_stage_only = st.session_state.planner_zoom_mode == "Selected stage only"
     map_height = _world_map_height(focus_stage_only, record.stage)
+
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Structural Planner</div>', unsafe_allow_html=True)
@@ -578,7 +670,9 @@ def _render_structural_planner(product: int) -> None:
         unsafe_allow_html=True,
     )
 
+
     control_col1, control_col2, control_col3 = st.columns(3)
+
 
     with control_col1:
         selected = st.selectbox(
@@ -592,6 +686,7 @@ def _render_structural_planner(product: int) -> None:
             st.session_state.selected_product = selected
             st.rerun()
 
+
     with control_col2:
         mode = st.selectbox(
             "Link mode",
@@ -602,6 +697,7 @@ def _render_structural_planner(product: int) -> None:
         if mode != st.session_state.planner_link_mode:
             st.session_state.planner_link_mode = mode
             st.rerun()
+
 
     with control_col3:
         zoom = st.selectbox(
@@ -614,6 +710,7 @@ def _render_structural_planner(product: int) -> None:
             st.session_state.planner_zoom_mode = zoom
             st.rerun()
 
+
     _metric_card_row(
         [
             ("Selected stage", stage_label(record.stage)),
@@ -623,7 +720,9 @@ def _render_structural_planner(product: int) -> None:
         ]
     )
 
+
     top_col1, top_col2 = st.columns(2)
+
 
     with top_col1:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
@@ -631,6 +730,7 @@ def _render_structural_planner(product: int) -> None:
         ordered = " → ".join(stage_label(stage) for stage in STAGE_ORDER if stage in STAGES)
         st.markdown(f'<div class="tmk-note">{escape(ordered)}</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
+
 
     with top_col2:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
@@ -646,7 +746,9 @@ def _render_structural_planner(product: int) -> None:
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
+
     lower_col1, lower_col2 = st.columns(2)
+
 
     with lower_col1:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
@@ -654,6 +756,7 @@ def _render_structural_planner(product: int) -> None:
         lines = "<br>".join(escape(_format_route(route)) for route in admissible_routes)
         st.markdown(f'<div class="tmk-note">{lines}</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
+
 
     with lower_col2:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
@@ -670,7 +773,9 @@ def _render_structural_planner(product: int) -> None:
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
+
     _render_stage_cards(product)
+
 
     st.markdown('<div class="tmk-map-wrap">', unsafe_allow_html=True)
     components.html(
@@ -683,6 +788,7 @@ def _render_structural_planner(product: int) -> None:
         scrolling=True,
     )
     st.markdown("</div>", unsafe_allow_html=True)
+
 
     st.markdown(
         """
@@ -697,7 +803,9 @@ def _render_structural_planner(product: int) -> None:
         unsafe_allow_html=True,
     )
 
+
     st.markdown("</div>", unsafe_allow_html=True)
+
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Products introduced at this stage</div>', unsafe_allow_html=True)
@@ -707,6 +815,8 @@ def _render_structural_planner(product: int) -> None:
     )
     _render_visible_products_grid(product, only_stage=record.stage)
     st.markdown("</div>", unsafe_allow_html=True)
+
+
 
 
 def _render_stage_cards(selected_product: int) -> None:
@@ -728,9 +838,12 @@ def _render_stage_cards(selected_product: int) -> None:
         )
 
 
+
+
 def _render_product_lab(product: int) -> None:
     record = product_record(product)
     compare = product_record(st.session_state.compare_product)
+
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Product Lab</div>', unsafe_allow_html=True)
@@ -739,7 +852,9 @@ def _render_product_lab(product: int) -> None:
         unsafe_allow_html=True,
     )
 
+
     control_col1, control_col2, control_col3 = st.columns(3)
+
 
     with control_col1:
         selected = st.selectbox(
@@ -756,10 +871,12 @@ def _render_product_lab(product: int) -> None:
             st.session_state.selected_route_index = 0
             st.rerun()
 
+
     compare_options = [item for item in ALL_PRODUCTS if item != st.session_state.selected_product]
     if st.session_state.compare_product not in compare_options:
         st.session_state.compare_product = compare_options[0]
         compare = product_record(st.session_state.compare_product)
+
 
     with control_col2:
         compare_value = st.selectbox(
@@ -772,6 +889,7 @@ def _render_product_lab(product: int) -> None:
         if compare_value != st.session_state.compare_product:
             st.session_state.compare_product = compare_value
             st.rerun()
+
 
     with control_col3:
         mode = st.radio(
@@ -786,8 +904,10 @@ def _render_product_lab(product: int) -> None:
             st.session_state.selected_route_index = 0
             st.rerun()
 
+
     record = product_record(st.session_state.selected_product)
     compare = product_record(st.session_state.compare_product)
+
 
     _metric_card_row(
         [
@@ -797,6 +917,7 @@ def _render_product_lab(product: int) -> None:
             ("Role", record.structural_role),
         ]
     )
+
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-subhead">Radial hub view</div>', unsafe_allow_html=True)
@@ -810,9 +931,12 @@ def _render_product_lab(product: int) -> None:
     st.markdown('<div class="tmk-mobile-note">Mobile layout switches to stacked route cards below 720px width.</div>', unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
+
     _render_route_inspector(record)
 
+
     left, right = st.columns(2)
+
 
     with left:
         st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
@@ -824,6 +948,7 @@ def _render_product_lab(product: int) -> None:
             )
         st.markdown("</div>", unsafe_allow_html=True)
 
+
     with right:
         st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
         st.markdown('<div class="tmk-subhead">Exit routes</div>', unsafe_allow_html=True)
@@ -834,20 +959,24 @@ def _render_product_lab(product: int) -> None:
             )
         st.markdown("</div>", unsafe_allow_html=True)
 
+
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-subhead">Truth set</div>', unsafe_allow_html=True)
     st.markdown(_pill_cloud(distinct_factor_routes(record.product), accent=True), unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
+
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-subhead">Inverse field</div>', unsafe_allow_html=True)
     st.markdown(_pill_cloud(inverse_labels(record.product), accent=False), unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
+
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-subhead">Pattern links</div>', unsafe_allow_html=True)
     _render_pattern_links(record.product)
     st.markdown("</div>", unsafe_allow_html=True)
+
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-subhead">Compare products</div>', unsafe_allow_html=True)
@@ -863,8 +992,11 @@ def _render_product_lab(product: int) -> None:
     st.markdown("</div>", unsafe_allow_html=True)
 
 
+
+
 def _route_inspector_items(record, mode: str) -> list[dict[str, str]]:
     items: list[dict[str, str]] = []
+
 
     if mode == "Entry routes":
         for route in entry_routes(record.product):
@@ -877,6 +1009,7 @@ def _route_inspector_items(record, mode: str) -> list[dict[str, str]]:
             )
         return items
 
+
     for divisor, quotient in record.ways_out[:4]:
         items.append(
             {
@@ -886,12 +1019,16 @@ def _route_inspector_items(record, mode: str) -> list[dict[str, str]]:
             }
         )
 
+
     return items
+
+
 
 
 def _render_route_inspector(record) -> None:
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-subhead">Route inspector</div>', unsafe_allow_html=True)
+
 
     items = _route_inspector_items(record, st.session_state.route_view_mode)
     if not items:
@@ -899,8 +1036,10 @@ def _render_route_inspector(record) -> None:
         st.markdown("</div>", unsafe_allow_html=True)
         return
 
+
     if st.session_state.selected_route_index >= len(items):
         st.session_state.selected_route_index = 0
+
 
     button_cols = st.columns(min(4, len(items)))
     for index, item in enumerate(items):
@@ -915,7 +1054,9 @@ def _render_route_inspector(record) -> None:
             st.session_state.selected_route_index = index
             st.rerun()
 
+
     selected_item = items[st.session_state.selected_route_index]
+
 
     st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
     title = st.session_state.route_view_mode[:-1] if st.session_state.route_view_mode.endswith("s") else st.session_state.route_view_mode
@@ -926,6 +1067,8 @@ def _render_route_inspector(record) -> None:
     st.markdown("</div>", unsafe_allow_html=True)
 
 
+
+
 def _render_worksheet_studio(product: int, tier: str) -> None:
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Worksheet Studio</div>', unsafe_allow_html=True)
@@ -934,7 +1077,9 @@ def _render_worksheet_studio(product: int, tier: str) -> None:
         unsafe_allow_html=True,
     )
 
+
     control_col1, control_col2 = st.columns(2)
+
 
     with control_col1:
         selected = st.selectbox(
@@ -948,6 +1093,7 @@ def _render_worksheet_studio(product: int, tier: str) -> None:
             st.session_state.selected_product = selected
             st.rerun()
 
+
     with control_col2:
         selected_tier = st.radio(
             "Worksheet tier",
@@ -960,22 +1106,22 @@ def _render_worksheet_studio(product: int, tier: str) -> None:
             st.session_state.selected_tier = selected_tier
             st.rerun()
 
-    import inspect
 
-params = inspect.signature(generate_worksheet).parameters
+    params = inspect.signature(generate_worksheet).parameters
 
-if "product" in params:
-    worksheet = generate_worksheet(
-        product=st.session_state.selected_product,
-        tier=st.session_state.selected_tier,
-    )
-elif "product_id" in params:
-    worksheet = generate_worksheet(
-        product_id=st.session_state.selected_product,
-        tier=st.session_state.selected_tier,
-    )
-else:
-    raise TypeError("generate_worksheet must accept either 'product' or 'product_id'")
+    if "product" in params:
+        worksheet = generate_worksheet(
+            product=st.session_state.selected_product,
+            tier=st.session_state.selected_tier,
+        )
+    elif "product_id" in params:
+        worksheet = generate_worksheet(
+            product_id=st.session_state.selected_product,
+            tier=st.session_state.selected_tier,
+        )
+    else:
+        raise TypeError("generate_worksheet must accept either 'product' or 'product_id'")
+
 
     _metric_card_row(
         [
@@ -985,6 +1131,7 @@ else:
             ("Questions", str(len(worksheet.questions))),
         ]
     )
+
 
     st.markdown('<div class="tmk-worksheet-frame">', unsafe_allow_html=True)
     st.markdown("### Pupil worksheet")
@@ -1000,10 +1147,12 @@ else:
         )
     st.markdown("</div>", unsafe_allow_html=True)
 
+
     st.markdown('<div class="tmk-worksheet-frame">', unsafe_allow_html=True)
     st.markdown("### Teacher key")
     answers = _coerce_sequence(getattr(worksheet.teacher_key, "answers", ()))
     notes = _coerce_sequence(getattr(worksheet.teacher_key, "notes", ()))
+
 
     st.markdown("#### Answers")
     for index, answer in enumerate(answers, start=1):
@@ -1015,6 +1164,7 @@ else:
             """,
             unsafe_allow_html=True,
         )
+
 
     st.markdown("#### Notes")
     for note in notes:
@@ -1028,6 +1178,8 @@ else:
         )
     st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
+
+
 
 
 def _metric_card_row(items: list[tuple[str, str]]) -> None:
@@ -1045,12 +1197,15 @@ def _metric_card_row(items: list[tuple[str, str]]) -> None:
             )
 
 
+
+
 def _render_visible_products_grid(product: int, only_stage: str | None = None) -> None:
     if only_stage is None:
         record = product_record(product)
         products = visible_products(record.stage)
     else:
         products = STAGES[only_stage].products
+
 
     cols_per_row = 4
     for row_start in range(0, len(products), cols_per_row):
@@ -1067,15 +1222,19 @@ def _render_visible_products_grid(product: int, only_stage: str | None = None) -
                 st.rerun()
 
 
+
+
 def _render_pattern_links(product: int) -> None:
     if product_pattern_ids is None or get_pattern is None:
         st.markdown('<div class="tmk-note">Pattern library not available in this runtime.</div>', unsafe_allow_html=True)
         return
 
+
     pattern_ids = tuple(product_pattern_ids(product))[:8]
     if not pattern_ids:
         st.markdown('<div class="tmk-note">No pattern links attached.</div>', unsafe_allow_html=True)
         return
+
 
     pills: list[str] = []
     for pattern_id in pattern_ids:
@@ -1083,11 +1242,14 @@ def _render_pattern_links(product: int) -> None:
         pills.append(f'<span class="tmk-pill">{escape(pattern.name)}</span>')
     st.markdown(f'<div class="tmk-soft-list">{"".join(pills)}</div>', unsafe_allow_html=True)
 
+
     first = get_pattern(pattern_ids[0])
     st.markdown(
         f'<div class="tmk-note" style="margin-top:0.65rem;">{escape(first.learner_label)}</div>',
         unsafe_allow_html=True,
     )
+
+
 
 
 def _world_map_height(focus_stage_only: bool, selected_stage: str) -> int:
@@ -1097,6 +1259,8 @@ def _world_map_height(focus_stage_only: bool, selected_stage: str) -> int:
     bottom = 28
     stages = _visible_world_stages(focus_stage_only, selected_stage)
     return top + len(stages) * lane_h + max(0, len(stages) - 1) * lane_gap + bottom + 20
+
+
 
 
 def _world_map_html(
@@ -1112,6 +1276,7 @@ def _world_map_html(
     header_band_h = 44
     left_label_space = 250
 
+
     selected_record = product_record(selected_product)
     stages = _visible_world_stages(focus_stage_only, selected_record.stage)
     total_height = _world_map_height(focus_stage_only, selected_record.stage)
@@ -1126,8 +1291,10 @@ def _world_map_html(
         stages=stages,
     )
 
+
     light_vars = _theme_css_vars(LIGHT_THEME)
     dark_vars = _theme_css_vars(DARK_THEME)
+
 
     lane_rects: list[str] = []
     lane_labels: list[str] = []
@@ -1135,11 +1302,13 @@ def _world_map_html(
     atlas_lines: list[str] = []
     selected_lines: list[str] = []
 
+
     for index, stage in enumerate(stages):
         y = top + index * (lane_h + lane_gap)
         style = _stage_palette(stage)
         stage_record = STAGES[stage]
         stage_key_label, stage_name_label = _split_stage_label(stage, stage_record.label)
+
 
         lane_rects.append(
             f'<rect x="{lane_x}" y="{y}" width="{lane_w}" height="{lane_h}" rx="24" fill="{style["background"]}" stroke="{style["border"]}" stroke-width="2"></rect>'
@@ -1151,6 +1320,7 @@ def _world_map_html(
             f'<text x="{lane_x + 18}" y="{y + 43}" font-size="15" font-weight="700" fill="var(--tmk-text)">{escape(stage_name_label)}</text>'
         )
 
+
         stage_products = STAGES[stage].products
         if len(stage_products) > 1:
             xs = [positions[p][0] for p in stage_products]
@@ -1158,6 +1328,7 @@ def _world_map_html(
             structure_lines.append(
                 _svg_line(min(xs), structure_y, max(xs), structure_y, "var(--tmk-border)", 2.0, 0.85, "")
             )
+
 
     if link_mode == "Show selected atlas":
         end_x, end_y = positions[selected_product]
@@ -1171,6 +1342,7 @@ def _world_map_html(
                     _svg_line(start_x, start_y, end_x, end_y, "var(--tmk-map-link-atlas)", 2.6, 1.0, "")
                 )
 
+
     if link_mode in ("Selected links", "Show selected atlas"):
         end_x, end_y = positions[selected_product]
         for factor in selected_record.intro_route:
@@ -1180,17 +1352,20 @@ def _world_map_html(
                     _svg_line(start_x, start_y, end_x, end_y, "var(--tmk-map-link-selected)", 4.0, 1.0, "")
                 )
 
+
     nodes: list[str] = []
     for product in ALL_PRODUCTS:
         record = product_record(product)
         if record.stage not in stages:
             continue
 
+
         style = _stage_palette(record.stage)
         x, y = positions[product]
         is_selected = product == selected_product
         radius = 21 if is_selected else 18
         outer_radius = 24 if is_selected else 20
+
 
         if is_selected:
             nodes.append(f'<circle cx="{x}" cy="{y}" r="{outer_radius}" fill="var(--tmk-map-node-selected)" opacity="0.22"></circle>')
@@ -1203,9 +1378,11 @@ def _world_map_html(
                 f'<circle cx="{x}" cy="{y}" r="{radius}" fill="{style["node"]}" stroke="var(--tmk-map-node-outline)" stroke-width="2"></circle>'
             )
 
+
         nodes.append(
             f'<text x="{x}" y="{y + 5}" text-anchor="middle" font-size="{18 if is_selected else 15}" font-weight="900" fill="#ffffff">{product}</text>'
         )
+
 
     return f"""
     <html>
@@ -1215,11 +1392,13 @@ def _world_map_html(
 {light_vars}
             }}
 
+
             @media (prefers-color-scheme: dark) {{
                 :root {{
 {dark_vars}
                 }}
             }}
+
 
             body {{
                 margin: 0;
@@ -1251,6 +1430,8 @@ def _world_map_html(
     """
 
 
+
+
 def _world_positions(
     lane_x: int,
     lane_w: int,
@@ -1264,16 +1445,19 @@ def _world_positions(
     positions: dict[int, tuple[float, float]] = {}
     usable_x = lane_w - left_label_space - 76
 
+
     for row_index, stage in enumerate(stages):
         products = STAGES[stage].products
         row_top = top + row_index * (lane_h + lane_gap)
         y = row_top + header_band_h + (lane_h - header_band_h) / 2 + 6
+
 
         if len(products) == 1:
             base_x = lane_x + left_label_space + usable_x / 2
             dx, dy = MAP_NODE_OFFSETS.get(products[0], (0.0, 0.0))
             positions[products[0]] = (base_x + dx, y + dy)
             continue
+
 
         step = usable_x / (len(products) - 1)
         start_x = lane_x + left_label_space
@@ -1282,7 +1466,10 @@ def _world_positions(
             dx, dy = MAP_NODE_OFFSETS.get(product, (0.0, 0.0))
             positions[product] = (base_x + dx, y + dy)
 
+
     return positions
+
+
 
 
 def _visible_world_stages(focus_stage_only: bool, selected_stage: str) -> list[str]:
@@ -1292,12 +1479,15 @@ def _visible_world_stages(focus_stage_only: bool, selected_stage: str) -> list[s
     return stages
 
 
+
+
 def _radial_hub_html(product: int) -> str:
     record = product_record(product)
     desktop_svg = _desktop_radial_svg(record)
     mobile_svg = _mobile_radial_svg(record)
     light_vars = _theme_css_vars(LIGHT_THEME)
     dark_vars = _theme_css_vars(DARK_THEME)
+
 
     return f"""
     <html>
@@ -1307,11 +1497,13 @@ def _radial_hub_html(product: int) -> str:
 {light_vars}
             }}
 
+
             @media (prefers-color-scheme: dark) {{
                 :root {{
 {dark_vars}
                 }}
             }}
+
 
             body {{
                 margin: 0;
@@ -1321,13 +1513,16 @@ def _radial_hub_html(product: int) -> str:
                 font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             }}
 
+
             .tmk-radial-desktop {{
                 display: block;
             }}
 
+
             .tmk-radial-mobile {{
                 display: none;
             }}
+
 
             svg {{
                 width: 100%;
@@ -1335,10 +1530,12 @@ def _radial_hub_html(product: int) -> str:
                 display: block;
             }}
 
+
             @media (max-width: 720px) {{
                 .tmk-radial-desktop {{
                     display: none;
                 }}
+
 
                 .tmk-radial-mobile {{
                     display: block;
@@ -1354,6 +1551,8 @@ def _radial_hub_html(product: int) -> str:
     """
 
 
+
+
 def _desktop_radial_svg(record) -> str:
     product = record.product
     style = _stage_palette(record.stage)
@@ -1361,27 +1560,34 @@ def _desktop_radial_svg(record) -> str:
     cy = 270
     r = 86
 
+
     entry_route_list = entry_routes(record.product)[:4]
     exit_labels = exit_route_labels(record.product, limit=4)
+
 
     entry_angles = [225, 255, 285, 315][: len(entry_route_list)]
     exit_angles = [140, 110, 70, 40][: len(exit_labels)]
 
+
     entry_points = [_point_on_circle(cx, cy, 210, angle) for angle in entry_angles]
     exit_points = [_point_on_circle(cx, cy, 220, angle) for angle in exit_angles]
 
+
     lines: list[str] = []
     boxes: list[str] = []
+
 
     for route, (bx, by) in zip(entry_route_list, entry_points):
         x1, y1 = _edge_point_toward(cx, cy, bx, by, r + 10)
         lines.append(_svg_arrow(bx, by + 22, x1, y1, "#dbe4f4", 4))
         boxes.append(_svg_info_box(bx - 64, by, 128, 42, _format_route(route), "#ffffff", "#cfd8e6", "#20304a", 18))
 
+
     for label, (bx, by) in zip(exit_labels, exit_points):
         x1, y1 = _edge_point_toward(cx, cy, bx, by, r + 10)
         lines.append(_svg_arrow(x1, y1, bx, by + 20, "#9c7cff", 4))
         boxes.append(_svg_info_box(bx - 70, by, 140, 42, label, "#241448", "#d9c4ff", "#ffffff", 18))
+
 
     return f"""
     <svg viewBox="0 0 840 520" width="840" height="520" xmlns="http://www.w3.org/2000/svg">
@@ -1408,24 +1614,30 @@ def _desktop_radial_svg(record) -> str:
     )
 
 
+
+
 def _mobile_radial_svg(record) -> str:
     product = record.product
     style = _stage_palette(record.stage)
     entry_route_list = entry_routes(record.product)[:4]
     exit_labels = exit_route_labels(record.product, limit=4)
 
+
     entry_cards = []
     exit_cards = []
+
 
     entry_y = 90
     for route in entry_route_list:
         entry_cards.append(_svg_info_box(40, entry_y, 280, 44, _format_route(route), "#ffffff", "#cfd8e6", "#20304a", 18))
         entry_y += 58
 
+
     exit_y = 380
     for label in exit_labels:
         exit_cards.append(_svg_info_box(40, exit_y, 280, 44, label, "#241448", "#d9c4ff", "#ffffff", 18))
         exit_y += 58
+
 
     return f"""
     <svg viewBox="0 0 360 660" xmlns="http://www.w3.org/2000/svg">
@@ -1440,6 +1652,8 @@ def _mobile_radial_svg(record) -> str:
         {''.join(exit_cards)}
     </svg>
     """
+
+
 
 
 def _svg_line(
@@ -1459,6 +1673,8 @@ def _svg_line(
     )
 
 
+
+
 def _svg_arrow(
     x1: float,
     y1: float,
@@ -1472,6 +1688,8 @@ def _svg_arrow(
         f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" '
         f'stroke="{color}" stroke-width="{width}" stroke-linecap="round" marker-end="{marker}"></line>'
     )
+
+
 
 
 def _svg_info_box(
@@ -1493,6 +1711,8 @@ def _svg_info_box(
     """
 
 
+
+
 def _edge_point_toward(cx: float, cy: float, tx: float, ty: float, radius: float) -> tuple[float, float]:
     dx = tx - cx
     dy = ty - cy
@@ -1503,9 +1723,13 @@ def _edge_point_toward(cx: float, cy: float, tx: float, ty: float, radius: float
     return cx + dx * scale, cy + dy * scale
 
 
+
+
 def _point_on_circle(cx: float, cy: float, radius: float, angle_degrees: float) -> tuple[float, float]:
     angle_radians = angle_degrees * pi / 180
     return cx + radius * cos(angle_radians), cy + radius * sin(angle_radians)
+
+
 
 
 def _stage_palette(stage: str) -> dict[str, str]:
@@ -1520,6 +1744,8 @@ def _stage_palette(stage: str) -> dict[str, str]:
     }
 
 
+
+
 def _split_stage_label(stage_key: str, label: str) -> tuple[str, str]:
     clean = label.strip()
     lowered = clean.lower()
@@ -1530,14 +1756,20 @@ def _split_stage_label(stage_key: str, label: str) -> tuple[str, str]:
     return f"Stage {stage_key}", clean
 
 
+
+
 def _product_option_label(product: int) -> str:
     record = product_record(product)
     return f"{product} · {record.stage} · {_format_route(record.intro_route)}"
 
 
+
+
 def _question_number(question, fallback: int) -> int:
     value = getattr(question, "id", None)
     return value if isinstance(value, int) else fallback
+
+
 
 
 def _render_question_text(question) -> str:
@@ -1546,6 +1778,8 @@ def _render_question_text(question) -> str:
         if value not in (None, ""):
             return _stringify(value)
     return _stringify(question)
+
+
 
 
 def _coerce_sequence(value) -> tuple:
@@ -1560,8 +1794,12 @@ def _coerce_sequence(value) -> tuple:
     return tuple(value) if isinstance(value, Iterable) else (value,)
 
 
+
+
 def _format_route(route: tuple[int, int]) -> str:
     return f"{route[0]}×{route[1]}"
+
+
 
 
 def _stringify(value) -> str:
@@ -1570,6 +1808,7 @@ def _stringify(value) -> str:
     return str(value)
 
 
+
+
 if __name__ == "__main__":
     main()
-
