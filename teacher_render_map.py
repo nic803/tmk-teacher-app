@@ -9,6 +9,7 @@ from domain.routes import (
     render_multiplication_route,
 )
 
+
 def render_teacher_answer(answer_data: dict) -> str:
     if "value" in answer_data and len(answer_data) == 1:
         return str(answer_data["value"])
