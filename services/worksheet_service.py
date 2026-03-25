@@ -1,5 +1,10 @@
-from domain.structure import get_structure
-
-def generate_worksheet(stage_id: str):
-    structure = get_structure(stage_id)
-    return structure["new_products"]
+try:
+    worksheet = generate_worksheet(
+        product=st.session_state.selected_product,
+        tier=st.session_state.selected_tier,
+    )
+except TypeError:
+    worksheet = generate_worksheet(
+        product_id=st.session_state.selected_product,
+        tier=st.session_state.selected_tier,
+    )
