@@ -1,7 +1,5 @@
 import inspect
 
-params = inspect.signature(generate_worksheet).parameters
-
 if "product" in params:
     worksheet = generate_worksheet(
         product=st.session_state.selected_product,
