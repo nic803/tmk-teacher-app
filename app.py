@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import inspect
-
 # ✅ FIX: ensure Streamlit can find local modules
 import sys
 import os
@@ -1107,20 +1105,10 @@ def _render_worksheet_studio(product: int, tier: str) -> None:
             st.rerun()
 
 
-    params = inspect.signature(generate_worksheet).parameters
-
-    if "product" in params:
-        worksheet = generate_worksheet(
-            product=st.session_state.selected_product,
-            tier=st.session_state.selected_tier,
-        )
-    elif "product_id" in params:
-        worksheet = generate_worksheet(
-            product_id=st.session_state.selected_product,
-            tier=st.session_state.selected_tier,
-        )
-    else:
-        raise TypeError("generate_worksheet must accept either 'product' or 'product_id'")
+    worksheet = generate_worksheet(
+        product=st.session_state.selected_product,
+        tier=st.session_state.selected_tier,
+    )
 
 
     _metric_card_row(
