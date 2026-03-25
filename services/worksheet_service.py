@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
+from domain.memory_cues import memory_cues_for_product
 from domain.routes import distinct_factor_routes
 from products import product_record, stage_label
 
@@ -32,9 +32,9 @@ def generate_worksheet(product: int, tier: str) -> Worksheet:
     record = product_record(product)
     stage = stage_label(record.stage)
 
-    intro_route = _coerce_route(record.intro_route)
-    routes = _coerce_routes(distinct_factor_routes(product))
-    exits = _coerce_exits(getattr(record, "ways_out", ()))
+    intro_route = tuple(record.intro_route)
+    routes = tuple(distinct_factor_routes(product))
+    exits = tuple(getattr(record, "ways_out", ()))
 
     alt_route = _first_non_intro_route(routes, intro_route)
     third_route = _next_distinct_route(routes, {intro_route, alt_route})
@@ -44,6 +44,9 @@ def generate_worksheet(product: int, tier: str) -> Worksheet:
     exit_2 = exits[1] if len(exits) > 1 else (alt_route[0], alt_route[1])
     exit_3 = exits[2] if len(exits) > 2 else (intro_route[1], intro_route[0])
 
+    cues = memory_cues_for_product(product)
+    cue = cues[0] if cues else None
+
     if tier == "Support":
         questions = (
             WorksheetQuestion(1, f"Complete: {intro_route[0]} × {intro_route[1]} = ____"),
@@ -52,7 +55,7 @@ def generate_worksheet(product: int, tier: str) -> Worksheet:
             WorksheetQuestion(4, f"Complete: {product} ÷ {intro_route[1]} = ____"),
             WorksheetQuestion(5, f"Complete: {intro_route[0]} × ____ = {product}"),
             WorksheetQuestion(6, f"Complete: ____ × {intro_route[1]} = {product}"),
-            WorksheetQuestion(7, f"What stage introduces {product}?"),
+            WorksheetQuestion(7, f"Which stage introduces {product}?"),
             WorksheetQuestion(8, f"Complete: {exit_1[0]} × {exit_1[1]} = ____"),
             WorksheetQuestion(9, f"Complete: {product} ÷ {exit_2[0]} = ____"),
             WorksheetQuestion(10, f"Write the intro route for {product}."),
@@ -72,6 +75,8 @@ def generate_worksheet(product: int, tier: str) -> Worksheet:
         notes = (
             f"{product} is introduced in {stage} through {_format_route(intro_route)}.",
             "Support tier stays anchored to the pedagogical intro route and linked inverse division facts.",
+            *(f"Memory cue: {cue.child_text}" for cue in cues),
+            *(cue.teacher_note for cue in cues),
         )
 
     elif tier == "Core":
@@ -102,11 +107,12 @@ def generate_worksheet(product: int, tier: str) -> Worksheet:
         notes = (
             f"Core tier anchors on intro route {_format_route(intro_route)} plus one additional admissible route.",
             "Division remains linked to the same product.",
+            *(f"Memory cue: {cue.child_text}" for cue in cues),
+            *(cue.teacher_note for cue in cues),
         )
 
     elif tier == "Extension":
-        extension_routes = routes if routes else (intro_route,)
-        route_answer = ", ".join(_format_route(route) for route in extension_routes)
+        route_answer = ", ".join(_format_route(route) for route in routes) if routes else _format_route(intro_route)
 
         questions = (
             WorksheetQuestion(1, f"List the distinct multiplication routes for {product}."),
@@ -135,6 +141,8 @@ def generate_worksheet(product: int, tier: str) -> Worksheet:
         notes = (
             "Extension tier can expose the wider admissible route set without breaking product-first structure.",
             f"{product} has {len(routes)} distinct multiplication route(s) and {len(exits)} division exit route(s).",
+            *(f"Memory cue: {cue.child_text}" for cue in cues),
+            *(cue.teacher_note for cue in cues),
         )
 
     else:
@@ -157,40 +165,6 @@ def generate_worksheet(product: int, tier: str) -> Worksheet:
 
 def _format_route(route: tuple[int, int]) -> str:
     return f"{route[0]}×{route[1]}"
-
-
-def _coerce_route(value: Any) -> tuple[int, int]:
-    if isinstance(value, (tuple, list)) and len(value) == 2:
-        return (int(value[0]), int(value[1]))
-    raise ValueError(f"Invalid intro route: {value!r}")
-
-
-def _coerce_routes(value: Any) -> tuple[tuple[int, int], ...]:
-    if value is None:
-        return ()
-
-    routes: list[tuple[int, int]] = []
-    for item in value:
-        if isinstance(item, (tuple, list)) and len(item) == 2:
-            routes.append((int(item[0]), int(item[1])))
-        else:
-            raise ValueError(f"Invalid route entry: {item!r}")
-
-    return tuple(routes)
-
-
-def _coerce_exits(value: Any) -> tuple[tuple[int, int], ...]:
-    if value is None:
-        return ()
-
-    exits: list[tuple[int, int]] = []
-    for item in value:
-        if isinstance(item, (tuple, list)) and len(item) == 2:
-            exits.append((int(item[0]), int(item[1])))
-        else:
-            raise ValueError(f"Invalid exit entry: {item!r}")
-
-    return tuple(exits)
 
 
 def _first_non_intro_route(
