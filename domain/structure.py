@@ -20,4 +20,5 @@ def get_product_structure(product: int) -> dict:
         "entry_routes": entry_routes(product),
         "exit_labels": exit_route_labels(product),
         "inverse_labels": inverse_labels(product),
+        "ways_out": tuple(getattr(record, "ways_out", ())),
     }
