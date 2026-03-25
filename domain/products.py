@@ -278,6 +278,39 @@ def products_in_family(factor: int) -> Tuple[int, ...]:
         )
     )
 
+def products_in_family(factor: int) -> Tuple[int, ...]:
+    return tuple(
+        sorted(
+            product
+            for product in ALL_PRODUCTS
+            if any(factor in route for route in factor_families(product))
+        )
+    )
 
-def stage_summary() -> Tuple[Tuple[StageKey, Tuple[int, ...]], ...]:
+
+def _validate_product_structure() -> None:
+    seen = set()
+
+    for stage in STAGE_ORDER:
+        for product in STAGES[stage].products:
+            if product in seen:
+                raise ValueError(f"Duplicate TMK product detected: {product}")
+            seen.add(product)
+
+    for product in ALL_PRODUCTS:
+        if product not in PRODUCT_STAGE:
+            raise ValueError(f"Product missing stage mapping: {product}")
+
+    for product in ALL_PRODUCTS:
+        if product not in INTRO_ROUTES:
+            raise ValueError(f"Missing intro route for product: {product}")
+
+    for product in ALL_PRODUCTS:
+        a, b = INTRO_ROUTES[product]
+        if a * b != product:
+            raise ValueError(f"Invalid intro route {a}×{b} for product {product}")
+
+
+def stage_summary() -> Tuple[Tuple[StageKey, Tuple[int, ...]], ...]:def stage_summary() -> Tuple[Tuple[StageKey, Tuple[int, ...]], ...]:
     return tuple((stage, STAGES[stage].products) for stage in STAGE_ORDER)
+_validate_product_structure()
