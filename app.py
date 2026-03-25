@@ -32,7 +32,7 @@ from products import (
 )
 
 # ✅ FIX: correct module name
-from question_form_engine import generate_worksheet
+from services.worksheet_service import generate_worksheet
 
 
 # ✅ safe optional import (leave as-is)
