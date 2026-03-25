@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Final, Literal
 
-from patterns import get_pattern, product_pattern_ids
-from products import ALL_PRODUCTS, ProductRecord, product_record
+from domain.patterns import get_pattern, product_pattern_ids
+from domain.products import ALL_PRODUCTS, ProductRecord, product_record
 
 Tier = Literal["Support", "Core", "Extension"]
 
