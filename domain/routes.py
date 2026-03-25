@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable
 
-from products import product_record
+from domain.products import product_record
 
 
 @dataclass(frozen=True)
