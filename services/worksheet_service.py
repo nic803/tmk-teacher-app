@@ -28,12 +28,17 @@ class Worksheet:
 
 
 def generate_worksheet(product: int, tier: str) -> Worksheet:
-    record = product_record(product)
-    stage = stage_label(record.stage)
+    structure = get_product_structure(product)
 
-    intro_route = tuple(record.intro_route)
-    routes = tuple(distinct_factor_routes(product))
-    exits = tuple(getattr(record, "ways_out", ()))
+stage = stage_label(structure["stage"])
+
+intro_route = tuple(structure["intro_route"])
+routes = tuple(structure["routes"])
+
+# temporary compatibility until exits move into structure layer
+from domain.products import product_record
+record = product_record(product)
+exits = tuple(getattr(record, "ways_out", ()))
 
     alt_route = _first_non_intro_route(routes, intro_route)
     third_route = _next_distinct_route(routes, {intro_route, alt_route})
