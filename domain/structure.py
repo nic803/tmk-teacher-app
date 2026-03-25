@@ -1,2 +1,23 @@
-def get_structure(stage_id: str):
-    ...
+from __future__ import annotations
+
+from domain.products import product_record
+from domain.routes import (
+    distinct_factor_routes,
+    entry_routes,
+    exit_route_labels,
+    inverse_labels,
+)
+
+
+def get_product_structure(product: int) -> dict:
+    record = product_record(product)
+
+    return {
+        "product": record.product,
+        "stage": record.stage,
+        "intro_route": record.intro_route,
+        "routes": distinct_factor_routes(product),
+        "entry_routes": entry_routes(product),
+        "exit_labels": exit_route_labels(product),
+        "inverse_labels": inverse_labels(product),
+    }
