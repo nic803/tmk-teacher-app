@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Literal, Tuple, List
+from typing import Literal, List
 
-from products import ProductRecord, product_record
+from domain.structure import get_product_structure
 
 
 # --- SIMPLE TYPES (keep minimal to avoid dependency errors) ---
@@ -31,9 +31,15 @@ class QuestionSpec:
     answer: str
 
 
+@dataclass(frozen=True)
+class _QuestionRecord:
+    product: int
+    intro_route: tuple[int, int]
+
+
 # --- CORE QUESTION BUILDER (SIMPLIFIED) ---
 
-def build_question_spec(record: ProductRecord, tier: Tier, qid: int) -> QuestionSpec:
+def build_question_spec(record: _QuestionRecord, tier: Tier, qid: int) -> QuestionSpec:
     left, right = record.intro_route
 
     return QuestionSpec(
@@ -53,7 +59,11 @@ def generate_worksheet(product: int, tier: Tier) -> List[QuestionSpec]:
     This avoids all blueprint / dependency issues.
     """
 
-    record = product_record(product)
+    structure = get_product_structure(product)
+    record = _QuestionRecord(
+        product=structure["product"],
+        intro_route=tuple(structure["intro_route"]),
+    )
 
     questions: List[QuestionSpec] = []
 
