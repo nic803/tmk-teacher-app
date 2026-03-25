@@ -3,10 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, Tuple
 
-from memory_cues import memory_cues_for_product
-from patterns import product_pattern_ids
-from products import product_record
-from question_form_engine import QuestionSpec
+from domain.memory_cues import memory_cues_for_product
+from domain.patterns import product_pattern_ids
+from domain.products import product_record
+from services.question_form_engine import QuestionSpec
 from worksheet_policy import worksheet_memory_cue_mode
 
 
