@@ -117,3 +117,10 @@ def shared_factors(product_a: int, product_b: int) -> str:
     factors_b = {factor for route in distinct_factor_routes(product_b) for factor in route}
     shared = sorted(factors_a.intersection(factors_b))
     return ", ".join(str(value) for value in shared) if shared else "none"
+
+def render_multiplication_route(route: MultiplicationRoute) -> str:
+    return f"{route.left} × {route.right}"
+
+
+def render_division_route(route: DivisionRoute) -> str:
+    return f"{route.product} ÷ {route.divisor} = {route.quotient}"
