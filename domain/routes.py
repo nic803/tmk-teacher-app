@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable
 
-from domain.products import product_record
 
 @dataclass(frozen=True)
 class MultiplicationRoute:
@@ -60,6 +59,8 @@ def canonical_multiplication_route(route: MultiplicationRoute) -> Multiplication
 
 
 def distinct_factor_routes(product: int) -> list[tuple[int, int]]:
+    from domain.products import product_record
+
     record = product_record(product)
     seen: set[tuple[int, int]] = set()
     routes: list[tuple[int, int]] = []
@@ -93,6 +94,8 @@ def entry_multiplication_routes(product: int) -> tuple[MultiplicationRoute, ...]
 
 
 def exit_routes(product: int) -> tuple[DivisionRoute, ...]:
+    from domain.products import product_record
+
     record = product_record(product)
     return tuple(
         DivisionRoute(product=product, divisor=divisor, quotient=quotient)
@@ -116,6 +119,7 @@ def shared_factors(product_a: int, product_b: int) -> str:
     factors_b = {factor for route in distinct_factor_routes(product_b) for factor in route}
     shared = sorted(factors_a.intersection(factors_b))
     return ", ".join(str(value) for value in shared) if shared else "none"
+
 
 def render_multiplication_route(route: MultiplicationRoute) -> str:
     return f"{route.left} × {route.right}"
