@@ -586,7 +586,7 @@ def _render_structural_planner(product: int) -> None:
             options=ALL_PRODUCTS,
             index=ALL_PRODUCTS.index(st.session_state.selected_product),
             format_func=_product_option_label,
-            key=f"planner_product_select_{selected_product}",
+            key=f"planner_product_select_{selected_product or 'default'}",
         )
         if selected != st.session_state.selected_product:
             st.session_state.selected_product = selected
