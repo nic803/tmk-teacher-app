@@ -52,7 +52,7 @@ def generate_worksheet(product: int, tier: str) -> Worksheet:
             WorksheetQuestion(4, f"Complete: {product} ÷ {intro_route[1]} = ____"),
             WorksheetQuestion(5, f"Complete: {intro_route[0]} × ____ = {product}"),
             WorksheetQuestion(6, f"Complete: ____ × {intro_route[1]} = {product}"),
-            WorksheetQuestion(7, f"Which stage introduces {product}?"),
+            WorksheetQuestion(7, f"What stage introduces {product}?"),
             WorksheetQuestion(8, f"Complete: {exit_1[0]} × {exit_1[1]} = ____"),
             WorksheetQuestion(9, f"Complete: {product} ÷ {exit_2[0]} = ____"),
             WorksheetQuestion(10, f"Write the intro route for {product}."),
