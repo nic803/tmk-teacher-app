@@ -168,6 +168,9 @@ def _ensure_state() -> None:
     if "recap_count" not in st.session_state:
         st.session_state.recap_count = 1
 
+    if "worksheet_rotation_index" not in st.session_state:
+        st.session_state.worksheet_rotation_index = 0
+
     if "last_bundle" not in st.session_state:
         st.session_state.last_bundle = None
 
@@ -403,6 +406,7 @@ def _render_sidebar() -> None:
             st.write(f"**Include recap:** {'Yes' if st.session_state.include_recap else 'No'}")
             if st.session_state.include_recap:
                 st.write(f"**Recap count:** {st.session_state.recap_count}")
+            st.write(f"**Next worksheet rotation:** {st.session_state.worksheet_rotation_index}")
 
 
 # -----------------------------
@@ -749,7 +753,6 @@ def _route_items_for_product(product: int, mode: str) -> list[dict[str, str]]:
 # -----------------------------
 # WORKSHEET STUDIO
 # -----------------------------
-
 def _render_worksheet_studio() -> None:
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Worksheet Studio</div>', unsafe_allow_html=True)
@@ -872,11 +875,19 @@ def _render_worksheet_studio() -> None:
     if st.session_state.last_request_signature != request_signature:
         st.session_state.last_bundle = None
 
-    if st.button("Generate worksheet", type="primary"):
+    generate_label = "Generate worksheet" if st.session_state.worksheet_rotation_index == 0 else "Generate next worksheet"
+
+    if st.button(generate_label, type="primary"):
         try:
-            bundle = generate_worksheet_bundle(request)
+            current_request = _build_product_selection_request()
+            current_signature = _worksheet_request_signature(current_request)
+
+            bundle = generate_worksheet_bundle(current_request)
             st.session_state.last_bundle = bundle
-            st.session_state.last_request_signature = request_signature
+            st.session_state.last_request_signature = current_signature
+
+            # Advance for the next click so the next worksheet rotates.
+            st.session_state.worksheet_rotation_index += 1
         except Exception as exc:
             msg = str(exc)
             if "No valid" in msg or "no valid" in msg:
@@ -1011,7 +1022,6 @@ def _render_worksheet_studio() -> None:
 # -----------------------------
 # HELPERS
 # -----------------------------
-
 def _build_product_selection_request() -> ProductSelectionRequest:
     payload = {
         "stage": st.session_state.selected_stage,
@@ -1025,6 +1035,7 @@ def _build_product_selection_request() -> ProductSelectionRequest:
         "mode": None if st.session_state.selection_mode == "Auto" else st.session_state.selection_mode,
         "include_recap": bool(st.session_state.include_recap),
         "recap_count": int(st.session_state.recap_count) if bool(st.session_state.include_recap) else 0,
+        "rotation_index": int(st.session_state.worksheet_rotation_index),
     }
 
     try:
@@ -1041,7 +1052,16 @@ def _build_product_selection_request() -> ProductSelectionRequest:
         fallback = {
             key: value
             for key, value in payload.items()
-            if value is not None and key in {"stage", "format_id", "tier", "selection_scope", "selection_mode", "include_recap", "recap_count"}
+            if value is not None and key in {
+                "stage",
+                "format_id",
+                "tier",
+                "selection_scope",
+                "selection_mode",
+                "include_recap",
+                "recap_count",
+                "rotation_index",
+            }
         }
         return ProductSelectionRequest(**fallback)
 
@@ -1085,7 +1105,15 @@ def _product_option_label(product: int) -> str:
 def _format_route(route: tuple[int, int]) -> str:
     return f"{route[0]} × {route[1]}"
 
+
 def _worksheet_request_signature(request: ProductSelectionRequest | dict[str, Any] | Any) -> tuple[tuple[str, str], ...]:
+    """
+    Signature for worksheet configuration only.
+
+    Important:
+    rotation_index is intentionally excluded so the current worksheet remains
+    visible after generation, while the next click rotates to the next set.
+    """
     if hasattr(request, "model_dump"):
         payload = request.model_dump()
     elif hasattr(request, "dict"):
@@ -1110,6 +1138,8 @@ def _worksheet_request_signature(request: ProductSelectionRequest | dict[str, An
             if hasattr(request, name):
                 payload[name] = getattr(request, name)
 
+    payload.pop("rotation_index", None)
+
     normalized: dict[str, str] = {}
     for key, value in payload.items():
         if value is None:
@@ -1125,7 +1155,7 @@ def _worksheet_request_signature(request: ProductSelectionRequest | dict[str, An
 def _invalidate_worksheet_bundle() -> None:
     st.session_state.last_bundle = None
     st.session_state.last_request_signature = None
-
+    st.session_state.worksheet_rotation_index = 0
 
 
 def _stringify(value: Any) -> str:
