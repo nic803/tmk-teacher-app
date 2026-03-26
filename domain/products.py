@@ -46,6 +46,9 @@ ALL_PRODUCTS: Final[tuple[int, ...]] = tuple(
     for product in STAGES[stage_id].products
 )
 
+PRODUCTS: Final[tuple[int, ...]] = ALL_PRODUCTS
+ALL_STAGE_IDS: Final[tuple[str, ...]] = STAGE_ORDER
+
 PRODUCT_STAGE: Final[dict[int, str]] = {
     product: stage_id
     for stage_id in STAGE_ORDER
@@ -144,6 +147,46 @@ def new_products(stage_id: str) -> tuple[int, ...]:
     if stage_id not in STAGES:
         raise ValueError(f"Unknown stage: {stage_id}")
     return STAGES[stage_id].products
+
+
+def get_stage(stage_id: str) -> StageDefinition:
+    if stage_id not in STAGES:
+        raise ValueError(f"Unknown stage: {stage_id}")
+    return STAGES[stage_id]
+
+
+def get_available_products(stage_id: str) -> tuple[int, ...]:
+    return available_products(stage_id)
+
+
+def get_new_products(stage_id: str) -> tuple[int, ...]:
+    return new_products(stage_id)
+
+
+def get_product(product: int) -> ProductRecord:
+    return product_record(product)
+
+
+def get_stage_products(stage_id: str, cumulative: bool = True) -> tuple[int, ...]:
+    return available_products(stage_id) if cumulative else new_products(stage_id)
+
+
+def get_structure(stage_id: str) -> dict[str, object]:
+    if stage_id not in STAGES:
+        raise ValueError(f"Unknown stage: {stage_id}")
+
+    products = available_products(stage_id)
+
+    return {
+        "stage": stage_id,
+        "products": tuple(product_record(product) for product in products),
+        "routes": (),
+        "available_products": products,
+        "new_products": new_products(stage_id),
+        "metadata": {
+            "stage_type": "core",
+        },
+    }
 
 
 def _validate_product_structure() -> None:
@@ -276,12 +319,20 @@ __all__ = [
     "EXPECTED_STAGE_PRODUCTS",
     "STAGES",
     "ALL_PRODUCTS",
+    "PRODUCTS",
+    "ALL_STAGE_IDS",
     "PRODUCT_STAGE",
     "factors_for_product",
     "commutative_pairs_for_product",
     "inverse_pairs_for_product",
     "known_routes_at_stage",
     "product_record",
+    "get_product",
     "available_products",
     "new_products",
+    "get_available_products",
+    "get_new_products",
+    "get_stage",
+    "get_stage_products",
+    "get_structure",
 ]
