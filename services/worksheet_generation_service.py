@@ -3,6 +3,9 @@ from __future__ import annotations
 from dataclasses import asdict, is_dataclass
 from typing import Any
 
+# Deterministic worksheet rotation counter
+_WORKSHEET_ROTATION_COUNTER = 0
+
 
 def _load_attr(module_name: str, *names: str) -> Any:
     module = __import__(module_name, fromlist=["*"])
@@ -116,6 +119,22 @@ def _normalise_teacher(teacher: Any) -> dict[str, Any]:
     return {"answers": normalised_answers}
 
 
+def _apply_rotation_to_request(request: Any) -> Any:
+    """
+    Inject a deterministic rotation_index into ProductSelectionRequest
+    so each worksheet rotates across valid product sets.
+    """
+    global _WORKSHEET_ROTATION_COUNTER
+
+    try:
+        setattr(request, "rotation_index", _WORKSHEET_ROTATION_COUNTER)
+    except Exception:
+        pass
+
+    _WORKSHEET_ROTATION_COUNTER += 1
+    return request
+
+
 def generate_worksheet_bundle(request: Any) -> dict[str, Any]:
     select_products = _load_attr(
         "services.product_selection_engine",
@@ -152,6 +171,9 @@ def generate_worksheet_bundle(request: Any) -> dict[str, Any]:
         )
     except Exception:
         validate_bundle = None
+
+    # NEW: rotate product selection
+    request = _apply_rotation_to_request(request)
 
     selection = select_products(request)
     plan = build_plan(request, selection)
