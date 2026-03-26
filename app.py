@@ -876,8 +876,7 @@ def _render_worksheet_studio() -> None:
         st.error(f"Worksheet generation failed: {exc}")
 
     st.markdown("</div>", unsafe_allow_html=True)
-    return
-    
+    return    
     selection = _bundle_part(bundle, "selection")
     student = _bundle_part(bundle, "student", "student_worksheet")
     teacher = _bundle_part(bundle, "teacher", "teacher_key")
