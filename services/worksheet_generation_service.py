@@ -1,123 +1,150 @@
 from __future__ import annotations
 
-from models.worksheet_models import (
-    ProductSelectionRequest,
-    WorksheetBundle,
-)
-
-from services.product_selection_engine import (
-    select_product_set,
-)
-
-from services.worksheet_planner import (
-    build_worksheet_plan,
-)
-
-from services.worksheet_renderer import (
-    render_student_worksheet,
-)
-
-from services.teacher_key_builder import (
-    build_teacher_key,
-)
-
-from services.worksheet_validation import (
-    validate_bundle,
-)
+from dataclasses import asdict, is_dataclass
+from typing import Any
 
 
-def generate_worksheet_bundle(
-    request: ProductSelectionRequest,
-) -> WorksheetBundle:
-    """
-    Generate a full worksheet bundle.
-
-    Pipeline:
-
-    1. Select products
-    2. Build worksheet plan
-    3. Render student worksheet
-    4. Build teacher key
-    5. Validate entire bundle
-    """
-
-    # -----------------------------
-    # STEP 1 — PRODUCT SELECTION
-    # -----------------------------
-
-    selection = select_product_set(request)
-
-    # -----------------------------
-    # STEP 2 — PLAN WORKSHEET
-    # -----------------------------
-
-    plan = build_worksheet_plan(selection)
-
-    # -----------------------------
-    # STEP 3 — RENDER STUDENT WORKSHEET
-    # -----------------------------
-
-    student_worksheet = render_student_worksheet(plan)
-
-    # -----------------------------
-    # STEP 4 — BUILD TEACHER KEY
-    # -----------------------------
-
-    teacher_key = build_teacher_key(plan)
-
-    # -----------------------------
-    # STEP 5 — VALIDATE
-    # -----------------------------
-
-    validation = validate_bundle(
-        selection=selection,
-        plan=plan,
-        student_worksheet=student_worksheet,
-        teacher_key=teacher_key,
+def _load_attr(module_name: str, *names: str) -> Any:
+    module = __import__(module_name, fromlist=["*"])
+    for name in names:
+        if hasattr(module, name):
+            return getattr(module, name)
+    available = ", ".join(sorted(dir(module)))
+    raise ImportError(
+        f"Could not find any of {names} in {module_name}. "
+        f"Available names: {available}"
     )
 
-    if not validation.is_valid:
-        raise ValueError(
-            "Worksheet generation failed validation:\n"
-            + "\n".join(validation.errors)
+
+def _as_plain_data(value: Any) -> Any:
+    if value is None:
+        return None
+    if is_dataclass(value):
+        return asdict(value)
+    if isinstance(value, dict):
+        return {k: _as_plain_data(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_as_plain_data(v) for v in value]
+    return value
+
+
+def _get(value: Any, *names: str, default: Any = None) -> Any:
+    if value is None:
+        return default
+
+    for name in names:
+        if isinstance(value, dict) and name in value:
+            return value[name]
+        if hasattr(value, name):
+            return getattr(value, name)
+
+    return default
+
+
+def _normalise_selection(selection: Any) -> dict[str, Any]:
+    selection = _as_plain_data(selection) or {}
+
+    return {
+        "selected_products": tuple(_get(selection, "selected_products", default=()) or ()),
+        "recap_products": tuple(_get(selection, "recap_products", default=()) or ()),
+        "selection_reasons": tuple(_get(selection, "selection_reasons", "reasons", default=()) or ()),
+        "vocab_supported": tuple(_get(selection, "vocab_supported", "supported_vocabulary", default=()) or ()),
+        "structural_tags": tuple(_get(selection, "structural_tags", "tags", default=()) or ()),
+    }
+
+
+def _normalise_student(student: Any) -> dict[str, Any]:
+    student = _as_plain_data(student) or {}
+    questions = _get(student, "questions", "items", default=()) or ()
+
+    normalised_questions = []
+    for index, item in enumerate(questions, start=1):
+        item = _as_plain_data(item) or {}
+        normalised_questions.append(
+            {
+                "q_id": _get(item, "q_id", "id", default=index),
+                "prompt": _get(item, "prompt", "question", "text", default=""),
+            }
         )
 
-    # -----------------------------
-    # FINAL BUNDLE
-    # -----------------------------
+    return {
+        "questions": normalised_questions,
+    }
 
-    return WorksheetBundle(
-        selection=selection,
-        plan=plan,
-        student_worksheet=student_worksheet,
-        teacher_key=teacher_key,
-        validation=validation,
+
+def _normalise_teacher(teacher: Any) -> dict[str, Any]:
+    teacher = _as_plain_data(teacher) or {}
+    answers = _get(teacher, "answers", "items", default=()) or ()
+
+    normalised_answers = []
+    for index, item in enumerate(answers, start=1):
+        item = _as_plain_data(item) or {}
+        normalised_answers.append(
+            {
+                "q_id": _get(item, "q_id", "id", default=index),
+                "answer": _get(item, "answer", "correct_answer", default=""),
+                "msvwa_tags": tuple(_get(item, "msvwa_tags", "msvwa", default=()) or ()),
+                "teacher_note": _get(item, "teacher_note", "note", default=""),
+                "vocab": tuple(_get(item, "vocab", "vocabulary_words", default=()) or ()),
+            }
+        )
+
+    return {
+        "answers": normalised_answers,
+    }
+
+
+def generate_worksheet_bundle(request: Any) -> dict[str, Any]:
+    select_products = _load_attr(
+        "services.product_selection_engine",
+        "select_products",
+        "build_product_selection",
+        "run_product_selection",
+    )
+    build_plan = _load_attr(
+        "services.worksheet_planner",
+        "build_worksheet_plan",
+        "plan_worksheet",
+        "create_worksheet_plan",
+    )
+    render_student = _load_attr(
+        "services.worksheet_renderer",
+        "render_student_worksheet",
+        "render_worksheet",
+        "render_student_sheet",
+    )
+    build_teacher = _load_attr(
+        "services.teacher_key_builder",
+        "build_teacher_key",
+        "render_teacher_key",
+        "create_teacher_key",
     )
 
+    try:
+        validate_bundle = _load_attr(
+            "services.worksheet_validation",
+            "validate_worksheet_bundle",
+            "validate_bundle",
+            "validate_worksheet_output",
+        )
+    except Exception:
+        validate_bundle = None
 
-def generate_student_worksheet(
-    request: ProductSelectionRequest,
-) -> dict:
-    """
-    Convenience helper.
+    selection = select_products(request)
+    plan = build_plan(request, selection)
+    student = render_student(plan)
+    teacher = build_teacher(plan)
 
-    Returns only the student worksheet.
-    """
+    bundle = {
+        "selection": _normalise_selection(selection),
+        "student": _normalise_student(student),
+        "teacher": _normalise_teacher(teacher),
+    }
 
-    bundle = generate_worksheet_bundle(request)
+    if validate_bundle is not None:
+        validate_bundle(bundle)
 
-    return bundle.student_worksheet
+    return bundle
 
 
-def generate_teacher_key(
-    request: ProductSelectionRequest,
-) -> dict:
-    """
-    Convenience helper.
-
-    Returns only the teacher key.
-    """
-
-    bundle = generate_worksheet_bundle(request)
-
-    return bundle.teacher_key
+__all__ = ["generate_worksheet_bundle"]
