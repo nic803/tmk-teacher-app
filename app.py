@@ -865,10 +865,19 @@ def _render_worksheet_studio() -> None:
         bundle = generate_worksheet_bundle(request)
         st.session_state.last_bundle = bundle
     except Exception as exc:
-        st.error(f"Worksheet generation failed: {exc}")
-        st.markdown("</div>", unsafe_allow_html=True)
-        return
+    msg = str(exc)
 
+    if "No valid" in msg or "no valid" in msg:
+        st.info(
+            "No worksheet can be generated for this combination. "
+            "Try a different selection mode or scope."
+        )
+    else:
+        st.error(f"Worksheet generation failed: {exc}")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+    return
+    
     selection = _bundle_part(bundle, "selection")
     student = _bundle_part(bundle, "student", "student_worksheet")
     teacher = _bundle_part(bundle, "teacher", "teacher_key")
