@@ -864,8 +864,7 @@ def _render_worksheet_studio() -> None:
     try:
         bundle = generate_worksheet_bundle(request)
         st.session_state.last_bundle = bundle
-        
-except Exception as exc:
+    except Exception as exc:
     msg = str(exc)
 
     if "No valid" in msg or "no valid" in msg:
