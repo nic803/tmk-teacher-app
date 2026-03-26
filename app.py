@@ -872,7 +872,6 @@ teacher = _bundle_part(bundle, "teacher", "teacher_key")
 
 selected_products = tuple(_field(selection, "selected_products", default=()))
 recap_products = tuple(_field(selection, "recap_products", default=()))
-    selection_reasons = tuple(_field(selection, "selection_reasons", default=()))
     vocab_supported = tuple(_field(selection, "vocab_supported", default=()))
     structural_tags = tuple(_field(selection, "structural_tags", default=()))
 
