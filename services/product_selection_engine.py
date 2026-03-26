@@ -6,12 +6,9 @@ from domain.product_metadata import (
     ProductMetadataRecord,
     available_products,
     metadata_summary,
-    multi_route_products,
     new_products,
     product_metadata,
     products_for_family_tag,
-    products_for_structural_tag,
-    products_supporting_vocab,
     recommended_multi_route_compare_products,
     recommended_single_hub_products,
     square_products,
@@ -105,6 +102,8 @@ def select_product_set(request: ProductSelectionRequest) -> ProductSelectionResu
         format_id=request.format_id,
     )
 
+    rotation_index = _request_rotation_index(request)
+
     base_candidates = _base_candidates_for_scope(
         stage=request.stage,
         selection_scope=request.selection_scope,
@@ -117,6 +116,7 @@ def select_product_set(request: ProductSelectionRequest) -> ProductSelectionResu
         selection_scope=request.selection_scope,
         mode=mode,
         base_candidates=base_candidates,
+        rotation_index=rotation_index,
     )
 
     recap_products = _select_recap_products(
@@ -245,6 +245,27 @@ def _validate_mode_allowed_for_request(
         )
 
 
+def _request_rotation_index(request: ProductSelectionRequest) -> int:
+    """
+    Deterministic variation hook.
+
+    Proper TMK behaviour:
+    - same request + same rotation_index -> same product set
+    - same request + different rotation_index -> next best valid product set
+
+    This allows the app/service layer to control worksheet variation without
+    breaking structural truth inside the selector.
+    """
+    raw = getattr(request, "rotation_index", 0)
+    if raw is None:
+        return 0
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return 0
+    return max(0, value)
+
+
 def _base_candidates_for_scope(
     stage: StageId,
     selection_scope: SelectionScope,
@@ -265,6 +286,7 @@ def _select_primary_products(
     selection_scope: SelectionScope,
     mode: ProductSetMode,
     base_candidates: tuple[int, ...],
+    rotation_index: int,
 ) -> tuple[int, ...]:
     if format_id == "one_product_10":
         product = _select_single_product(
@@ -273,6 +295,7 @@ def _select_primary_products(
             selection_scope=selection_scope,
             mode=mode,
             base_candidates=base_candidates,
+            rotation_index=rotation_index,
         )
         return (product,)
 
@@ -284,6 +307,7 @@ def _select_primary_products(
         mode=mode,
         base_candidates=base_candidates,
         target_count=target_count,
+        rotation_index=rotation_index,
     )
     return triple
 
@@ -294,6 +318,7 @@ def _select_single_product(
     selection_scope: SelectionScope,
     mode: ProductSetMode,
     base_candidates: tuple[int, ...],
+    rotation_index: int,
 ) -> int:
     candidates = _single_mode_candidates(
         stage=stage,
@@ -322,7 +347,8 @@ def _select_single_product(
             f"No valid single-product candidates for stage '{stage}', mode '{mode}', scope '{selection_scope}'."
         )
 
-    return ranked[0]
+    pick_index = _rotating_pick_index(ranked, rotation_index, top_window=3)
+    return ranked[pick_index]
 
 
 def _select_three_products(
@@ -332,6 +358,7 @@ def _select_three_products(
     mode: ProductSetMode,
     base_candidates: tuple[int, ...],
     target_count: int,
+    rotation_index: int,
 ) -> tuple[int, ...]:
     triples = _three_product_mode_candidates(
         stage=stage,
@@ -373,7 +400,8 @@ def _select_three_products(
             f"No valid three-product candidates for stage '{stage}', mode '{mode}', scope '{selection_scope}'."
         )
 
-    return ranked[0]
+    pick_index = _rotating_pick_index(ranked, rotation_index, top_window=3)
+    return ranked[pick_index]
 
 
 def _single_mode_candidates(
@@ -762,6 +790,24 @@ def _matches_known_doubling_chain(products: tuple[int, ...]) -> bool:
         tuple(sorted((12, 24, 48))),
         tuple(sorted((16, 32, 64))),
     )
+
+
+def _rotating_pick_index(
+    ranked_items: list[object],
+    rotation_index: int,
+    top_window: int = 3,
+) -> int:
+    """
+    Pick deterministically from the top structural candidates.
+
+    We do not pick from the whole ranked list, because lower-ranked candidates
+    may weaken worksheet coherence. We rotate only across the best few.
+    """
+    if not ranked_items:
+        raise ValueError("Cannot pick from an empty ranked candidate list.")
+
+    usable_window = min(len(ranked_items), max(1, top_window))
+    return rotation_index % usable_window
 
 
 def _dedupe_triples(
