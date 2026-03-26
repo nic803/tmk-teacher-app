@@ -66,6 +66,7 @@ class ProductSelectionRequest:
     include_recap: bool = False
     recap_count: int = 0
     selection_mode: Optional[ProductSetMode] = None
+    rotation_index: int = 0
 
 
 @dataclass(frozen=True)
@@ -364,6 +365,9 @@ def validate_selection_request(request: ProductSelectionRequest) -> None:
 
     if request.recap_count < 0:
         raise ValueError("recap_count must be 0 or greater.")
+
+    if request.rotation_index < 0:
+        raise ValueError("rotation_index must be 0 or greater.")
 
     if not request.include_recap and request.recap_count != 0:
         raise ValueError(
