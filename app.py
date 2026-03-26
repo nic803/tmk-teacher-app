@@ -5,7 +5,6 @@ from typing import Any, Iterable
 
 import streamlit as st
 
-
 # -----------------------------
 # DOMAIN IMPORTS
 # -----------------------------
@@ -23,7 +22,6 @@ from domain.products import (
     STAGES,
     product_record,
     stage_label,
-    visible_products,
 )
 
 from domain.product_metadata import (
@@ -35,7 +33,6 @@ from domain.product_metadata import (
 from domain.stage_vocabulary import (
     get_stage_vocabulary,
 )
-
 
 # -----------------------------
 # WORKSHEET SYSTEM IMPORTS
@@ -52,7 +49,6 @@ from services.worksheet_generation_service import (
     generate_worksheet_bundle,
 )
 
-
 APP_TITLE = "TMK Teacher App"
 SURFACES = ("Structural Planner", "Product Lab", "Worksheet Studio")
 TIERS = ("Support", "Core", "Extension")
@@ -61,7 +57,6 @@ SELECTION_SCOPES = ("new_only", "available_mixed", "hybrid")
 PLANNER_LINK_MODES = ("Selected links", "Show selected atlas", "No links")
 PLANNER_ZOOM_MODES = ("Selected stage only", "Whole world")
 ROUTE_VIEW_MODES = ("Entry routes", "Exit routes")
-
 
 LIGHT_THEME = {
     "bg": "#FAF7F2",
@@ -84,7 +79,6 @@ DARK_THEME = {
     "accent": "#E89A3A",
     "accent_soft": "#C76412",
 }
-
 
 st.set_page_config(
     page_title=APP_TITLE,
@@ -156,7 +150,6 @@ def _ensure_state() -> None:
     if "selected_route_index" not in st.session_state:
         st.session_state.selected_route_index = 0
 
-    # New worksheet state
     if "selected_stage" not in st.session_state:
         st.session_state.selected_stage = product_record(st.session_state.selected_product).stage
 
@@ -377,7 +370,7 @@ def _render_sidebar() -> None:
         st.write(f"**Stage:** {stage_label(record.stage)}")
         st.write(f"**Intro route:** {_format_route(record.intro_route)}")
         st.write(f"**Full routes:** {len(distinct_factor_routes(record.product))}")
-        st.write(f"**Division exits:** {len(record.ways_out)}")
+        st.write(f"**Division exits:** {len(getattr(record, 'ways_out', ()))}")
         st.write(f"**Role:** {record.structural_role}")
 
         try:
@@ -466,7 +459,7 @@ def _render_structural_planner(product: int) -> None:
             ("Selected stage", stage_label(record.stage)),
             ("Introduced here", str(len(STAGES[record.stage].products))),
             ("Full routes", str(len(admissible_routes))),
-            ("Division exits", str(len(record.ways_out))),
+            ("Division exits", str(len(getattr(record, "ways_out", ())))),
         ]
     )
 
@@ -490,6 +483,11 @@ def _render_structural_planner(product: int) -> None:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
         st.markdown('<div class="tmk-small-label">Cumulative available products</div>', unsafe_allow_html=True)
         _render_pill_list(metadata_available_products(record.stage), selected=record.product)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">New products at this stage</div>', unsafe_allow_html=True)
+        _render_pill_list(metadata_new_products(record.stage), selected=record.product)
         st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
@@ -872,7 +870,6 @@ def _render_worksheet_studio() -> None:
         return
 
     selection = _bundle_part(bundle, "selection")
-    plan = _bundle_part(bundle, "plan")
     student = _bundle_part(bundle, "student", "student_worksheet")
     teacher = _bundle_part(bundle, "teacher", "teacher_key")
 
