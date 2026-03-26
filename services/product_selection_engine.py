@@ -193,7 +193,7 @@ def explain_selection_request(request: ProductSelectionRequest) -> dict[str, obj
         "vocab_supported": result.vocab_supported,
         "structural_tags": result.structural_tags,
         "selected_product_metadata": tuple(
-            metadata_summary(product) for product in result.selected_products
+            metadata_summary(p) for p in result.selected_products
         ),
     }
 
@@ -223,16 +223,9 @@ def _choose_default_mode(
     format_id: WorksheetFormatId,
     stage: StageId,
 ) -> ProductSetMode:
-    # Stage-aware auto mode selection.
-    # This is the critical fix for late-stage TMK behaviour.
     if format_id == "three_product_12":
         if stage == "G":
-            if tier == "Extension":
-                return "square_or_special_focus"
-            if tier == "Core":
-                return "interleave_compare"
             return "square_or_special_focus"
-
         if stage == "F" and tier == "Extension":
             return "interleave_compare"
 
@@ -250,13 +243,9 @@ def _validate_mode_allowed_for_request(
     format_id: WorksheetFormatId,
 ) -> None:
     if mode not in _ALLOWED_MODES_BY_FORMAT[format_id]:
-        raise ValueError(
-            f"Mode '{mode}' is not allowed for format '{format_id}'."
-        )
+        raise ValueError(f"Mode '{mode}' is not allowed for format '{format_id}'.")
     if mode not in _STAGE_COMPATIBLE_MODES[stage]:
-        raise ValueError(
-            f"Mode '{mode}' is not compatible with stage '{stage}'."
-        )
+        raise ValueError(f"Mode '{mode}' is not compatible with stage '{stage}'.")
 
 
 def _request_rotation_index(request: ProductSelectionRequest) -> int:
@@ -293,7 +282,7 @@ def _select_primary_products(
     rotation_index: int,
 ) -> tuple[int, ...]:
     if format_id == "one_product_10":
-        product = _select_single_product(
+        selected = _select_single_product(
             stage=stage,
             tier=tier,
             selection_scope=selection_scope,
@@ -301,10 +290,10 @@ def _select_primary_products(
             base_candidates=base_candidates,
             rotation_index=rotation_index,
         )
-        return (product,)
+        return (selected,)
 
     target_count = product_count_for_format(format_id)
-    triple = _select_three_products(
+    return _select_three_products(
         stage=stage,
         tier=tier,
         selection_scope=selection_scope,
@@ -313,7 +302,6 @@ def _select_primary_products(
         target_count=target_count,
         rotation_index=rotation_index,
     )
-    return triple
 
 
 def _select_single_product(
@@ -331,7 +319,8 @@ def _select_single_product(
     )
 
     if selection_scope == "hybrid":
-        preferred_new = [p for p in candidates if p in set(new_products(stage))]
+        stage_new = set(new_products(stage))
+        preferred_new = [p for p in candidates if p in stage_new]
         if preferred_new:
             candidates = preferred_new
 
@@ -370,20 +359,24 @@ def _select_three_products(
         base_candidates=base_candidates,
     )
 
+    stage_new = set(new_products(stage))
+
     if selection_scope == "hybrid":
-        stage_new = set(new_products(stage))
-        triples = [
+        filtered = [
             triple for triple in triples
-            if any(product in stage_new for product in triple)
-            and any(product not in stage_new for product in triple)
+            if any(p in stage_new for p in triple)
+            and any(p not in stage_new for p in triple)
         ]
+        if filtered:
+            triples = filtered
 
     if selection_scope == "new_only":
-        stage_new = set(new_products(stage))
-        triples = [
+        filtered = [
             triple for triple in triples
-            if all(product in stage_new for product in triple)
+            if all(p in stage_new for p in triple)
         ]
+        if filtered:
+            triples = filtered
 
     triples = [triple for triple in triples if len(triple) == target_count]
 
@@ -417,26 +410,23 @@ def _single_mode_candidates(
 
     if mode == "single_hub":
         ranked = recommended_single_hub_products(stage)
-        return [product for product in ranked if product in candidate_set]
+        return [p for p in ranked if p in candidate_set]
 
     if mode == "square_or_special_focus":
-        squares = square_products(stage)
-
         if stage == "G":
             preferred_g = [p for p in (49, 36, 64, 25) if p in candidate_set]
             if preferred_g:
                 return preferred_g
 
-        preferred = [product for product in squares if product in candidate_set]
+        stage_squares = square_products(stage)
+        preferred = [p for p in stage_squares if p in candidate_set]
         if preferred:
-            return list(preferred)
+            return preferred
 
         ranked = recommended_single_hub_products(stage)
-        return [product for product in ranked if product in candidate_set]
+        return [p for p in ranked if p in candidate_set]
 
-    raise ValueError(
-        f"Mode '{mode}' is not a valid one-product selection mode."
-    )
+    raise ValueError(f"Mode '{mode}' is not a valid one-product selection mode.")
 
 
 def _three_product_mode_candidates(
@@ -448,7 +438,7 @@ def _three_product_mode_candidates(
 
     if mode == "same_stage_products":
         stage_products = tuple(
-            product for product in new_products(stage) if product in candidate_set
+            p for p in new_products(stage) if p in candidate_set
         )
         return _sliding_triples(stage_products)
 
@@ -464,10 +454,10 @@ def _three_product_mode_candidates(
             "times_2",
         )
         for family_tag in family_preferences:
-            products = tuple(
+            family_products = tuple(
                 p for p in products_for_family_tag(family_tag, stage) if p in candidate_set
             )
-            triples.extend(_sliding_triples(products))
+            triples.extend(_sliding_triples(family_products))
         return _dedupe_triples(triples)
 
     if mode == "multi_route_compare":
@@ -479,38 +469,35 @@ def _three_product_mode_candidates(
                     (21, 42, 49),
                     (42, 49, 56),
                 )
-                if all(product in candidate_set for product in triple)
+                if all(p in candidate_set for p in triple)
             ]
             if closure_first:
                 return _dedupe_triples(closure_first)
 
         multi_route = tuple(
-            product for product in recommended_multi_route_compare_products(stage)
-            if product in candidate_set
+            p for p in recommended_multi_route_compare_products(stage)
+            if p in candidate_set
         )
         triples = _sliding_triples(multi_route)
         if triples:
             return triples
 
-        squares_and_multi = tuple(
-            product for product in available_products(stage)
-            if product in candidate_set
-            and (
-                product_metadata(product).has_multiple_routes
-                or product_metadata(product).is_square
+        fallback = tuple(
+            p for p in available_products(stage)
+            if p in candidate_set and (
+                product_metadata(p).has_multiple_routes or product_metadata(p).is_square
             )
         )
-        return _sliding_triples(squares_and_multi)
+        return _sliding_triples(fallback)
 
     if mode == "doubling_chain":
-        candidates = [
+        return [
             triple for triple in (
                 (12, 24, 48),
                 (16, 32, 64),
             )
-            if all(product in candidate_set for product in triple)
+            if all(p in candidate_set for p in triple)
         ]
-        return candidates
 
     if mode == "interleave_compare":
         if stage == "G":
@@ -520,23 +507,22 @@ def _three_product_mode_candidates(
                     (21, 36, 42),
                     (42, 49, 56),
                 )
-                if all(product in candidate_set for product in triple)
+                if all(p in candidate_set for p in triple)
             ]
             if preferred_g:
                 return preferred_g
 
-        preferred = [
+        return [
             triple for triple in (
                 (21, 24, 42),
                 (21, 36, 42),
                 (21, 42, 49),
             )
-            if all(product in candidate_set for product in triple)
+            if all(p in candidate_set for p in triple)
         ]
-        return preferred
 
     if mode == "square_or_special_focus":
-        candidates = []
+        candidates: list[tuple[int, ...]] = []
 
         if stage == "G":
             candidates.extend(
@@ -546,7 +532,7 @@ def _three_product_mode_candidates(
                         (25, 36, 49),
                         (42, 49, 56),
                     )
-                    if all(product in candidate_set for product in triple)
+                    if all(p in candidate_set for p in triple)
                 ]
             )
 
@@ -557,14 +543,14 @@ def _three_product_mode_candidates(
                     (16, 25, 36),
                     (36, 49, 64),
                 )
-                if all(product in candidate_set for product in triple)
+                if all(p in candidate_set for p in triple)
             ]
         )
 
         if candidates:
             return _dedupe_triples(candidates)
 
-        squares = tuple(product for product in square_products(stage) if product in candidate_set)
+        squares = tuple(p for p in square_products(stage) if p in candidate_set)
         return _sliding_triples(squares)
 
     raise ValueError(f"Unsupported three-product selection mode '{mode}'.")
@@ -580,24 +566,23 @@ def _select_recap_products(
         return ()
 
     stage_new = set(new_products(stage))
+    selected_set = set(selected_products)
+
     recap_pool = [
-        product for product in available_products(stage)
-        if product not in stage_new and product not in set(selected_products)
+        p for p in available_products(stage)
+        if p not in stage_new and p not in selected_set
     ]
 
     ranked = sorted(
         recap_pool,
-        key=lambda p: (
-            -_recap_priority_score(product, stage),
-            product_metadata(p).product,
-        ),
+        key=lambda p: (-_recap_priority_score(p, stage), p),
     )
 
     return tuple(ranked[:recap_count])
 
 
-def _recap_priority_score(product: int, stage: StageId) -> int:
-    record = product_metadata(product)
+def _recap_priority_score(product_value: int, stage: StageId) -> int:
+    record = product_metadata(product_value)
     score = 0
 
     score += _hub_band_rank(record.hub_band) * 10
@@ -607,7 +592,7 @@ def _recap_priority_score(product: int, stage: StageId) -> int:
     if stage in ("F", "G") and record.has_factor_7:
         score += 20
 
-    if stage == "G" and product in (36, 42, 56, 64):
+    if stage == "G" and product_value in (36, 42, 56, 64):
         score += 20
 
     return score
@@ -635,7 +620,6 @@ def _single_hub_score(
         score += 8
     if selection_scope == "hybrid" and record.stage_introduced != stage:
         score += 1
-
     if selection_scope == "available_mixed" and record.stage_introduced == stage:
         score += 4
 
@@ -673,7 +657,7 @@ def _coherence_score(
     mode: ProductSetMode,
     selection_scope: SelectionScope,
 ) -> int:
-    records = tuple(product_metadata(product) for product in products)
+    records = tuple(product_metadata(p) for p in products)
     score = 0
 
     score += len(_shared_family_tags(records)) * 8
@@ -687,9 +671,9 @@ def _coherence_score(
     if selection_scope == "new_only":
         score += sum(int(record.stage_introduced == stage) for record in records) * 8
     elif selection_scope == "hybrid":
-        stage_new = {record.product for record in records if record.stage_introduced == stage}
-        stage_old = {record.product for record in records if record.stage_introduced != stage}
-        if stage_new and stage_old:
+        stage_new_products = {record.product for record in records if record.stage_introduced == stage}
+        stage_old_products = {record.product for record in records if record.stage_introduced != stage}
+        if stage_new_products and stage_old_products:
             score += 10
     elif selection_scope == "available_mixed":
         score += sum(int(record.stage_introduced == stage) for record in records) * 4
@@ -704,17 +688,14 @@ def _coherence_score(
     if mode == "multi_route_compare":
         score += sum(int(record.has_multiple_routes) for record in records) * 5
 
-    if mode == "doubling_chain":
-        if _matches_known_doubling_chain(products):
-            score += 25
+    if mode == "doubling_chain" and _matches_known_doubling_chain(products):
+        score += 25
 
-    if mode == "interleave_compare":
-        if any(record.stage_introduced == "F" for record in records):
-            score += 20
+    if mode == "interleave_compare" and any(record.stage_introduced == "F" for record in records):
+        score += 20
 
-    if mode == "square_or_special_focus":
-        if any(record.is_square for record in records):
-            score += 20
+    if mode == "square_or_special_focus" and any(record.is_square for record in records):
+        score += 20
 
     if stage in ("F", "G"):
         score += sum(int(record.has_factor_7) for record in records) * 12
@@ -769,7 +750,9 @@ def _selection_reasons(
     ]
 
     if stage == "G":
-        reasons.append("Stage G auto-selection prioritises closure, 7-times structure, and square-linked products.")
+        reasons.append(
+            "Stage G prioritises closure, 7-times structure, and square-linked products."
+        )
 
     if format_id == "one_product_10":
         record = product_metadata(selected_products[0])
@@ -789,22 +772,18 @@ def _selection_reasons(
                 f"Product {record.product} supports 7-times structure."
             )
     else:
-        records = tuple(product_metadata(product) for product in selected_products)
+        records = tuple(product_metadata(p) for p in selected_products)
         reasons.append(
             f"Selected products {selected_products} form a structurally coherent set for mode '{mode}'."
         )
 
         shared_families = _shared_family_tags(records)
         if shared_families:
-            reasons.append(
-                f"Shared family tags: {', '.join(shared_families)}."
-            )
+            reasons.append(f"Shared family tags: {', '.join(shared_families)}.")
 
         shared_structural = _shared_structural_tags(records)
         if shared_structural:
-            reasons.append(
-                f"Shared structural tags: {', '.join(shared_structural)}."
-            )
+            reasons.append(f"Shared structural tags: {', '.join(shared_structural)}.")
 
         required_vocab = _supported_required_vocab(records, stage)
         if required_vocab:
@@ -814,7 +793,7 @@ def _selection_reasons(
 
     if recap_products:
         reasons.append(
-            f"Recap products included: {', '.join(str(product) for product in recap_products)}."
+            f"Recap products included: {', '.join(str(p) for p in recap_products)}."
         )
 
     return tuple(reasons)
@@ -833,11 +812,14 @@ def _vocab_supported_for_products(
     for word in required:
         if word not in available:
             continue
-        if any(word.lower() in {tag.lower() for tag in product_metadata(product).vocab_tags} for product in all_products):
+        if any(
+            word.lower() in {tag.lower() for tag in product_metadata(p).vocab_tags}
+            for p in all_products
+        ):
             supported_words.append(word)
 
-    for product in all_products:
-        for word in product_metadata(product).vocab_tags:
+    for p in all_products:
+        for word in product_metadata(p).vocab_tags:
             if word in available and word not in supported_words:
                 supported_words.append(word)
 
@@ -849,8 +831,8 @@ def _combined_structural_tags(
     recap_products: tuple[int, ...],
 ) -> tuple[str, ...]:
     ordered: list[str] = []
-    for product in selected_products + recap_products:
-        for tag in product_metadata(product).structural_tags:
+    for p in selected_products + recap_products:
+        for tag in product_metadata(p).structural_tags:
             if tag not in ordered:
                 ordered.append(tag)
     return tuple(ordered)
@@ -881,7 +863,10 @@ def _supported_required_vocab(
     required = stage_required_vocab_focus(stage)
     supported: list[str] = []
     for word in required:
-        if any(word.lower() in {tag.lower() for tag in record.vocab_tags} for record in records):
+        if any(
+            word.lower() in {tag.lower() for tag in record.vocab_tags}
+            for record in records
+        ):
             supported.append(word)
     return tuple(supported)
 
@@ -901,7 +886,6 @@ def _rotating_pick_index(
 ) -> int:
     if not ranked_items:
         raise ValueError("Cannot pick from an empty ranked candidate list.")
-
     usable_window = min(len(ranked_items), max(1, top_window))
     return rotation_index % usable_window
 
