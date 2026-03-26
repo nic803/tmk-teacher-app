@@ -847,7 +847,7 @@ def _render_worksheet_studio() -> None:
                 step=1,
                 key="worksheet_recap_count_v20",
             )
-            if st.button("Generate worksheet"):
+if st.button("Generate worksheet"):
     try:
         bundle = generate_worksheet_bundle(request)
         st.session_state.last_bundle = bundle
