@@ -7,7 +7,35 @@ from domain.product_metadata import (
     available_products as metadata_available_products,
     new_products as metadata_new_products,
 )
+
 from domain.stage_vocabulary import get_stage_vocabulary
+
+
+ITEM_FAMILY_SEQUENCE = (
+    "product_recognition",
+    "route_in",
+    "missing_factor",
+    "route_out",
+    "another_way",
+    "compare_routes",
+    "correct_incorrect",
+    "error_repair",
+    "structural_grouping",
+    "final_explanation",
+)
+
+QUIZ_FORMAT_SEQUENCE = (
+    "circle",
+    "fill_box",
+    "fill_box",
+    "fill_box",
+    "fill_box",
+    "choose",
+    "yes_no",
+    "fill_box",
+    "sort",
+    "fill_box",
+)
 
 
 def _as_plain_data(value: Any) -> Any:
@@ -69,7 +97,9 @@ def _structural_tags(selection: Any) -> tuple[str, ...]:
 
 def _vocab_supported(selection: Any, stage: str) -> tuple[str, ...]:
     selection = _as_plain_data(selection) or {}
+
     vocab = _get(selection, "vocab_supported", "supported_vocabulary", default=None)
+
     if vocab:
         return tuple(str(v) for v in vocab)
 
@@ -89,9 +119,8 @@ def _build_question_items(
     selected_products: tuple[int, ...],
     recap_products: tuple[int, ...],
 ) -> list[dict[str, Any]]:
+
     total = _question_count(format_id)
-    if not selected_products:
-        raise ValueError("Worksheet planner received no selected products.")
 
     primary_pool = list(selected_products)
     recap_pool = list(recap_products)
@@ -99,6 +128,7 @@ def _build_question_items(
     items: list[dict[str, Any]] = []
 
     for index in range(total):
+
         if recap_pool and index >= total - len(recap_pool):
             product = recap_pool[(index - (total - len(recap_pool))) % len(recap_pool)]
             source = "recap"
@@ -106,15 +136,22 @@ def _build_question_items(
             product = primary_pool[index % len(primary_pool)]
             source = "selected"
 
+        family = ITEM_FAMILY_SEQUENCE[index % len(ITEM_FAMILY_SEQUENCE)]
+        quiz_format = QUIZ_FORMAT_SEQUENCE[index % len(QUIZ_FORMAT_SEQUENCE)]
+
         items.append(
             {
                 "q_id": index + 1,
                 "slot_index": index,
+                "family": family,
+                "quiz_format": quiz_format,
+                "target_product": product,
                 "product": product,
                 "source": source,
                 "stage": stage,
                 "tier": tier,
                 "format_id": format_id,
+                "related_products": selected_products,
             }
         )
 
@@ -122,6 +159,7 @@ def _build_question_items(
 
 
 def build_worksheet_plan(request: Any, selection: Any) -> dict[str, Any]:
+
     request_data = _as_plain_data(request) or {}
 
     stage = _get(request_data, "stage", default=None)
