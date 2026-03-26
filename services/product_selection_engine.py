@@ -223,11 +223,32 @@ def _choose_default_mode(
     format_id: WorksheetFormatId,
     stage: StageId,
 ) -> ProductSetMode:
+    """
+    Stage-aware TMK auto mode selection.
+
+    This prevents Auto from repeatedly falling back to early cumulative
+    triples like 20, 30, 40 when later stages should foreground their own
+    structural logic.
+    """
     if format_id == "three_product_12":
+        stage_defaults: dict[StageId, ProductSetMode] = {
+            "A": "square_or_special_focus",
+            "B": "same_factor_family",
+            "C": "same_stage_products",
+            "D": "same_stage_products",
+            "E": "doubling_chain",
+            "F": "interleave_compare",
+            "G": "square_or_special_focus",
+        }
+
+        preferred = stage_defaults[stage]
+        if preferred in _ALLOWED_MODES_BY_FORMAT[format_id] and preferred in _STAGE_COMPATIBLE_MODES[stage]:
+            return preferred
+
+    if format_id == "one_product_10":
         if stage == "G":
             return "square_or_special_focus"
-        if stage == "F" and tier == "Extension":
-            return "interleave_compare"
+        return "single_hub"
 
     allowed = available_selection_modes(stage=stage, format_id=format_id, tier=tier)
     if not allowed:
