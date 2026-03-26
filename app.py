@@ -353,12 +353,15 @@ def _theme_css_vars(theme: dict[str, str]) -> str:
 # NAV / SIDEBAR
 # -----------------------------
 def _render_nav() -> None:
-    cols = st.columns(len(SURFACES))
+    nav_cols = st.columns(len(SURFACES))
+
     for idx, surface in enumerate(SURFACES):
         button_type = "primary" if surface == st.session_state.surface else "secondary"
-        if cols[idx].button(
+        widget_key = f"tmk_top_nav_{idx}_{surface.lower().replace(' ', '_')}"
+
+        if nav_cols[idx].button(
             surface,
-            key=f"surface_nav_{surface}",
+            key=widget_key,
             use_container_width=True,
             type=button_type,
         ):
@@ -1233,5 +1236,4 @@ def _field(obj: Any, *names: str, default: Any = None) -> Any:
 
 
 if __name__ == "__main__":
-    main()
     main()
