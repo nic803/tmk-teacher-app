@@ -227,8 +227,7 @@ def _choose_default_mode(
     Stage-aware TMK auto mode selection.
 
     This prevents Auto from repeatedly falling back to early cumulative
-    triples like 20, 30, 40 when later stages should foreground their own
-    structural logic.
+    triples when later stages should foreground their own structural logic.
     """
     if format_id == "three_product_12":
         stage_defaults: dict[StageId, ProductSetMode] = {
@@ -361,7 +360,7 @@ def _select_single_product(
             f"No valid single-product candidates for stage '{stage}', mode '{mode}', scope '{selection_scope}'."
         )
 
-    pick_index = _rotating_pick_index(ranked, rotation_index, top_window=3)
+    pick_index = _rotating_pick_index(ranked, rotation_index, top_window=8)
     return ranked[pick_index]
 
 
@@ -418,7 +417,7 @@ def _select_three_products(
             f"No valid three-product candidates for stage '{stage}', mode '{mode}', scope '{selection_scope}'."
         )
 
-    pick_index = _rotating_pick_index(ranked, rotation_index, top_window=3)
+    pick_index = _rotating_pick_index(ranked, rotation_index, top_window=8)
     return ranked[pick_index]
 
 
@@ -903,8 +902,15 @@ def _matches_known_doubling_chain(products: tuple[int, ...]) -> bool:
 def _rotating_pick_index(
     ranked_items: list[object],
     rotation_index: int,
-    top_window: int = 3,
+    top_window: int = 8,
 ) -> int:
+    """
+    Rotate across a wider top-ranked window.
+
+    A window of 3 was too narrow and often returned the same selected_products
+    repeatedly. 8 preserves structural quality while allowing meaningful
+    worksheet regeneration.
+    """
     if not ranked_items:
         raise ValueError("Cannot pick from an empty ranked candidate list.")
     usable_window = min(len(ranked_items), max(1, top_window))
