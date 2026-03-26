@@ -45,7 +45,7 @@ def _normalise_selection(selection: Any) -> dict[str, Any]:
     selection = _as_plain_data(selection) or {}
 
     return {
-        "selected_products": tuple(_get(selection, "selected_products", default=()) or ()),
+        "selected_products": tuple(_get(selection, "selected_products", "products", default=()) or ()),
         "recap_products": tuple(_get(selection, "recap_products", default=()) or ()),
         "selection_reasons": tuple(_get(selection, "selection_reasons", "reasons", default=()) or ()),
         "vocab_supported": tuple(_get(selection, "vocab_supported", "supported_vocabulary", default=()) or ()),
@@ -67,9 +67,7 @@ def _normalise_student(student: Any) -> dict[str, Any]:
             }
         )
 
-    return {
-        "questions": normalised_questions,
-    }
+    return {"questions": normalised_questions}
 
 
 def _normalise_teacher(teacher: Any) -> dict[str, Any]:
@@ -89,14 +87,13 @@ def _normalise_teacher(teacher: Any) -> dict[str, Any]:
             }
         )
 
-    return {
-        "answers": normalised_answers,
-    }
+    return {"answers": normalised_answers}
 
 
 def generate_worksheet_bundle(request: Any) -> dict[str, Any]:
     select_products = _load_attr(
         "services.product_selection_engine",
+        "select_product_set",
         "select_products",
         "build_product_selection",
         "run_product_selection",
