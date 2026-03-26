@@ -214,6 +214,7 @@ def recommended_request(
         include_recap=include_recap,
         recap_count=recap_count,
         selection_mode=None,
+        rotation_index=0,
     )
 
 
@@ -222,6 +223,19 @@ def _choose_default_mode(
     format_id: WorksheetFormatId,
     stage: StageId,
 ) -> ProductSetMode:
+    # Stage-aware auto mode selection.
+    # This is the critical fix for late-stage TMK behaviour.
+    if format_id == "three_product_12":
+        if stage == "G":
+            if tier == "Extension":
+                return "square_or_special_focus"
+            if tier == "Core":
+                return "interleave_compare"
+            return "square_or_special_focus"
+
+        if stage == "F" and tier == "Extension":
+            return "interleave_compare"
+
     allowed = available_selection_modes(stage=stage, format_id=format_id, tier=tier)
     if not allowed:
         raise ValueError(
@@ -246,16 +260,6 @@ def _validate_mode_allowed_for_request(
 
 
 def _request_rotation_index(request: ProductSelectionRequest) -> int:
-    """
-    Deterministic variation hook.
-
-    Proper TMK behaviour:
-    - same request + same rotation_index -> same product set
-    - same request + different rotation_index -> next best valid product set
-
-    This allows the app/service layer to control worksheet variation without
-    breaking structural truth inside the selector.
-    """
     raw = getattr(request, "rotation_index", 0)
     if raw is None:
         return 0
@@ -417,6 +421,12 @@ def _single_mode_candidates(
 
     if mode == "square_or_special_focus":
         squares = square_products(stage)
+
+        if stage == "G":
+            preferred_g = [p for p in (49, 36, 64, 25) if p in candidate_set]
+            if preferred_g:
+                return preferred_g
+
         preferred = [product for product in squares if product in candidate_set]
         if preferred:
             return list(preferred)
@@ -461,6 +471,19 @@ def _three_product_mode_candidates(
         return _dedupe_triples(triples)
 
     if mode == "multi_route_compare":
+        if stage == "G":
+            closure_first = [
+                triple for triple in (
+                    (36, 49, 64),
+                    (25, 36, 49),
+                    (21, 42, 49),
+                    (42, 49, 56),
+                )
+                if all(product in candidate_set for product in triple)
+            ]
+            if closure_first:
+                return _dedupe_triples(closure_first)
+
         multi_route = tuple(
             product for product in recommended_multi_route_compare_products(stage)
             if product in candidate_set
@@ -490,6 +513,18 @@ def _three_product_mode_candidates(
         return candidates
 
     if mode == "interleave_compare":
+        if stage == "G":
+            preferred_g = [
+                triple for triple in (
+                    (21, 42, 49),
+                    (21, 36, 42),
+                    (42, 49, 56),
+                )
+                if all(product in candidate_set for product in triple)
+            ]
+            if preferred_g:
+                return preferred_g
+
         preferred = [
             triple for triple in (
                 (21, 24, 42),
@@ -501,16 +536,33 @@ def _three_product_mode_candidates(
         return preferred
 
     if mode == "square_or_special_focus":
-        candidates = [
-            triple for triple in (
-                (25, 36, 49),
-                (16, 25, 36),
-                (36, 49, 64),
+        candidates = []
+
+        if stage == "G":
+            candidates.extend(
+                [
+                    triple for triple in (
+                        (36, 49, 64),
+                        (25, 36, 49),
+                        (42, 49, 56),
+                    )
+                    if all(product in candidate_set for product in triple)
+                ]
             )
-            if all(product in candidate_set for product in triple)
-        ]
+
+        candidates.extend(
+            [
+                triple for triple in (
+                    (25, 36, 49),
+                    (16, 25, 36),
+                    (36, 49, 64),
+                )
+                if all(product in candidate_set for product in triple)
+            ]
+        )
+
         if candidates:
-            return candidates
+            return _dedupe_triples(candidates)
 
         squares = tuple(product for product in square_products(stage) if product in candidate_set)
         return _sliding_triples(squares)
@@ -536,13 +588,29 @@ def _select_recap_products(
     ranked = sorted(
         recap_pool,
         key=lambda p: (
-            -_hub_band_rank(product_metadata(p).hub_band),
-            -int(product_metadata(p).has_multiple_routes),
+            -_recap_priority_score(product, stage),
             product_metadata(p).product,
         ),
     )
 
     return tuple(ranked[:recap_count])
+
+
+def _recap_priority_score(product: int, stage: StageId) -> int:
+    record = product_metadata(product)
+    score = 0
+
+    score += _hub_band_rank(record.hub_band) * 10
+    score += int(record.has_multiple_routes) * 8
+    score += int(record.is_square) * 6
+
+    if stage in ("F", "G") and record.has_factor_7:
+        score += 20
+
+    if stage == "G" and product in (36, 42, 56, 64):
+        score += 20
+
+    return score
 
 
 def _single_hub_score(
@@ -562,11 +630,22 @@ def _single_hub_score(
     if record.is_square:
         score += 4
     if record.has_factor_7 and stage in ("F", "G"):
-        score += 3
+        score += 12
     if record.stage_introduced == stage:
-        score += 6
+        score += 8
     if selection_scope == "hybrid" and record.stage_introduced != stage:
         score += 1
+
+    if selection_scope == "available_mixed" and record.stage_introduced == stage:
+        score += 4
+
+    if stage == "G":
+        if product == 49:
+            score += 60
+        if record.is_square:
+            score += 12
+        if record.has_factor_7:
+            score += 12
 
     if tier == "Support":
         if record.has_multiple_routes:
@@ -581,6 +660,8 @@ def _single_hub_score(
             score += 4
         if record.is_square:
             score += 2
+        if stage in ("F", "G") and record.has_factor_7:
+            score += 6
 
     return score
 
@@ -604,12 +685,14 @@ def _coherence_score(
     score += sum(int(record.has_factor_7) for record in records) * 2
 
     if selection_scope == "new_only":
-        score += sum(int(record.stage_introduced == stage) for record in records) * 5
+        score += sum(int(record.stage_introduced == stage) for record in records) * 8
     elif selection_scope == "hybrid":
         stage_new = {record.product for record in records if record.stage_introduced == stage}
         stage_old = {record.product for record in records if record.stage_introduced != stage}
         if stage_new and stage_old:
             score += 10
+    elif selection_scope == "available_mixed":
+        score += sum(int(record.stage_introduced == stage) for record in records) * 4
 
     if mode == "same_stage_products":
         if all(record.stage_introduced == stage for record in records):
@@ -633,6 +716,20 @@ def _coherence_score(
         if any(record.is_square for record in records):
             score += 20
 
+    if stage in ("F", "G"):
+        score += sum(int(record.has_factor_7) for record in records) * 12
+
+    if stage == "G":
+        if any(record.product == 49 for record in records):
+            score += 50
+        score += sum(int(record.is_square) for record in records) * 10
+
+        products_set = {record.product for record in records}
+        if {36, 49}.issubset(products_set):
+            score += 20
+        if {42, 49}.issubset(products_set):
+            score += 20
+
     if tier == "Support":
         score -= sum(int(record.has_multiple_routes) for record in records)
         if mode in ("same_factor_family", "same_stage_products", "doubling_chain"):
@@ -649,6 +746,8 @@ def _coherence_score(
             score += 6
         if any(record.has_multiple_routes for record in records):
             score += 8
+        if stage in ("F", "G") and any(record.has_factor_7 for record in records):
+            score += 10
 
     return score
 
@@ -668,6 +767,9 @@ def _selection_reasons(
         f"Format: {format_id}.",
         f"Tier: {tier}.",
     ]
+
+    if stage == "G":
+        reasons.append("Stage G auto-selection prioritises closure, 7-times structure, and square-linked products.")
 
     if format_id == "one_product_10":
         record = product_metadata(selected_products[0])
@@ -797,12 +899,6 @@ def _rotating_pick_index(
     rotation_index: int,
     top_window: int = 3,
 ) -> int:
-    """
-    Pick deterministically from the top structural candidates.
-
-    We do not pick from the whole ranked list, because lower-ranked candidates
-    may weaken worksheet coherence. We rotate only across the best few.
-    """
     if not ranked_items:
         raise ValueError("Cannot pick from an empty ranked candidate list.")
 
