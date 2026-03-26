@@ -879,15 +879,50 @@ def _render_worksheet_studio() -> None:
 
     if st.button(generate_label, type="primary"):
         try:
-            current_request = _build_product_selection_request()
-            current_signature = _worksheet_request_signature(current_request)
+            previous_bundle = st.session_state.last_bundle
+            previous_selection = _bundle_part(previous_bundle, "selection") if previous_bundle else None
+            previous_products = tuple(_field(previous_selection, "selected_products", default=())) if previous_selection else ()
 
-            bundle = generate_worksheet_bundle(current_request)
-            st.session_state.last_bundle = bundle
-            st.session_state.last_request_signature = current_signature
+            new_bundle = None
+            new_request_signature = None
+            found_different = False
+            last_candidate_bundle = None
+            last_candidate_signature = None
 
-            # Advance for the next click so the next worksheet rotates.
+            for _ in range(12):
+                current_request = _build_product_selection_request()
+                current_signature = _worksheet_request_signature(current_request)
+
+                candidate_bundle = generate_worksheet_bundle(current_request)
+                candidate_selection = _bundle_part(candidate_bundle, "selection")
+                candidate_products = tuple(_field(candidate_selection, "selected_products", default=()))
+
+                last_candidate_bundle = candidate_bundle
+                last_candidate_signature = current_signature
+
+                if not previous_products or candidate_products != previous_products:
+                    new_bundle = candidate_bundle
+                    new_request_signature = current_signature
+                    found_different = True
+                    break
+
+                st.session_state.worksheet_rotation_index += 1
+
+            if new_bundle is None:
+                new_bundle = last_candidate_bundle
+                new_request_signature = last_candidate_signature
+
+            st.session_state.last_bundle = new_bundle
+            st.session_state.last_request_signature = new_request_signature
+
             st.session_state.worksheet_rotation_index += 1
+
+            if previous_products and not found_different:
+                st.warning(
+                    "No different selected product set was available for this exact configuration. "
+                    "Try changing selection mode or scope."
+                )
+
         except Exception as exc:
             msg = str(exc)
             if "No valid" in msg or "no valid" in msg:
@@ -1110,7 +1145,6 @@ def _worksheet_request_signature(request: ProductSelectionRequest | dict[str, An
     """
     Signature for worksheet configuration only.
 
-    Important:
     rotation_index is intentionally excluded so the current worksheet remains
     visible after generation, while the next click rotates to the next set.
     """
