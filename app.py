@@ -746,6 +746,7 @@ def _route_items_for_product(product: int, mode: str) -> list[dict[str, str]]:
 # -----------------------------
 # WORKSHEET STUDIO
 # -----------------------------
+
 def _render_worksheet_studio() -> None:
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Worksheet Studio</div>', unsafe_allow_html=True)
@@ -847,33 +848,54 @@ def _render_worksheet_studio() -> None:
                 step=1,
                 key="worksheet_recap_count_v20",
             )
-if st.button("Generate worksheet"):
-    try:
-        bundle = generate_worksheet_bundle(request)
-        st.session_state.last_bundle = bundle
+            if int(recap_count) != int(st.session_state.recap_count):
+                st.session_state.recap_count = int(recap_count)
+                st.rerun()
 
-    except Exception as exc:
-        msg = str(exc)
+    request = _build_product_selection_request()
 
-        if "No valid" in msg or "no valid" in msg:
-            st.info(
-                "No worksheet can be generated for this combination. "
-                "Try a different selection mode or scope."
-            )
-        else:
-            st.error(f"Worksheet generation failed: {exc}")
+    if st.button("Generate worksheet", type="primary"):
+        try:
+            bundle = generate_worksheet_bundle(request)
+            st.session_state.last_bundle = bundle
+        except Exception as exc:
+            msg = str(exc)
+            if "No valid" in msg or "no valid" in msg:
+                st.info(
+                    "No worksheet can be generated for this combination. "
+                    "Try a different selection mode or scope."
+                )
+            else:
+                st.error(f"Worksheet generation failed: {exc}")
+            st.markdown("</div>", unsafe_allow_html=True)
+            return
 
+    bundle = st.session_state.last_bundle
+    if bundle is None:
+        st.markdown(
+            '<div class="tmk-note">Choose a stage and options, then generate a worksheet.</div>',
+            unsafe_allow_html=True,
+        )
         st.markdown("</div>", unsafe_allow_html=True)
         return
 
-selection = _bundle_part(bundle, "selection")
-student = _bundle_part(bundle, "student", "student_worksheet")
-teacher = _bundle_part(bundle, "teacher", "teacher_key")
+    selection = _bundle_part(bundle, "selection")
+    student = _bundle_part(bundle, "student", "student_worksheet")
+    teacher = _bundle_part(bundle, "teacher", "teacher_key")
 
-selected_products = tuple(_field(selection, "selected_products", default=()))
-recap_products = tuple(_field(selection, "recap_products", default=()))
-vocab_supported = tuple(_field(selection, "vocab_supported", default=()))
-structural_tags = tuple(_field(selection, "structural_tags", default=()))
+    selected_products = tuple(_field(selection, "selected_products", default=()))
+    recap_products = tuple(_field(selection, "recap_products", default=()))
+    vocab_supported = tuple(_field(selection, "vocab_supported", default=()))
+    structural_tags = tuple(_field(selection, "structural_tags", default=()))
+    selection_reasons = tuple(
+        _field(
+            selection,
+            "selection_reasons",
+            "reasons",
+            "rationale",
+            default=(),
+        )
+    )
 
     _metric_card_row(
         [
@@ -970,6 +992,41 @@ structural_tags = tuple(_field(selection, "structural_tags", default=()))
 # -----------------------------
 # HELPERS
 # -----------------------------
+
+def _build_product_selection_request() -> ProductSelectionRequest:
+    payload = {
+        "stage": st.session_state.selected_stage,
+        "stage_id": st.session_state.selected_stage,
+        "format_id": st.session_state.worksheet_format,
+        "worksheet_format": st.session_state.worksheet_format,
+        "tier": st.session_state.selected_tier,
+        "selection_scope": st.session_state.selection_scope,
+        "scope": st.session_state.selection_scope,
+        "selection_mode": None if st.session_state.selection_mode == "Auto" else st.session_state.selection_mode,
+        "mode": None if st.session_state.selection_mode == "Auto" else st.session_state.selection_mode,
+        "include_recap": bool(st.session_state.include_recap),
+        "recap_count": int(st.session_state.recap_count),
+    }
+
+    try:
+        import inspect
+
+        signature = inspect.signature(ProductSelectionRequest)
+        supported = {
+            name: value
+            for name, value in payload.items()
+            if name in signature.parameters and value is not None
+        }
+        return ProductSelectionRequest(**supported)
+    except Exception:
+        fallback = {
+            key: value
+            for key, value in payload.items()
+            if value is not None and key in {"stage", "format_id", "tier", "selection_scope", "selection_mode", "include_recap", "recap_count"}
+        }
+        return ProductSelectionRequest(**fallback)
+
+
 def _metric_card_row(items: list[tuple[str, str]]) -> None:
     cols = st.columns(len(items))
     for col, (label, value) in zip(cols, items):
