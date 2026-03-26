@@ -7,20 +7,10 @@ import streamlit as st
 
 
 # ============================================================
-# EXISTING TMK SERVICE HOOKS
+# OPTIONAL SERVICE IMPORTS
+# Replace these with your real service/view builders.
+# UI only consumes prepared data.
 # ============================================================
-# Replace these imports with your real service functions.
-# They must return already-prepared view data.
-#
-# Example expected functions:
-# - get_planner_view(selected_stage: str | None = None) -> dict
-# - get_product_lab_view(
-#       selected_product_label: str | None = None,
-#       selected_compare_label: str | None = None
-#   ) -> dict
-#
-# The UI below does not compute TMK structure. It only renders
-# whatever your services provide.
 
 try:
     from services.planner_service import get_planner_view  # type: ignore
@@ -31,6 +21,11 @@ try:
     from services.product_service import get_product_lab_view  # type: ignore
 except Exception:
     get_product_lab_view = None
+
+try:
+    from services.worksheet_service import get_worksheet_studio_view  # type: ignore
+except Exception:
+    get_worksheet_studio_view = None
 
 
 # ============================================================
@@ -75,9 +70,6 @@ def inject_theme() -> None:
                 --muted: {PALETTE['muted']};
                 --border: {PALETTE['border']};
                 --shadow: {PALETTE['shadow']};
-                --radius-lg: 22px;
-                --radius-md: 16px;
-                --radius-sm: 12px;
             }}
 
             .stApp {{
@@ -95,9 +87,9 @@ def inject_theme() -> None:
 
             @media (min-width: 768px) {{
                 .block-container {{
-                    padding-top: 1.35rem;
-                    padding-left: 1.3rem;
-                    padding-right: 1.3rem;
+                    padding-top: 1.3rem;
+                    padding-left: 1.2rem;
+                    padding-right: 1.2rem;
                 }}
             }}
 
@@ -106,243 +98,9 @@ def inject_theme() -> None:
                 letter-spacing: -0.02em;
             }}
 
-            .tmk-page-header {{
-                background: rgba(255,255,255,0.84);
-                border: 1px solid var(--border);
-                border-radius: var(--radius-lg);
-                padding: 1.1rem 1rem;
-                box-shadow: var(--shadow);
-                backdrop-filter: blur(8px);
-                margin-bottom: 1rem;
-            }}
-
-            .tmk-page-header h1 {{
-                margin: 0;
-                font-size: 1.8rem;
-                line-height: 1.1;
-            }}
-
-            .tmk-page-header p {{
-                margin: 0.45rem 0 0 0;
-                color: var(--muted);
-                font-size: 0.98rem;
-                line-height: 1.45;
-            }}
-
-            .tmk-section {{
-                background: rgba(255,255,255,0.84);
-                border: 1px solid var(--border);
-                border-radius: var(--radius-lg);
-                padding: 1rem;
-                box-shadow: var(--shadow);
-                margin-bottom: 1rem;
-            }}
-
-            .tmk-section-title {{
-                display: flex;
-                align-items: baseline;
-                justify-content: space-between;
-                gap: 0.75rem;
-                margin-bottom: 0.8rem;
-            }}
-
-            .tmk-section-title h3 {{
-                margin: 0;
-                font-size: 1.08rem;
-            }}
-
-            .tmk-section-title span {{
-                color: var(--muted);
-                font-size: 0.86rem;
-            }}
-
-            .tmk-stat-grid {{
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 0.75rem;
-            }}
-
-            @media (min-width: 760px) {{
-                .tmk-stat-grid {{
-                    grid-template-columns: repeat(4, minmax(0, 1fr));
-                }}
-            }}
-
-            .tmk-stat-card {{
-                background: linear-gradient(180deg, #FFFDF9 0%, #F7F3EC 100%);
-                border: 1px solid rgba(230, 216, 195, 0.95);
-                border-radius: var(--radius-md);
-                padding: 0.9rem;
-            }}
-
-            .tmk-stat-label {{
-                color: var(--muted);
-                font-size: 0.78rem;
-                text-transform: uppercase;
-                letter-spacing: 0.08em;
-                margin-bottom: 0.3rem;
-            }}
-
-            .tmk-stat-value {{
-                color: var(--ink);
-                font-size: 1.12rem;
-                font-weight: 700;
-                line-height: 1.15;
-            }}
-
-            .tmk-chip-row {{
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.55rem;
-            }}
-
-            .tmk-chip {{
-                display: inline-flex;
-                align-items: center;
-                min-height: 40px;
-                padding: 0.52rem 0.8rem;
-                border-radius: 999px;
-                background: rgba(216, 218, 223, 0.28);
-                border: 1px solid rgba(27, 31, 59, 0.10);
-                color: var(--ink);
-                font-weight: 600;
-                font-size: 0.92rem;
-            }}
-
-            .tmk-chip.is-new {{
-                background: rgba(138, 124, 255, 0.10);
-                border-color: rgba(138, 124, 255, 0.25);
-            }}
-
-            .tmk-chip.is-active {{
-                background: rgba(231, 111, 81, 0.12);
-                border-color: rgba(231, 111, 81, 0.30);
-            }}
-
-            .tmk-chip.is-soft {{
-                background: rgba(127, 165, 138, 0.10);
-                border-color: rgba(127, 165, 138, 0.25);
-            }}
-
-            .tmk-muted {{
-                color: var(--muted);
-                font-size: 0.93rem;
-                line-height: 1.45;
-            }}
-
-            .tmk-divider {{
-                height: 1px;
-                background: linear-gradient(90deg, transparent, rgba(27,31,59,0.12), transparent);
-                margin: 0.8rem 0 0.9rem;
-            }}
-
-            .tmk-hub-zone {{
-                background: linear-gradient(180deg, rgba(27,31,59,0.98), rgba(37,48,78,0.98));
-                border-radius: 26px;
-                padding: 1rem;
-                color: white;
-                overflow: hidden;
-            }}
-
-            .tmk-hub-title {{
-                font-size: 1.25rem;
-                font-weight: 700;
-                margin-bottom: 0.2rem;
-            }}
-
-            .tmk-hub-subtitle {{
-                color: rgba(255,255,255,0.82);
-                font-size: 0.92rem;
-                margin-bottom: 1rem;
-            }}
-
-            .tmk-hub-mobile {{
-                display: grid;
-                gap: 0.85rem;
-            }}
-
-            .tmk-hub-route-group {{
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.65rem;
-                justify-content: center;
-            }}
-
-            .tmk-route-pill {{
-                background: rgba(255,255,255,0.94);
-                color: var(--ink);
-                min-height: 48px;
-                border-radius: 16px;
-                padding: 0.75rem 1rem;
-                font-size: 1rem;
-                font-weight: 700;
-                border: 1px solid rgba(255,255,255,0.65);
-                box-shadow: 0 6px 16px rgba(0,0,0,0.10);
-            }}
-
-            .tmk-arrow-row {{
-                display: flex;
-                justify-content: center;
-                gap: 1rem;
-                color: rgba(255,255,255,0.78);
-                font-size: 1.35rem;
-                line-height: 1;
-            }}
-
-            .tmk-product-core {{
-                width: 170px;
-                height: 170px;
-                max-width: 52vw;
-                max-height: 52vw;
-                margin: 0 auto;
-                border-radius: 999px;
-                background: linear-gradient(180deg, #657F9D 0%, #56728F 100%);
-                border: 8px solid rgba(255,255,255,0.92);
-                display: grid;
-                place-items: center;
-                box-shadow: 0 15px 35px rgba(0,0,0,0.16);
-            }}
-
-            .tmk-product-core span {{
-                font-size: 3.2rem;
-                line-height: 1;
-                font-weight: 800;
-                letter-spacing: -0.04em;
-                color: white;
-            }}
-
-            .tmk-mini-map {{
-                display: grid;
-                gap: 0.6rem;
-            }}
-
-            .tmk-stage-row {{
-                display: grid;
-                grid-template-columns: 30px 1fr;
-                gap: 0.6rem;
-                align-items: start;
-            }}
-
-            .tmk-stage-label {{
-                font-weight: 800;
-                color: var(--ink);
-                font-size: 0.9rem;
-                padding-top: 0.25rem;
-            }}
-
-            .tmk-scroll-x {{
-                overflow-x: auto;
-                padding-bottom: 0.15rem;
-            }}
-
-            .tmk-compare-card {{
-                background: linear-gradient(180deg, rgba(127,165,138,0.10), rgba(127,165,138,0.04));
-                border: 1px solid rgba(127,165,138,0.20);
-                border-radius: var(--radius-md);
-                padding: 0.9rem;
-            }}
-
-            div[data-testid="stSelectbox"] > label {{
+            div[data-testid="stSelectbox"] > label,
+            div[data-testid="stRadio"] > label,
+            div[data-testid="stMultiSelect"] > label {{
                 color: var(--ink);
                 font-weight: 700;
             }}
@@ -352,6 +110,140 @@ def inject_theme() -> None:
                 border-color: rgba(27,31,59,0.12) !important;
                 background: rgba(255,255,255,0.86) !important;
             }}
+
+            .tmk-card {{
+                background: rgba(255,255,255,0.86);
+                border: 1px solid var(--border);
+                border-radius: 22px;
+                padding: 1rem;
+                box-shadow: var(--shadow);
+            }}
+
+            .tmk-muted {{
+                color: var(--muted);
+                font-size: 0.93rem;
+                line-height: 1.45;
+            }}
+
+            .tmk-chip {{
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 38px;
+                padding: 0.45rem 0.75rem;
+                border-radius: 999px;
+                font-size: 0.9rem;
+                font-weight: 600;
+                color: var(--ink);
+                background: rgba(216, 218, 223, 0.28);
+                border: 1px solid rgba(27,31,59,0.10);
+                margin: 0.2rem 0.25rem 0.2rem 0;
+            }}
+
+            .tmk-chip-new {{
+                background: rgba(138, 124, 255, 0.10);
+                border-color: rgba(138, 124, 255, 0.25);
+            }}
+
+            .tmk-chip-active {{
+                background: rgba(231, 111, 81, 0.12);
+                border-color: rgba(231, 111, 81, 0.30);
+            }}
+
+            .tmk-chip-soft {{
+                background: rgba(127, 165, 138, 0.10);
+                border-color: rgba(127, 165, 138, 0.25);
+            }}
+
+            .tmk-hub-wrap {{
+                background: linear-gradient(180deg, rgba(27,31,59,0.98), rgba(37,48,78,0.98));
+                border-radius: 26px;
+                padding: 1rem;
+                color: white;
+            }}
+
+            .tmk-hub-title {{
+                font-size: 1.3rem;
+                font-weight: 800;
+                margin-bottom: 0.2rem;
+            }}
+
+            .tmk-hub-sub {{
+                color: rgba(255,255,255,0.82);
+                font-size: 0.92rem;
+                margin-bottom: 1rem;
+            }}
+
+            .tmk-hub-routes {{
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.65rem;
+            }}
+
+            .tmk-route-pill {{
+                background: rgba(255,255,255,0.95);
+                color: var(--ink);
+                min-height: 46px;
+                padding: 0.7rem 1rem;
+                border-radius: 16px;
+                font-size: 1rem;
+                font-weight: 700;
+                border: 1px solid rgba(255,255,255,0.65);
+            }}
+
+            .tmk-arrow-row {{
+                text-align: center;
+                color: rgba(255,255,255,0.75);
+                font-size: 1.35rem;
+                margin: 0.5rem 0;
+            }}
+
+            .tmk-core {{
+                width: 170px;
+                height: 170px;
+                max-width: 52vw;
+                max-height: 52vw;
+                margin: 0.2rem auto 0.4rem auto;
+                border-radius: 999px;
+                background: linear-gradient(180deg, #657F9D 0%, #56728F 100%);
+                border: 8px solid rgba(255,255,255,0.92);
+                display: grid;
+                place-items: center;
+                box-shadow: 0 15px 35px rgba(0,0,0,0.16);
+            }}
+
+            .tmk-core span {{
+                font-size: 3.2rem;
+                line-height: 1;
+                font-weight: 800;
+                letter-spacing: -0.04em;
+                color: white;
+            }}
+
+            .tmk-section-title {{
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                gap: 0.75rem;
+                margin-bottom: 0.75rem;
+            }}
+
+            .tmk-section-title h3 {{
+                margin: 0;
+                font-size: 1.05rem;
+            }}
+
+            .tmk-section-title small {{
+                color: var(--muted);
+                font-size: 0.84rem;
+            }}
+
+            .tmk-divider {{
+                height: 1px;
+                background: linear-gradient(90deg, transparent, rgba(27,31,59,0.12), transparent);
+                margin: 0.9rem 0;
+            }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -359,7 +251,7 @@ def inject_theme() -> None:
 
 
 # ============================================================
-# UI PRIMITIVES
+# SMALL HELPERS
 # ============================================================
 
 @dataclass(frozen=True)
@@ -368,321 +260,301 @@ class StatItem:
     value: str
 
 
-def page_header(title: str, subtitle: str) -> None:
+def card_title(title: str, subtitle: str | None = None) -> None:
+    subtitle_html = f"<small>{subtitle}</small>" if subtitle else ""
     st.markdown(
         f"""
-        <div class="tmk-page-header">
-            <h1>{title}</h1>
-            <p>{subtitle}</p>
+        <div class="tmk-section-title">
+            <h3>{title}</h3>
+            {subtitle_html}
         </div>
         """,
         unsafe_allow_html=True,
     )
 
 
-def start_section(title: str, subtitle: str | None = None) -> None:
-    subtitle_html = f"<span>{subtitle}</span>" if subtitle else ""
-    st.markdown(
-        f"""
-        <div class="tmk-section">
-            <div class="tmk-section-title">
-                <h3>{title}</h3>
-                {subtitle_html}
-            </div>
-        """,
-        unsafe_allow_html=True,
-    )
+def chip_html(label: str, variant: str = "") -> str:
+    classes = "tmk-chip"
+    if variant:
+        classes += f" {variant}"
+    return f'<span class="{classes}">{label}</span>'
 
 
-def end_section() -> None:
-    st.markdown("</div>", unsafe_allow_html=True)
+def render_chip_row(labels: Sequence[str], variant: str = "") -> None:
+    html = "".join(chip_html(str(label), variant) for label in labels)
+    st.markdown(html, unsafe_allow_html=True)
 
 
-def stat_grid(items: Sequence[StatItem]) -> None:
-    cards = "".join(
-        f"""
-        <div class="tmk-stat-card">
-            <div class="tmk-stat-label">{item.label}</div>
-            <div class="tmk-stat-value">{item.value}</div>
-        </div>
-        """
-        for item in items
-    )
-    st.markdown(f'<div class="tmk-stat-grid">{cards}</div>', unsafe_allow_html=True)
-
-
-def chip_row(labels: Sequence[str], variant: str = "") -> None:
-    chips = "".join(
-        f'<span class="tmk-chip {variant}">{label}</span>' for label in labels
-    )
-    st.markdown(f'<div class="tmk-chip-row">{chips}</div>', unsafe_allow_html=True)
-
-
-def muted(text: str) -> None:
-    st.markdown(f'<div class="tmk-muted">{text}</div>', unsafe_allow_html=True)
-
-
-def divider() -> None:
-    st.markdown('<div class="tmk-divider"></div>', unsafe_allow_html=True)
+def render_stats(items: Sequence[StatItem], columns: int = 4) -> None:
+    cols = st.columns(columns)
+    for i, item in enumerate(items):
+        with cols[i % columns]:
+            st.markdown(
+                f"""
+                <div class="tmk-card" style="padding:0.9rem;">
+                    <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; color:{PALETTE['muted']}; margin-bottom:0.25rem;">
+                        {item.label}
+                    </div>
+                    <div style="font-size:1.15rem; font-weight:800; color:{PALETTE['ink']};">
+                        {item.value}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
 
 # ============================================================
-# COMMON CONTROLS
+# NAV
 # ============================================================
 
-def render_nav() -> str:
+def render_top_nav() -> str:
     return st.radio(
         "Navigate",
-        ["Structural Planner", "Product Lab"],
+        ["Structural Planner", "Product Lab", "Worksheet Studio"],
         horizontal=True,
-        key="tmk_page_nav",
+        key="tmk_top_nav",
+        label_visibility="collapsed",
     )
 
 
-def render_stage_selector(stages: Sequence[str], selected_stage: str | None) -> str:
-    safe_stages = list(stages) if stages else ["A"]
-    current = selected_stage if selected_stage in safe_stages else safe_stages[0]
-    index = safe_stages.index(current)
-    return st.selectbox("Stage", safe_stages, index=index, key="planner_stage_selector")
-
-
-def render_product_selector(
-    product_labels: Sequence[str],
-    selected_label: str | None,
-    key: str,
-    label: str,
-) -> str:
-    safe_products = list(product_labels) if product_labels else ["—"]
-    current = selected_label if selected_label in safe_products else safe_products[0]
-    index = safe_products.index(current)
-    return st.selectbox(label, safe_products, index=index, key=key)
-
-
-def render_compare_selector(
-    product_labels: Sequence[str],
-    selected_label: str | None,
-) -> str | None:
-    safe_products = list(product_labels)
-    options = ["None", *safe_products]
-    current = selected_label if selected_label in safe_products else "None"
-    index = options.index(current)
-    result = st.selectbox("Compare with", options, index=index, key="lab_compare_selector")
-    return None if result == "None" else result
-
-
 # ============================================================
-# STRUCTURAL PLANNER UI
+# PAGE HEADERS
 # ============================================================
 
-def render_cumulative_product_map(
-    stage_products: Mapping[str, Sequence[Mapping[str, Any]]],
-    active_stage: str,
-    active_product: str | None = None,
-) -> None:
-    start_section("Cumulative product map", "System view")
-
-    st.markdown('<div class="tmk-mini-map">', unsafe_allow_html=True)
-    for stage, products in stage_products.items():
-        chips = []
-        for item in products:
-            classes: list[str] = []
-            if item.get("is_new"):
-                classes.append("is-new")
-            if active_product is not None and str(item.get("label")) == str(active_product):
-                classes.append("is-active")
-            class_text = " ".join(classes)
-            chips.append(f'<span class="tmk-chip {class_text}">{item.get("label", "")}</span>')
-
-        stage_html = "".join(chips)
-        st.markdown(
-            f"""
-            <div class="tmk-stage-row">
-                <div class="tmk-stage-label">{stage}</div>
-                <div class="tmk-scroll-x">
-                    <div class="tmk-chip-row">{stage_html}</div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    muted(
-        f"Selected stage: {active_stage}. New products are highlighted. "
-        f"This view stays cumulative and does not repeat product-hub detail."
+def render_page_header(title: str, subtitle: str) -> None:
+    st.markdown(
+        f"""
+        <div class="tmk-card" style="margin-bottom:1rem;">
+            <h1 style="margin:0; font-size:2rem;">{title}</h1>
+            <p class="tmk-muted" style="margin:0.45rem 0 0 0;">{subtitle}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-    end_section()
+
+
+# ============================================================
+# STRUCTURAL PLANNER
+# ============================================================
+
+def render_cumulative_map(stage_products: Mapping[str, Sequence[Mapping[str, Any]]], active_product: str | None) -> None:
+    with st.container():
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        card_title("Cumulative product map", "System view")
+
+        for stage, products in stage_products.items():
+            left, right = st.columns([0.08, 0.92])
+            with left:
+                st.markdown(
+                    f"<div style='font-weight:800; color:{PALETTE['ink']}; padding-top:0.45rem;'>{stage}</div>",
+                    unsafe_allow_html=True,
+                )
+            with right:
+                html = ""
+                for item in products:
+                    label = str(item.get("label", ""))
+                    cls = ""
+                    if item.get("is_new"):
+                        cls = "tmk-chip-new"
+                    if active_product is not None and label == str(active_product):
+                        cls = "tmk-chip-active"
+                    html += chip_html(label, cls)
+                st.markdown(html, unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_stage_summary(summary: Mapping[str, Any]) -> None:
-    start_section("Stage summary", "Calm, cumulative, readable")
+    with st.container():
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        card_title("Stage summary", "Calm, cumulative, readable")
 
-    stat_grid(
-        [
-            StatItem("Stage", str(summary.get("stage", "—"))),
-            StatItem("Stage role", str(summary.get("role", "—"))),
-            StatItem("New products", str(summary.get("new_count", "0"))),
-            StatItem("Available", str(summary.get("available_count", "0"))),
-        ]
-    )
+        render_stats(
+            [
+                StatItem("Stage", str(summary.get("stage", "—"))),
+                StatItem("Role", str(summary.get("role", "—"))),
+                StatItem("New products", str(summary.get("new_count", "—"))),
+                StatItem("Available", str(summary.get("available_count", "—"))),
+            ]
+        )
 
-    divider()
+        st.markdown('<div class="tmk-divider"></div>', unsafe_allow_html=True)
 
-    new_products = [str(v) for v in summary.get("new_products", [])]
-    available_products = [str(v) for v in summary.get("available_products", [])]
+        new_products = [str(x) for x in summary.get("new_products", [])]
+        available_products = [str(x) for x in summary.get("available_products", [])]
 
-    if new_products:
-        st.caption("New products")
-        chip_row(new_products, "is-new")
+        if new_products:
+            st.caption("New products")
+            render_chip_row(new_products, "tmk-chip-new")
 
-    if available_products:
-        st.caption("Available products")
-        chip_row(available_products)
+        if available_products:
+            st.caption("Available products")
+            render_chip_row(available_products)
 
-    end_section()
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_structural_planner_page(view_model: Mapping[str, Any]) -> None:
-    page_header(
+    render_page_header(
         str(view_model.get("title", "Structural Planner")),
-        str(view_model.get("subtitle", "See cumulative products across the TMK system.")),
+        str(view_model.get("subtitle", "See cumulative products without repeating product-hub detail.")),
     )
 
-    selected_stage = render_stage_selector(
-        stages=view_model.get("stage_options", []),
-        selected_stage=view_model.get("selected_stage"),
+    stage_options = list(view_model.get("stage_options", [])) or ["A"]
+    selected_stage = str(view_model.get("selected_stage", stage_options[0]))
+    selected_stage = st.selectbox(
+        "Stage",
+        stage_options,
+        index=stage_options.index(selected_stage) if selected_stage in stage_options else 0,
+        key="planner_stage_selector",
     )
 
-    # If your service supports reloading by stage, this preserves controller simplicity.
     if get_planner_view is not None:
         refreshed = get_planner_view(selected_stage=selected_stage)
         if isinstance(refreshed, Mapping):
             view_model = refreshed
 
-    render_cumulative_product_map(
+    render_cumulative_map(
         stage_products=view_model.get("cumulative_map", {}),
-        active_stage=str(view_model.get("selected_stage", selected_stage)),
         active_product=view_model.get("active_product"),
+    )
+
+    st.markdown(
+        f"<p class='tmk-muted'>Selected stage: {view_model.get('selected_stage', selected_stage)}. "
+        f"New products are highlighted. This view stays cumulative and does not repeat product-hub detail.</p>",
+        unsafe_allow_html=True,
     )
 
     render_stage_summary(view_model.get("stage_summary", {}))
 
 
 # ============================================================
-# PRODUCT LAB UI
+# PRODUCT LAB
 # ============================================================
 
-def render_product_hub(
-    product_label: str,
-    entry_routes: Sequence[str],
-    exit_routes: Sequence[str],
-) -> None:
-    start_section("Product hub", "Routes in and out")
+def render_product_hub(product_label: str, entry_routes: Sequence[str], exit_routes: Sequence[str]) -> None:
+    with st.container():
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
 
-    entry_html = "".join(
-        f'<span class="tmk-route-pill">{route}</span>' for route in entry_routes
-    )
-    exit_html = "".join(
-        f'<span class="tmk-route-pill">{route}</span>' for route in exit_routes
-    )
-
-    st.markdown(
-        f"""
-        <div class="tmk-hub-zone">
-            <div class="tmk-hub-title">Hub view</div>
-            <div class="tmk-hub-subtitle">
-                Entry routes move inward to the product. Exit routes move outward from it.
+        st.markdown(
+            f"""
+            <div class="tmk-hub-wrap">
+                <div class="tmk-hub-title">Radial Hub View</div>
+                <div class="tmk-hub-sub">
+                    Entry routes point inward. Exit routes point outward. Distinct pairings only.
+                </div>
+                <div class="tmk-hub-routes">
+                    {''.join(f'<span class="tmk-route-pill">{r}</span>' for r in entry_routes)}
+                </div>
+                <div class="tmk-arrow-row">↓ &nbsp;&nbsp; ↓ &nbsp;&nbsp; ↓</div>
+                <div class="tmk-core"><span>{product_label}</span></div>
+                <div class="tmk-arrow-row">↓ &nbsp;&nbsp; ↓ &nbsp;&nbsp; ↓</div>
+                <div class="tmk-hub-routes">
+                    {''.join(f'<span class="tmk-route-pill">{r}</span>' for r in exit_routes)}
+                </div>
             </div>
-            <div class="tmk-hub-mobile">
-                <div class="tmk-hub-route-group">{entry_html}</div>
-                <div class="tmk-arrow-row"><span>↓</span><span>↓</span><span>↓</span></div>
-                <div class="tmk-product-core"><span>{product_label}</span></div>
-                <div class="tmk-arrow-row"><span>↓</span><span>↓</span><span>↓</span></div>
-                <div class="tmk-hub-route-group">{exit_html}</div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+            """,
+            unsafe_allow_html=True,
+        )
 
-    end_section()
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_product_identity(product_meta: Mapping[str, Any]) -> None:
-    start_section("Product identity", "One product, one view")
+    with st.container():
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        card_title("Product identity", "One product, one view")
 
-    stat_grid(
-        [
-            StatItem("Product", str(product_meta.get("product", "—"))),
-            StatItem("Stage", str(product_meta.get("stage", "—"))),
-            StatItem("Role", str(product_meta.get("role", "—"))),
-            StatItem("Distinct routes", str(product_meta.get("route_count", "—"))),
-        ]
-    )
+        render_stats(
+            [
+                StatItem("Product", str(product_meta.get("product", "—"))),
+                StatItem("Stage", str(product_meta.get("stage", "—"))),
+                StatItem("Role", str(product_meta.get("role", "—"))),
+                StatItem("Distinct routes", str(product_meta.get("route_count", "—"))),
+            ]
+        )
 
-    description = product_meta.get("description")
-    if description:
-        divider()
-        muted(str(description))
+        description = product_meta.get("description")
+        if description:
+            st.markdown('<div class="tmk-divider"></div>', unsafe_allow_html=True)
+            st.markdown(f"<p class='tmk-muted'>{description}</p>", unsafe_allow_html=True)
 
-    end_section()
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
-def render_relationships_card(title: str, values: Sequence[str], subtitle: str) -> None:
-    start_section(title, subtitle)
-    chip_row([str(v) for v in values], "is-soft")
-    end_section()
+def render_simple_relationship_card(title: str, subtitle: str, values: Sequence[str]) -> None:
+    with st.container():
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        card_title(title, subtitle)
+        render_chip_row([str(v) for v in values], "tmk-chip-soft")
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_compare_card(compare: Mapping[str, Any] | None) -> None:
     if not compare:
         return
 
-    start_section("Comparison", "Optional, compact, non-repetitive")
+    with st.container():
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        card_title("Comparison", "Optional, compact, non-repetitive")
 
-    st.markdown('<div class="tmk-compare-card">', unsafe_allow_html=True)
+        render_stats(
+            [
+                StatItem("Compare with", str(compare.get("product", "—"))),
+                StatItem("Stage", str(compare.get("stage", "—"))),
+                StatItem("Shared factors", str(compare.get("shared_factors", "—"))),
+                StatItem("Shared patterns", str(compare.get("shared_patterns", "—"))),
+            ]
+        )
 
-    stat_grid(
-        [
-            StatItem("Compare with", str(compare.get("product", "—"))),
-            StatItem("Stage", str(compare.get("stage", "—"))),
-            StatItem("Shared factors", str(compare.get("shared_factors", "—"))),
-            StatItem("Shared patterns", str(compare.get("shared_patterns", "—"))),
-        ]
-    )
+        routes = [str(x) for x in compare.get("routes", [])]
+        if routes:
+            st.markdown('<div class="tmk-divider"></div>', unsafe_allow_html=True)
+            st.caption("Compare product routes")
+            render_chip_row(routes)
 
-    routes = [str(v) for v in compare.get("routes", [])]
-    if routes:
-        divider()
-        st.caption("Compare product routes")
-        chip_row(routes)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-    end_section()
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_product_lab_page(view_model: Mapping[str, Any]) -> None:
-    page_header(
+    render_page_header(
         str(view_model.get("title", "Product Lab")),
         str(view_model.get("subtitle", "Explore one product as a structural hub.")),
     )
 
-    selected_product = render_product_selector(
-        product_labels=view_model.get("product_options", []),
-        selected_label=view_model.get("selected_product_label"),
-        key="lab_product_selector",
-        label="Selected product",
-    )
+    product_options = list(view_model.get("product_options", [])) or ["—"]
+    selected_product = str(view_model.get("selected_product_label", product_options[0]))
+    if selected_product not in product_options:
+        selected_product = product_options[0]
 
-    selected_compare = render_compare_selector(
-        product_labels=view_model.get("compare_options", []),
-        selected_label=view_model.get("selected_compare_label"),
-    )
+    compare_options = list(view_model.get("compare_options", []))
+    compare_current = view_model.get("selected_compare_label")
+    compare_choices = ["None", *compare_options]
+    compare_current = compare_current if compare_current in compare_options else "None"
+
+    col1, col2 = st.columns(2)
+    with col1:
+        selected_product = st.selectbox(
+            "Selected product",
+            product_options,
+            index=product_options.index(selected_product),
+            key="lab_product_selector",
+        )
+    with col2:
+        selected_compare = st.selectbox(
+            "Compare with",
+            compare_choices,
+            index=compare_choices.index(compare_current),
+            key="lab_compare_selector",
+        )
+
+    selected_compare_value = None if selected_compare == "None" else selected_compare
 
     if get_product_lab_view is not None:
         refreshed = get_product_lab_view(
             selected_product_label=selected_product,
-            selected_compare_label=selected_compare,
+            selected_compare_label=selected_compare_value,
         )
         if isinstance(refreshed, Mapping):
             view_model = refreshed
@@ -690,7 +562,7 @@ def render_product_lab_page(view_model: Mapping[str, Any]) -> None:
     product_meta = view_model.get("product_meta", {})
 
     render_product_hub(
-        product_label=str(product_meta.get("product", selected_product or "—")),
+        product_label=str(product_meta.get("product", selected_product)),
         entry_routes=[str(v) for v in view_model.get("entry_routes", [])],
         exit_routes=[str(v) for v in view_model.get("exit_routes", [])],
     )
@@ -702,31 +574,18 @@ def render_product_lab_page(view_model: Mapping[str, Any]) -> None:
     derived_chains = [str(v) for v in view_model.get("derived_chains", [])]
 
     if representations:
-        render_relationships_card(
-            "Representations",
-            representations,
-            "Canonical product forms",
-        )
+        render_simple_relationship_card("Representations", "Canonical product forms", representations)
 
     if inverse_links:
-        render_relationships_card(
-            "Inverse links",
-            inverse_links,
-            "Linked division relationships",
-        )
+        render_simple_relationship_card("Inverse links", "Linked division relationships", inverse_links)
 
     if derived_chains:
-        render_relationships_card(
-            "Derived chains",
-            derived_chains,
-            "Stage-appropriate structural chains",
-        )
+        render_simple_relationship_card("Derived chains", "Stage-appropriate structural chains", derived_chains)
 
     mini_map = view_model.get("mini_map")
     if mini_map:
-        render_cumulative_product_map(
+        render_cumulative_map(
             stage_products=mini_map,
-            active_stage=str(product_meta.get("stage", "")),
             active_product=str(product_meta.get("product", "")),
         )
 
@@ -734,9 +593,94 @@ def render_product_lab_page(view_model: Mapping[str, Any]) -> None:
 
 
 # ============================================================
-# FALLBACK DEMO DATA
+# WORKSHEET STUDIO
 # ============================================================
-# These are only used if your real services are not imported yet.
+
+def render_worksheet_studio_page(view_model: Mapping[str, Any]) -> None:
+    render_page_header(
+        str(view_model.get("title", "Worksheet Studio")),
+        str(view_model.get("subtitle", "Generate worksheets from TMK service outputs.")),
+    )
+
+    controls = view_model.get("controls", {})
+    summary = view_model.get("summary", {})
+    preview = view_model.get("preview", {})
+
+    stage_options = list(controls.get("stage_options", [])) or ["A"]
+    format_options = list(controls.get("format_options", [])) or ["Standard"]
+    tier_options = list(controls.get("tier_options", [])) or ["Core"]
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        selected_stage = st.selectbox(
+            "Stage",
+            stage_options,
+            index=stage_options.index(controls.get("selected_stage", stage_options[0]))
+            if controls.get("selected_stage", stage_options[0]) in stage_options else 0,
+            key="worksheet_stage_selector",
+        )
+    with col2:
+        selected_format = st.selectbox(
+            "Format",
+            format_options,
+            index=format_options.index(controls.get("selected_format", format_options[0]))
+            if controls.get("selected_format", format_options[0]) in format_options else 0,
+            key="worksheet_format_selector",
+        )
+    with col3:
+        selected_tier = st.selectbox(
+            "Tier",
+            tier_options,
+            index=tier_options.index(controls.get("selected_tier", tier_options[0]))
+            if controls.get("selected_tier", tier_options[0]) in tier_options else 0,
+            key="worksheet_tier_selector",
+        )
+
+    if get_worksheet_studio_view is not None:
+        refreshed = get_worksheet_studio_view(
+            selected_stage=selected_stage,
+            selected_format=selected_format,
+            selected_tier=selected_tier,
+        )
+        if isinstance(refreshed, Mapping):
+            view_model = refreshed
+            summary = view_model.get("summary", {})
+            preview = view_model.get("preview", {})
+
+    with st.container():
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        card_title("Worksheet summary", "Service-fed only")
+
+        render_stats(
+            [
+                StatItem("Stage", str(summary.get("stage", "—"))),
+                StatItem("Format", str(summary.get("format", "—"))),
+                StatItem("Tier", str(summary.get("tier", "—"))),
+                StatItem("Products", str(summary.get("product_count", "—"))),
+            ]
+        )
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    if preview:
+        with st.container():
+            st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+            card_title("Worksheet preview", "Read-only preview")
+
+            title = preview.get("title")
+            if title:
+                st.subheader(str(title))
+
+            lines = preview.get("lines", [])
+            for line in lines:
+                st.write(str(line))
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+
+# ============================================================
+# FALLBACK VIEWS
+# ============================================================
 
 def fallback_planner_view(selected_stage: str | None = None) -> Mapping[str, Any]:
     stage = selected_stage or "D"
@@ -812,14 +756,46 @@ def fallback_product_lab_view(
     }
 
 
+def fallback_worksheet_studio_view(
+    selected_stage: str | None = None,
+    selected_format: str | None = None,
+    selected_tier: str | None = None,
+) -> Mapping[str, Any]:
+    return {
+        "title": "Worksheet Studio",
+        "subtitle": "Generate worksheets from TMK service outputs.",
+        "controls": {
+            "stage_options": ["A", "B", "C", "D", "E", "F", "G"],
+            "selected_stage": selected_stage or "D",
+            "format_options": ["Standard", "Mixed", "Practice"],
+            "selected_format": selected_format or "Standard",
+            "tier_options": ["Core", "Stretch", "Support"],
+            "selected_tier": selected_tier or "Core",
+        },
+        "summary": {
+            "stage": selected_stage or "D",
+            "format": selected_format or "Standard",
+            "tier": selected_tier or "Core",
+            "product_count": "8",
+        },
+        "preview": {
+            "title": "Worksheet preview",
+            "lines": [
+                "Bundle prepared by service layer.",
+                "Preview lines only.",
+                "Use your existing worksheet generator output here.",
+            ],
+        },
+    }
+
+
 # ============================================================
-# APP ENTRY
+# APP
 # ============================================================
 
 def main() -> None:
     inject_theme()
-
-    page = render_nav()
+    page = render_top_nav()
 
     if page == "Structural Planner":
         if get_planner_view is not None:
@@ -830,23 +806,38 @@ def main() -> None:
             view_model = fallback_planner_view(
                 selected_stage=st.session_state.get("planner_stage_selector")
             )
-
         render_structural_planner_page(view_model)
 
     elif page == "Product Lab":
+        compare_value = st.session_state.get("lab_compare_selector")
+        compare_value = None if compare_value in (None, "None") else compare_value
+
         if get_product_lab_view is not None:
             view_model = get_product_lab_view(
                 selected_product_label=st.session_state.get("lab_product_selector"),
-                selected_compare_label=st.session_state.get("lab_compare_selector"),
+                selected_compare_label=compare_value,
             )
         else:
-            compare_value = st.session_state.get("lab_compare_selector")
             view_model = fallback_product_lab_view(
                 selected_product_label=st.session_state.get("lab_product_selector"),
-                selected_compare_label=None if compare_value in (None, "None") else compare_value,
+                selected_compare_label=compare_value,
             )
-
         render_product_lab_page(view_model)
+
+    elif page == "Worksheet Studio":
+        if get_worksheet_studio_view is not None:
+            view_model = get_worksheet_studio_view(
+                selected_stage=st.session_state.get("worksheet_stage_selector"),
+                selected_format=st.session_state.get("worksheet_format_selector"),
+                selected_tier=st.session_state.get("worksheet_tier_selector"),
+            )
+        else:
+            view_model = fallback_worksheet_studio_view(
+                selected_stage=st.session_state.get("worksheet_stage_selector"),
+                selected_format=st.session_state.get("worksheet_format_selector"),
+                selected_tier=st.session_state.get("worksheet_tier_selector"),
+            )
+        render_worksheet_studio_page(view_model)
 
 
 if __name__ == "__main__":
