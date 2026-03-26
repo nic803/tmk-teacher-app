@@ -861,9 +861,10 @@ def _render_worksheet_studio() -> None:
         selection_mode=None if st.session_state.selection_mode == "Auto" else st.session_state.selection_mode,
     )
 
-    try:
-        bundle = generate_worksheet_bundle(request)
-        st.session_state.last_bundle = bundle
+try:
+    bundle = generate_worksheet_bundle(request)
+    st.session_state.last_bundle = bundle
+
 except Exception as exc:
     msg = str(exc)
 
@@ -876,7 +877,7 @@ except Exception as exc:
         st.error(f"Worksheet generation failed: {exc}")
 
     st.markdown("</div>", unsafe_allow_html=True)
-    return    
+    return
     selection = _bundle_part(bundle, "selection")
     student = _bundle_part(bundle, "student", "student_worksheet")
     teacher = _bundle_part(bundle, "teacher", "teacher_key")
