@@ -171,6 +171,9 @@ def _ensure_state() -> None:
     if "last_bundle" not in st.session_state:
         st.session_state.last_bundle = None
 
+    if "last_request_signature" not in st.session_state:
+        st.session_state.last_request_signature = None
+
 
 def _sync_surface_from_query_params() -> None:
     requested_surface = st.query_params.get("surface")
@@ -769,6 +772,7 @@ def _render_worksheet_studio() -> None:
         if selected_stage != st.session_state.selected_stage:
             st.session_state.selected_stage = selected_stage
             st.session_state.selection_mode = "Auto"
+            _invalidate_worksheet_bundle()
             st.rerun()
 
     with top_mid:
@@ -782,6 +786,7 @@ def _render_worksheet_studio() -> None:
         if selected_format != st.session_state.worksheet_format:
             st.session_state.worksheet_format = selected_format
             st.session_state.selection_mode = "Auto"
+            _invalidate_worksheet_bundle()
             st.rerun()
 
     with top_right:
@@ -795,6 +800,7 @@ def _render_worksheet_studio() -> None:
         if selected_tier != st.session_state.selected_tier:
             st.session_state.selected_tier = selected_tier
             st.session_state.selection_mode = "Auto"
+            _invalidate_worksheet_bundle()
             st.rerun()
 
     with bottom_left:
@@ -807,6 +813,7 @@ def _render_worksheet_studio() -> None:
         if selected_scope != st.session_state.selection_scope:
             st.session_state.selection_scope = selected_scope
             st.session_state.selection_mode = "Auto"
+            _invalidate_worksheet_bundle()
             st.rerun()
 
     mode_options = ("Auto",) + available_selection_modes(
@@ -827,6 +834,7 @@ def _render_worksheet_studio() -> None:
         )
         if selected_mode != st.session_state.selection_mode:
             st.session_state.selection_mode = selected_mode
+            _invalidate_worksheet_bundle()
             st.rerun()
 
     with bottom_right:
@@ -837,6 +845,7 @@ def _render_worksheet_studio() -> None:
         )
         if include_recap != st.session_state.include_recap:
             st.session_state.include_recap = include_recap
+            _invalidate_worksheet_bundle()
             st.rerun()
 
         if st.session_state.include_recap:
@@ -850,14 +859,20 @@ def _render_worksheet_studio() -> None:
             )
             if int(recap_count) != int(st.session_state.recap_count):
                 st.session_state.recap_count = int(recap_count)
+                _invalidate_worksheet_bundle()
                 st.rerun()
 
     request = _build_product_selection_request()
+    request_signature = _worksheet_request_signature(request)
+
+    if st.session_state.last_request_signature != request_signature:
+        st.session_state.last_bundle = None
 
     if st.button("Generate worksheet", type="primary"):
         try:
             bundle = generate_worksheet_bundle(request)
             st.session_state.last_bundle = bundle
+            st.session_state.last_request_signature = request_signature
         except Exception as exc:
             msg = str(exc)
             if "No valid" in msg or "no valid" in msg:
@@ -945,11 +960,11 @@ def _render_worksheet_studio() -> None:
         for index, answer in enumerate(answers, start=1):
             q_id = _field(answer, "q_id", default=index)
             answer_text = _field(answer, "answer", default="")
-            msvwa = _field(answer, "msvwa", "msvwa_tags", default=())
+            focus_tags = _field(answer, "focus_tags", "structural_focus", "msvwa", "msvwa_tags", default=())
             teacher_note = _field(answer, "teacher_note", "note", default="")
             vocab = _field(answer, "vocab", "vocabulary_words", default=None)
 
-            tags_text = ", ".join(str(tag) for tag in _coerce_sequence(msvwa)) if msvwa else "—"
+            tags_text = ", ".join(str(tag) for tag in _coerce_sequence(focus_tags)) if focus_tags else "—"
 
             vocab_text = ""
             if vocab:
@@ -961,7 +976,7 @@ def _render_worksheet_studio() -> None:
                 <div class="tmk-answer-box">
                     <div class="tmk-small-label">Q{q_id}</div>
                     <div><strong>Answer:</strong> {escape(_stringify(answer_text))}</div>
-                    <div class="tmk-note"><strong>MSVWA:</strong> {escape(tags_text)}</div>
+                    <div class="tmk-note"><strong>Focus:</strong> {escape(tags_text)}</div>
                     {vocab_text}
                     <div class="tmk-note" style="margin-top:0.35rem;">{escape(_stringify(teacher_note))}</div>
                 </div>
@@ -1065,6 +1080,48 @@ def _product_option_label(product: int) -> str:
 
 def _format_route(route: tuple[int, int]) -> str:
     return f"{route[0]} × {route[1]}"
+
+def _worksheet_request_signature(request: ProductSelectionRequest | dict[str, Any] | Any) -> tuple[tuple[str, str], ...]:
+    if hasattr(request, "model_dump"):
+        payload = request.model_dump()
+    elif hasattr(request, "dict"):
+        payload = request.dict()
+    elif isinstance(request, dict):
+        payload = dict(request)
+    else:
+        payload = {}
+        for name in (
+            "stage",
+            "stage_id",
+            "format_id",
+            "worksheet_format",
+            "tier",
+            "selection_scope",
+            "scope",
+            "selection_mode",
+            "mode",
+            "include_recap",
+            "recap_count",
+        ):
+            if hasattr(request, name):
+                payload[name] = getattr(request, name)
+
+    normalized: dict[str, str] = {}
+    for key, value in payload.items():
+        if value is None:
+            normalized[key] = ""
+        elif isinstance(value, (list, tuple, set)):
+            normalized[key] = ",".join(str(item) for item in value)
+        else:
+            normalized[key] = str(value)
+
+    return tuple(sorted(normalized.items()))
+
+
+def _invalidate_worksheet_bundle() -> None:
+    st.session_state.last_bundle = None
+    st.session_state.last_request_signature = None
+
 
 
 def _stringify(value: Any) -> str:
