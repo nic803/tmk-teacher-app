@@ -864,15 +864,14 @@ if st.button("Generate worksheet"):
             st.error(f"Worksheet generation failed: {exc}")
 
         st.markdown("</div>", unsafe_allow_html=True)
-    return
-        st.markdown("</div>", unsafe_allow_html=True)
         return
-    selection = _bundle_part(bundle, "selection")
-    student = _bundle_part(bundle, "student", "student_worksheet")
-    teacher = _bundle_part(bundle, "teacher", "teacher_key")
 
-    selected_products = tuple(_field(selection, "selected_products", default=()))
-    recap_products = tuple(_field(selection, "recap_products", default=()))
+selection = _bundle_part(bundle, "selection")
+student = _bundle_part(bundle, "student", "student_worksheet")
+teacher = _bundle_part(bundle, "teacher", "teacher_key")
+
+selected_products = tuple(_field(selection, "selected_products", default=()))
+recap_products = tuple(_field(selection, "recap_products", default=()))
     selection_reasons = tuple(_field(selection, "selection_reasons", default=()))
     vocab_supported = tuple(_field(selection, "vocab_supported", default=()))
     structural_tags = tuple(_field(selection, "structural_tags", default=()))
