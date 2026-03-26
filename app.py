@@ -864,7 +864,7 @@ if st.button("Generate worksheet"):
             st.error(f"Worksheet generation failed: {exc}")
 
         st.markdown("</div>", unsafe_allow_html=True)
-        return
+    return
         st.markdown("</div>", unsafe_allow_html=True)
         return
     selection = _bundle_part(bundle, "selection")
