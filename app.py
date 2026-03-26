@@ -847,21 +847,7 @@ def _render_worksheet_studio() -> None:
                 step=1,
                 key="worksheet_recap_count_v20",
             )
-            if recap_count != st.session_state.recap_count:
-                st.session_state.recap_count = int(recap_count)
-                st.rerun()
-
-    request = ProductSelectionRequest(
-        stage=st.session_state.selected_stage,
-        format_id=st.session_state.worksheet_format,
-        tier=st.session_state.selected_tier,
-        selection_scope=st.session_state.selection_scope,
-        include_recap=st.session_state.include_recap,
-        recap_count=int(st.session_state.recap_count) if st.session_state.include_recap else 0,
-        selection_mode=None if st.session_state.selection_mode == "Auto" else st.session_state.selection_mode,
-    )
-
-if st.button("Generate worksheet"):
+            if st.button("Generate worksheet"):
     try:
         bundle = generate_worksheet_bundle(request)
         st.session_state.last_bundle = bundle
@@ -877,6 +863,8 @@ if st.button("Generate worksheet"):
         else:
             st.error(f"Worksheet generation failed: {exc}")
 
+        st.markdown("</div>", unsafe_allow_html=True)
+        return
         st.markdown("</div>", unsafe_allow_html=True)
         return
     selection = _bundle_part(bundle, "selection")
