@@ -32,24 +32,50 @@ def _get(value: Any, *names: str, default: Any = None) -> Any:
     if value is None:
         return default
 
+    if isinstance(value, dict):
+        for name in names:
+            if name in value:
+                return value[name]
+        return default
+
     for name in names:
-        if isinstance(value, dict) and name in value:
-            return value[name]
         if hasattr(value, name):
             return getattr(value, name)
 
     return default
 
 
+def _as_tuple(value: Any) -> tuple[Any, ...]:
+    if value is None:
+        return ()
+    if isinstance(value, tuple):
+        return value
+    if isinstance(value, list):
+        return tuple(value)
+    if isinstance(value, set):
+        return tuple(value)
+    return (value,)
+
+
 def _normalise_selection(selection: Any) -> dict[str, Any]:
     selection = _as_plain_data(selection) or {}
 
     return {
-        "selected_products": tuple(_get(selection, "selected_products", "products", default=()) or ()),
-        "recap_products": tuple(_get(selection, "recap_products", default=()) or ()),
-        "selection_reasons": tuple(_get(selection, "selection_reasons", "reasons", default=()) or ()),
-        "vocab_supported": tuple(_get(selection, "vocab_supported", "supported_vocabulary", default=()) or ()),
-        "structural_tags": tuple(_get(selection, "structural_tags", "tags", default=()) or ()),
+        "selected_products": tuple(
+            _get(selection, "selected_products", "products", default=()) or ()
+        ),
+        "recap_products": tuple(
+            _get(selection, "recap_products", default=()) or ()
+        ),
+        "selection_reasons": tuple(
+            _get(selection, "selection_reasons", "reasons", default=()) or ()
+        ),
+        "vocab_supported": tuple(
+            _get(selection, "vocab_supported", "supported_vocabulary", default=()) or ()
+        ),
+        "structural_tags": tuple(
+            _get(selection, "structural_tags", "tags", default=()) or ()
+        ),
     }
 
 
@@ -58,7 +84,7 @@ def _normalise_student(student: Any) -> dict[str, Any]:
     questions = _get(student, "questions", "items", default=()) or ()
 
     normalised_questions = []
-    for index, item in enumerate(questions, start=1):
+    for index, item in enumerate(_as_tuple(questions), start=1):
         item = _as_plain_data(item) or {}
         normalised_questions.append(
             {
@@ -75,7 +101,7 @@ def _normalise_teacher(teacher: Any) -> dict[str, Any]:
     answers = _get(teacher, "answers", "items", default=()) or ()
 
     normalised_answers = []
-    for index, item in enumerate(answers, start=1):
+    for index, item in enumerate(_as_tuple(answers), start=1):
         item = _as_plain_data(item) or {}
         normalised_answers.append(
             {
