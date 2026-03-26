@@ -845,6 +845,10 @@ def _render_worksheet_studio() -> None:
         )
         if include_recap != st.session_state.include_recap:
             st.session_state.include_recap = include_recap
+            if include_recap and int(st.session_state.recap_count) < 1:
+                st.session_state.recap_count = 1
+            if not include_recap:
+                st.session_state.recap_count = 0
             _invalidate_worksheet_bundle()
             st.rerun()
 
@@ -1020,7 +1024,7 @@ def _build_product_selection_request() -> ProductSelectionRequest:
         "selection_mode": None if st.session_state.selection_mode == "Auto" else st.session_state.selection_mode,
         "mode": None if st.session_state.selection_mode == "Auto" else st.session_state.selection_mode,
         "include_recap": bool(st.session_state.include_recap),
-        "recap_count": int(st.session_state.recap_count),
+        "recap_count": int(st.session_state.recap_count) if bool(st.session_state.include_recap) else 0,
     }
 
     try:
