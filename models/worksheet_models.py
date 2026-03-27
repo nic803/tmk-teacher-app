@@ -1,62 +1,117 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Literal, Sequence
+from dataclasses import dataclass
+from typing import Literal
 
 
 # ============================================================
-# Core identifiers
+# Stage system
 # ============================================================
 
 StageId = Literal["A", "B", "C", "D", "E", "F", "G"]
-StageType = StageId
-Stage = StageId
+
+SUPPORTED_STAGES: tuple[StageId, ...] = ("A", "B", "C", "D", "E", "F", "G")
+
+
+def validate_stage(stage: StageId) -> None:
+    if stage not in SUPPORTED_STAGES:
+        raise ValueError(f"Invalid TMK stage '{stage}'.")
+
+
+# ============================================================
+# Product metadata record
+# ============================================================
+
+@dataclass(frozen=True)
+class ProductMetadataRecord:
+    product: int
+    stage_introduced: StageId
+    intro_family: str
+
+    factor_pairs: tuple[tuple[int, int], ...]
+
+    family_tags: tuple[str, ...]
+    structural_tags: tuple[str, ...]
+    vocab_tags: tuple[str, ...]
+
+    route_profile: str
+    hub_band: str
+
+    has_multiple_routes: bool
+    known_routes_at_stage: tuple[tuple[int, int], ...]
+
+    is_square: bool
+    has_factor_7: bool
+
+    notes: str
+
+
+# ============================================================
+# Metadata validation
+# ============================================================
+
+def validate_product_metadata_record(record: ProductMetadataRecord) -> None:
+
+    if not isinstance(record.product, int) or record.product <= 0:
+        raise ValueError("product must be a positive integer")
+
+    validate_stage(record.stage_introduced)
+
+    if not record.factor_pairs:
+        raise ValueError(f"Product {record.product} must define factor_pairs")
+
+    for pair in record.factor_pairs:
+        if len(pair) != 2:
+            raise ValueError(f"Invalid factor pair for product {record.product}")
+
+    if record.route_profile not in {
+        "single_route",
+        "multi_route",
+        "square_route",
+    }:
+        raise ValueError(
+            f"Invalid route_profile '{record.route_profile}' for product {record.product}"
+        )
+
+    if record.hub_band not in {"low", "medium", "high"}:
+        raise ValueError(
+            f"Invalid hub_band '{record.hub_band}' for product {record.product}"
+        )
+
+    if not isinstance(record.family_tags, tuple):
+        raise ValueError(f"family_tags must be tuple for product {record.product}")
+
+    if not isinstance(record.structural_tags, tuple):
+        raise ValueError(f"structural_tags must be tuple for product {record.product}")
+
+    if not isinstance(record.vocab_tags, tuple):
+        raise ValueError(f"vocab_tags must be tuple for product {record.product}")
+
+    if not isinstance(record.known_routes_at_stage, tuple):
+        raise ValueError(
+            f"known_routes_at_stage must be tuple for product {record.product}"
+        )
+
+
+# ============================================================
+# Worksheet selection system
+# ============================================================
 
 WorksheetFormatId = Literal[
     "one_product_10",
     "three_product_12",
 ]
-FormatId = WorksheetFormatId
 
 WorksheetTier = Literal[
     "Support",
     "Core",
     "Extension",
 ]
-TierId = WorksheetTier
 
 SelectionScope = Literal[
     "new_only",
     "available_mixed",
     "hybrid",
-]
-ScopeId = SelectionScope
-
-
-# ============================================================
-# Selection modes
-# ============================================================
-
-SingleSelectionMode = Literal[
-    "single_hub",
-    "multi_route_hub",
-    "square_product",
-    "special_focus",
-    "doubling_chain_product",
-    "stage_bridge",
-    "closure_product",
-    "boundary_focus",
-    "benchmark_product",
-    "comparison_ready",
-]
-
-MultiSelectionMode = Literal[
-    "same_factor_family",
-    "same_stage_products",
-    "multi_route_compare",
-    "doubling_chain",
-    "interleave_compare",
-    "square_or_special_focus",
 ]
 
 ProductSetMode = Literal[
@@ -77,453 +132,3 @@ ProductSetMode = Literal[
     "interleave_compare",
     "square_or_special_focus",
 ]
-
-SelectionMode = ProductSetMode
-NumberTypeSelectionMode = ProductSetMode
-WorksheetSelectionMode = ProductSetMode
-
-
-# ============================================================
-# Flexible compatibility base
-# ============================================================
-
-class FlexibleRecord:
-    """
-    Compatibility model for older domain modules that instantiate
-    record objects from models.worksheet_models with arbitrary
-    keyword fields.
-    """
-
-    _tuple_fields = {
-        "family_tags",
-        "structural_tags",
-        "vocab_tags",
-        "known_routes_at_stage",
-        "known_routes",
-        "routes",
-        "intro_routes",
-        "ways_out",
-        "factors",
-        "inverse_labels",
-        "required_vocab_focus",
-        "available_vocab",
-        "new_vocab",
-        "preferred_quiz_formats",
-        "preferred_vocab_task_types",
-        "example_child_friendly_questions",
-    }
-
-    _bool_fields = {
-        "is_square",
-        "has_multiple_routes",
-        "has_factor_7",
-        "is_bridge",
-        "is_closure",
-        "is_special_focus",
-    }
-
-    _int_fields = {
-        "product",
-        "product_value",
-        "route_count",
-    }
-
-    _str_fields = {
-        "stage",
-        "stage_id",
-        "stage_introduced",
-        "hub_band",
-        "route_profile",
-        "notes",
-        "structural_role",
-        "label",
-        "name",
-    }
-
-    def __init__(self, **kwargs: Any) -> None:
-        for key, value in kwargs.items():
-            setattr(self, key, self._normalize_field(key, value))
-
-        self._apply_defaults()
-
-    def _normalize_field(self, key: str, value: Any) -> Any:
-        if key in self._tuple_fields:
-            if value is None:
-                return ()
-            if isinstance(value, tuple):
-                return value
-            if isinstance(value, list):
-                return tuple(value)
-            if isinstance(value, set):
-                return tuple(value)
-            return (value,)
-
-        if key in self._bool_fields:
-            return bool(value)
-
-        if key in self._int_fields:
-            try:
-                return int(value)
-            except Exception:
-                return value
-
-        if key in self._str_fields:
-            if value is None:
-                return ""
-            return str(value)
-
-        return value
-
-    def _apply_defaults(self) -> None:
-        defaults: dict[str, Any] = {
-            "product": 0,
-            "stage": "",
-            "stage_id": "",
-            "stage_introduced": "",
-            "hub_band": "",
-            "route_profile": "",
-            "notes": "",
-            "structural_role": "",
-            "family_tags": (),
-            "structural_tags": (),
-            "vocab_tags": (),
-            "known_routes_at_stage": (),
-            "known_routes": (),
-            "routes": (),
-            "intro_routes": (),
-            "ways_out": (),
-            "factors": (),
-            "inverse_labels": (),
-            "required_vocab_focus": (),
-            "available_vocab": (),
-            "new_vocab": (),
-            "preferred_quiz_formats": (),
-            "preferred_vocab_task_types": (),
-            "example_child_friendly_questions": (),
-            "is_square": False,
-            "has_multiple_routes": False,
-            "has_factor_7": False,
-            "is_bridge": False,
-            "is_closure": False,
-            "is_special_focus": False,
-        }
-
-        for key, value in defaults.items():
-            if not hasattr(self, key):
-                setattr(self, key, value)
-
-    def dict(self) -> dict[str, Any]:
-        return dict(self.__dict__)
-
-    def model_dump(self) -> dict[str, Any]:
-        return self.dict()
-
-    def __repr__(self) -> str:
-        fields = ", ".join(f"{k}={v!r}" for k, v in self.__dict__.items())
-        return f"{self.__class__.__name__}({fields})"
-
-
-class ProductMetadataRecord(FlexibleRecord):
-    pass
-
-
-class ProductMetadataSummary(FlexibleRecord):
-    pass
-
-
-class StageVocabularyRecord(FlexibleRecord):
-    pass
-
-
-# ============================================================
-# Selection request / result
-# ============================================================
-
-@dataclass
-class ProductSelectionRequest:
-    stage: StageId
-    format_id: WorksheetFormatId
-    tier: WorksheetTier
-    selection_scope: SelectionScope
-    selection_mode: ProductSetMode | None = None
-    include_recap: bool = False
-    recap_count: int = 0
-    rotation_index: int = 0
-
-    def __post_init__(self) -> None:
-        if self.recap_count < 0:
-            raise ValueError("recap_count cannot be negative")
-        if self.rotation_index < 0:
-            raise ValueError("rotation_index cannot be negative")
-        if not self.include_recap:
-            self.recap_count = 0
-
-    def dict(self) -> dict[str, Any]:
-        return {
-            "stage": self.stage,
-            "format_id": self.format_id,
-            "tier": self.tier,
-            "selection_scope": self.selection_scope,
-            "selection_mode": self.selection_mode,
-            "include_recap": self.include_recap,
-            "recap_count": self.recap_count,
-            "rotation_index": self.rotation_index,
-        }
-
-    def model_dump(self) -> dict[str, Any]:
-        return self.dict()
-
-
-@dataclass
-class ProductSelectionResult:
-    stage: StageId
-    format_id: WorksheetFormatId
-    tier: WorksheetTier
-    selection_scope: SelectionScope
-    selection_mode: ProductSetMode
-    selected_products: tuple[int, ...] = field(default_factory=tuple)
-    recap_products: tuple[int, ...] = field(default_factory=tuple)
-    selection_reasons: tuple[str, ...] = field(default_factory=tuple)
-    vocab_supported: tuple[str, ...] = field(default_factory=tuple)
-    structural_tags: tuple[str, ...] = field(default_factory=tuple)
-
-    def __post_init__(self) -> None:
-        for values in (self.selected_products, self.recap_products):
-            for value in values:
-                if not isinstance(value, int) or value <= 0:
-                    raise ValueError("product values must be positive integers")
-
-    def dict(self) -> dict[str, Any]:
-        return {
-            "stage": self.stage,
-            "format_id": self.format_id,
-            "tier": self.tier,
-            "selection_scope": self.selection_scope,
-            "selection_mode": self.selection_mode,
-            "selected_products": self.selected_products,
-            "recap_products": self.recap_products,
-            "selection_reasons": self.selection_reasons,
-            "vocab_supported": self.vocab_supported,
-            "structural_tags": self.structural_tags,
-        }
-
-    def model_dump(self) -> dict[str, Any]:
-        return self.dict()
-
-
-# ============================================================
-# Worksheet payload objects
-# ============================================================
-
-@dataclass
-class WorksheetQuestion:
-    q_id: int
-    prompt: str
-
-    def dict(self) -> dict[str, Any]:
-        return {"q_id": self.q_id, "prompt": self.prompt}
-
-    def model_dump(self) -> dict[str, Any]:
-        return self.dict()
-
-
-@dataclass
-class WorksheetAnswer:
-    q_id: int
-    answer: str
-    focus_tags: tuple[str, ...] = field(default_factory=tuple)
-    teacher_note: str = ""
-    vocab: tuple[str, ...] = field(default_factory=tuple)
-
-    def dict(self) -> dict[str, Any]:
-        return {
-            "q_id": self.q_id,
-            "answer": self.answer,
-            "focus_tags": self.focus_tags,
-            "teacher_note": self.teacher_note,
-            "vocab": self.vocab,
-        }
-
-    def model_dump(self) -> dict[str, Any]:
-        return self.dict()
-
-
-@dataclass
-class StudentWorksheet:
-    questions: tuple[WorksheetQuestion, ...] = field(default_factory=tuple)
-
-    def dict(self) -> dict[str, Any]:
-        return {
-            "questions": tuple(
-                question.dict() if hasattr(question, "dict") else question
-                for question in self.questions
-            )
-        }
-
-    def model_dump(self) -> dict[str, Any]:
-        return self.dict()
-
-
-@dataclass
-class TeacherKey:
-    answers: tuple[WorksheetAnswer, ...] = field(default_factory=tuple)
-
-    def dict(self) -> dict[str, Any]:
-        return {
-            "answers": tuple(
-                answer.dict() if hasattr(answer, "dict") else answer
-                for answer in self.answers
-            )
-        }
-
-    def model_dump(self) -> dict[str, Any]:
-        return self.dict()
-
-
-@dataclass
-class WorksheetBundle:
-    selection: ProductSelectionResult
-    student: StudentWorksheet
-    teacher: TeacherKey
-
-    def dict(self) -> dict[str, Any]:
-        return {
-            "selection": self.selection.dict() if hasattr(self.selection, "dict") else self.selection,
-            "student": self.student.dict() if hasattr(self.student, "dict") else self.student,
-            "teacher": self.teacher.dict() if hasattr(self.teacher, "dict") else self.teacher,
-        }
-
-    def model_dump(self) -> dict[str, Any]:
-        return self.dict()
-
-
-# ============================================================
-# Legacy aliases
-# ============================================================
-
-StudentWorksheetModel = StudentWorksheet
-TeacherKeyModel = TeacherKey
-WorksheetQuestionModel = WorksheetQuestion
-WorksheetAnswerModel = WorksheetAnswer
-WorksheetSelectionResult = ProductSelectionResult
-WorksheetSelectionRequest = ProductSelectionRequest
-SelectionRequest = ProductSelectionRequest
-SelectionResult = ProductSelectionResult
-
-
-# ============================================================
-# Allowed modes by format
-# ============================================================
-
-_ONE_PRODUCT_MODES: tuple[ProductSetMode, ...] = (
-    "single_hub",
-    "multi_route_hub",
-    "square_product",
-    "special_focus",
-    "doubling_chain_product",
-    "stage_bridge",
-    "closure_product",
-    "boundary_focus",
-    "benchmark_product",
-    "comparison_ready",
-)
-
-_THREE_PRODUCT_MODES: tuple[ProductSetMode, ...] = (
-    "same_factor_family",
-    "same_stage_products",
-    "multi_route_compare",
-    "doubling_chain",
-    "interleave_compare",
-    "square_or_special_focus",
-)
-
-_ALLOWED_MODES_BY_FORMAT: dict[WorksheetFormatId, tuple[ProductSetMode, ...]] = {
-    "one_product_10": _ONE_PRODUCT_MODES,
-    "three_product_12": _THREE_PRODUCT_MODES,
-}
-
-
-# ============================================================
-# Validation helpers
-# ============================================================
-
-def validate_product_set_mode(mode: ProductSetMode) -> None:
-    if mode not in _ONE_PRODUCT_MODES and mode not in _THREE_PRODUCT_MODES:
-        raise ValueError(f"Unknown product selection mode: {mode}")
-
-
-def validate_selection_request(request: ProductSelectionRequest) -> None:
-    if request.format_id not in _ALLOWED_MODES_BY_FORMAT:
-        raise ValueError(f"Unknown worksheet format: {request.format_id}")
-
-    if request.selection_mode is not None:
-        validate_product_set_mode(request.selection_mode)
-        allowed = _ALLOWED_MODES_BY_FORMAT[request.format_id]
-        if request.selection_mode not in allowed:
-            raise ValueError(
-                f"Selection mode '{request.selection_mode}' is not allowed for format '{request.format_id}'."
-            )
-
-
-def validate_selection_result(result: ProductSelectionResult) -> None:
-    if result.format_id == "one_product_10":
-        if len(result.selected_products) != 1:
-            raise ValueError("one_product_10 requires exactly 1 selected product")
-    elif result.format_id == "three_product_12":
-        if len(result.selected_products) != 3:
-            raise ValueError("three_product_12 requires exactly 3 selected products")
-    else:
-        raise ValueError(f"Unknown worksheet format: {result.format_id}")
-
-    if len(set(result.selected_products)) != len(result.selected_products):
-        raise ValueError("selected_products contains duplicates")
-
-    if len(set(result.recap_products)) != len(result.recap_products):
-        raise ValueError("recap_products contains duplicates")
-
-    if result.selection_mode not in _ALLOWED_MODES_BY_FORMAT[result.format_id]:
-        raise ValueError(
-            f"Selection mode '{result.selection_mode}' is not valid for format '{result.format_id}'."
-        )
-
-
-def allowed_modes_for_format(format_id: WorksheetFormatId) -> tuple[ProductSetMode, ...]:
-    if format_id not in _ALLOWED_MODES_BY_FORMAT:
-        raise ValueError(f"Unknown worksheet format: {format_id}")
-    return _ALLOWED_MODES_BY_FORMAT[format_id]
-
-
-def is_one_product_mode(mode: ProductSetMode) -> bool:
-    return mode in _ONE_PRODUCT_MODES
-
-
-def is_three_product_mode(mode: ProductSetMode) -> bool:
-    return mode in _THREE_PRODUCT_MODES
-
-
-def coerce_questions(items: Sequence[dict | WorksheetQuestion]) -> tuple[WorksheetQuestion, ...]:
-    questions: list[WorksheetQuestion] = []
-    for item in items:
-        if isinstance(item, WorksheetQuestion):
-            questions.append(item)
-        else:
-            questions.append(WorksheetQuestion(**item))
-    return tuple(questions)
-
-
-def coerce_answers(items: Sequence[dict | WorksheetAnswer]) -> tuple[WorksheetAnswer, ...]:
-    answers: list[WorksheetAnswer] = []
-    for item in items:
-        if isinstance(item, WorksheetAnswer):
-            answers.append(item)
-        else:
-            answers.append(WorksheetAnswer(**item))
-    return tuple(answers)
-
-
-# ============================================================
-# Compatibility fallback
-# ============================================================
-
-def __getattr__(name: str) -> Any:
-    return FlexibleRecord
