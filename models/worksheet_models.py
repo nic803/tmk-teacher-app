@@ -89,13 +89,128 @@ WorksheetSelectionMode = ProductSetMode
 
 class FlexibleRecord:
     """
-    Compatibility model for older modules that instantiate record objects
-    from models.worksheet_models with arbitrary keyword fields.
+    Compatibility model for older domain modules that instantiate
+    record objects from models.worksheet_models with arbitrary
+    keyword fields.
     """
+
+    _tuple_fields = {
+        "family_tags",
+        "structural_tags",
+        "vocab_tags",
+        "known_routes_at_stage",
+        "known_routes",
+        "routes",
+        "intro_routes",
+        "ways_out",
+        "factors",
+        "inverse_labels",
+        "required_vocab_focus",
+        "available_vocab",
+        "new_vocab",
+        "preferred_quiz_formats",
+        "preferred_vocab_task_types",
+        "example_child_friendly_questions",
+    }
+
+    _bool_fields = {
+        "is_square",
+        "has_multiple_routes",
+        "has_factor_7",
+        "is_bridge",
+        "is_closure",
+        "is_special_focus",
+    }
+
+    _int_fields = {
+        "product",
+        "product_value",
+        "route_count",
+    }
+
+    _str_fields = {
+        "stage",
+        "stage_id",
+        "stage_introduced",
+        "hub_band",
+        "route_profile",
+        "notes",
+        "structural_role",
+        "label",
+        "name",
+    }
 
     def __init__(self, **kwargs: Any) -> None:
         for key, value in kwargs.items():
-            setattr(self, key, value)
+            setattr(self, key, self._normalize_field(key, value))
+
+        self._apply_defaults()
+
+    def _normalize_field(self, key: str, value: Any) -> Any:
+        if key in self._tuple_fields:
+            if value is None:
+                return ()
+            if isinstance(value, tuple):
+                return value
+            if isinstance(value, list):
+                return tuple(value)
+            if isinstance(value, set):
+                return tuple(value)
+            return (value,)
+
+        if key in self._bool_fields:
+            return bool(value)
+
+        if key in self._int_fields:
+            try:
+                return int(value)
+            except Exception:
+                return value
+
+        if key in self._str_fields:
+            if value is None:
+                return ""
+            return str(value)
+
+        return value
+
+    def _apply_defaults(self) -> None:
+        defaults: dict[str, Any] = {
+            "product": 0,
+            "stage": "",
+            "stage_id": "",
+            "stage_introduced": "",
+            "hub_band": "",
+            "route_profile": "",
+            "notes": "",
+            "structural_role": "",
+            "family_tags": (),
+            "structural_tags": (),
+            "vocab_tags": (),
+            "known_routes_at_stage": (),
+            "known_routes": (),
+            "routes": (),
+            "intro_routes": (),
+            "ways_out": (),
+            "factors": (),
+            "inverse_labels": (),
+            "required_vocab_focus": (),
+            "available_vocab": (),
+            "new_vocab": (),
+            "preferred_quiz_formats": (),
+            "preferred_vocab_task_types": (),
+            "example_child_friendly_questions": (),
+            "is_square": False,
+            "has_multiple_routes": False,
+            "has_factor_7": False,
+            "is_bridge": False,
+            "is_closure": False,
+            "is_special_focus": False,
+        }
+
+        for key, value in defaults.items():
+            if not hasattr(self, key):
+                setattr(self, key, value)
 
     def dict(self) -> dict[str, Any]:
         return dict(self.__dict__)
