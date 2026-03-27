@@ -100,6 +100,58 @@ def permitted_quiz_formats_for_family(
     return result
 
 
+def family_allowed_for_tier(
+    family: WorksheetItemFamily,
+    tier: WorksheetTier,
+) -> bool:
+    validate_item_family(family)
+    validate_tier(tier)
+    return family in APPROVED_PUPIL_ITEM_FAMILIES
+
+
+def format_allowed_for_family(
+    family: WorksheetItemFamily,
+    quiz_format: QuizFormat,
+) -> bool:
+    validate_item_family(family)
+    validate_quiz_format(quiz_format)
+    return quiz_format in permitted_quiz_formats_for_family(family)
+
+
+def explanation_format_allowed_for_tier(
+    quiz_format: QuizFormat,
+    tier: WorksheetTier,
+) -> bool:
+    validate_quiz_format(quiz_format)
+    validate_tier(tier)
+
+    allowed_by_tier: dict[WorksheetTier, tuple[QuizFormat, ...]] = {
+        "Support": ("choose", "tick", "yes_no"),
+        "Core": ("fill_box", "choose", "write_word"),
+        "Extension": ("fill_box", "write_word", "open_response"),
+    }
+    return quiz_format in allowed_by_tier[tier]
+
+
+def choose_default_quiz_format(
+    family: WorksheetItemFamily,
+    tier: WorksheetTier,
+) -> QuizFormat:
+    validate_item_family(family)
+    validate_tier(tier)
+
+    family_map = recommended_quiz_formats_by_family()[family]
+    if not family_map:
+        raise ValueError(f"No quiz formats defined for family '{family}'.")
+
+    if family == "final_explanation":
+        for fmt in family_map:
+            if explanation_format_allowed_for_tier(fmt, tier):
+                return fmt
+
+    return family_map[0]
+
+
 def item_family_allowed_for_pupils(item_family: str) -> bool:
     return item_family in APPROVED_PUPIL_ITEM_FAMILIES
 
