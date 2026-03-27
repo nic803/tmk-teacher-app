@@ -1,13 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import Literal, Sequence
 
-from pydantic import BaseModel, Field, root_validator, validator
-
-
-# ============================================================
-# Core TMK worksheet type aliases
-# ============================================================
 
 StageId = Literal["A", "B", "C", "D", "E", "F", "G"]
 
@@ -50,99 +45,162 @@ ProductSetMode = Literal[
 ]
 
 
-# ============================================================
-# Selection request / result models
-# ============================================================
-
-class ProductSelectionRequest(BaseModel):
+@dataclass
+class ProductSelectionRequest:
     stage: StageId
     format_id: WorksheetFormatId
     tier: WorksheetTier
     selection_scope: SelectionScope
-
     selection_mode: ProductSetMode | None = None
-
     include_recap: bool = False
     recap_count: int = 0
-
     rotation_index: int = 0
 
-    @validator("recap_count")
-    def _validate_recap_count(cls, value: int) -> int:
-        if value < 0:
+    def __post_init__(self) -> None:
+        if self.recap_count < 0:
             raise ValueError("recap_count cannot be negative")
-        return value
-
-    @validator("rotation_index")
-    def _validate_rotation_index(cls, value: int) -> int:
-        if value < 0:
+        if self.rotation_index < 0:
             raise ValueError("rotation_index cannot be negative")
-        return value
+        if not self.include_recap:
+            self.recap_count = 0
 
-    @root_validator
-    def _normalize_recap(cls, values: dict) -> dict:
-        include_recap = values.get("include_recap", False)
-        if not include_recap:
-            values["recap_count"] = 0
-        return values
+    def dict(self) -> dict:
+        return {
+            "stage": self.stage,
+            "format_id": self.format_id,
+            "tier": self.tier,
+            "selection_scope": self.selection_scope,
+            "selection_mode": self.selection_mode,
+            "include_recap": self.include_recap,
+            "recap_count": self.recap_count,
+            "rotation_index": self.rotation_index,
+        }
+
+    def model_dump(self) -> dict:
+        return self.dict()
 
 
-class ProductSelectionResult(BaseModel):
+@dataclass
+class ProductSelectionResult:
     stage: StageId
     format_id: WorksheetFormatId
     tier: WorksheetTier
     selection_scope: SelectionScope
     selection_mode: ProductSetMode
+    selected_products: tuple[int, ...] = field(default_factory=tuple)
+    recap_products: tuple[int, ...] = field(default_factory=tuple)
+    selection_reasons: tuple[str, ...] = field(default_factory=tuple)
+    vocab_supported: tuple[str, ...] = field(default_factory=tuple)
+    structural_tags: tuple[str, ...] = field(default_factory=tuple)
 
-    selected_products: tuple[int, ...] = Field(default_factory=tuple)
-    recap_products: tuple[int, ...] = Field(default_factory=tuple)
+    def __post_init__(self) -> None:
+        for values in (self.selected_products, self.recap_products):
+            for value in values:
+                if not isinstance(value, int) or value <= 0:
+                    raise ValueError("product values must be positive integers")
 
-    selection_reasons: tuple[str, ...] = Field(default_factory=tuple)
-    vocab_supported: tuple[str, ...] = Field(default_factory=tuple)
-    structural_tags: tuple[str, ...] = Field(default_factory=tuple)
+    def dict(self) -> dict:
+        return {
+            "stage": self.stage,
+            "format_id": self.format_id,
+            "tier": self.tier,
+            "selection_scope": self.selection_scope,
+            "selection_mode": self.selection_mode,
+            "selected_products": self.selected_products,
+            "recap_products": self.recap_products,
+            "selection_reasons": self.selection_reasons,
+            "vocab_supported": self.vocab_supported,
+            "structural_tags": self.structural_tags,
+        }
 
-    @validator("selected_products", "recap_products")
-    def _validate_products_are_positive(cls, values: tuple[int, ...]) -> tuple[int, ...]:
-        for value in values:
-            if not isinstance(value, int) or value <= 0:
-                raise ValueError("product values must be positive integers")
-        return values
+    def model_dump(self) -> dict:
+        return self.dict()
 
 
-# ============================================================
-# Worksheet payload models
-# ============================================================
-
-class WorksheetQuestion(BaseModel):
+@dataclass
+class WorksheetQuestion:
     q_id: int
     prompt: str
 
+    def dict(self) -> dict:
+        return {
+            "q_id": self.q_id,
+            "prompt": self.prompt,
+        }
 
-class WorksheetAnswer(BaseModel):
+    def model_dump(self) -> dict:
+        return self.dict()
+
+
+@dataclass
+class WorksheetAnswer:
     q_id: int
     answer: str
-    focus_tags: tuple[str, ...] = Field(default_factory=tuple)
+    focus_tags: tuple[str, ...] = field(default_factory=tuple)
     teacher_note: str = ""
-    vocab: tuple[str, ...] = Field(default_factory=tuple)
+    vocab: tuple[str, ...] = field(default_factory=tuple)
+
+    def dict(self) -> dict:
+        return {
+            "q_id": self.q_id,
+            "answer": self.answer,
+            "focus_tags": self.focus_tags,
+            "teacher_note": self.teacher_note,
+            "vocab": self.vocab,
+        }
+
+    def model_dump(self) -> dict:
+        return self.dict()
 
 
-class StudentWorksheet(BaseModel):
-    questions: tuple[WorksheetQuestion, ...] = Field(default_factory=tuple)
+@dataclass
+class StudentWorksheet:
+    questions: tuple[WorksheetQuestion, ...] = field(default_factory=tuple)
+
+    def dict(self) -> dict:
+        return {
+            "questions": tuple(
+                question.dict() if hasattr(question, "dict") else question
+                for question in self.questions
+            ),
+        }
+
+    def model_dump(self) -> dict:
+        return self.dict()
 
 
-class TeacherKey(BaseModel):
-    answers: tuple[WorksheetAnswer, ...] = Field(default_factory=tuple)
+@dataclass
+class TeacherKey:
+    answers: tuple[WorksheetAnswer, ...] = field(default_factory=tuple)
+
+    def dict(self) -> dict:
+        return {
+            "answers": tuple(
+                answer.dict() if hasattr(answer, "dict") else answer
+                for answer in self.answers
+            ),
+        }
+
+    def model_dump(self) -> dict:
+        return self.dict()
 
 
-class WorksheetBundle(BaseModel):
+@dataclass
+class WorksheetBundle:
     selection: ProductSelectionResult
     student: StudentWorksheet
     teacher: TeacherKey
 
+    def dict(self) -> dict:
+        return {
+            "selection": self.selection.dict() if hasattr(self.selection, "dict") else self.selection,
+            "student": self.student.dict() if hasattr(self.student, "dict") else self.student,
+            "teacher": self.teacher.dict() if hasattr(self.teacher, "dict") else self.teacher,
+        }
 
-# ============================================================
-# Allowed modes by worksheet format
-# ============================================================
+    def model_dump(self) -> dict:
+        return self.dict()
+
 
 _ONE_PRODUCT_MODES: tuple[ProductSetMode, ...] = (
     "single_hub",
@@ -171,10 +229,6 @@ _ALLOWED_MODES_BY_FORMAT: dict[WorksheetFormatId, tuple[ProductSetMode, ...]] = 
     "three_product_12": _THREE_PRODUCT_MODES,
 }
 
-
-# ============================================================
-# Public validation helpers used by services
-# ============================================================
 
 def validate_product_set_mode(mode: ProductSetMode) -> None:
     if mode not in _ONE_PRODUCT_MODES and mode not in _THREE_PRODUCT_MODES:
@@ -215,10 +269,6 @@ def validate_selection_result(result: ProductSelectionResult) -> None:
             f"Selection mode '{result.selection_mode}' is not valid for format '{result.format_id}'."
         )
 
-
-# ============================================================
-# Small utility helpers
-# ============================================================
 
 def allowed_modes_for_format(format_id: WorksheetFormatId) -> tuple[ProductSetMode, ...]:
     if format_id not in _ALLOWED_MODES_BY_FORMAT:
