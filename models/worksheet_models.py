@@ -446,6 +446,10 @@ def validate_worksheet_format_id(format_id: WorksheetFormatId) -> None:
         raise ValueError(f"Invalid worksheet format '{format_id}'.")
 
 
+def validate_format_id(format_id: WorksheetFormatId) -> None:
+    validate_worksheet_format_id(format_id)
+
+
 def validate_selection_scope(scope: SelectionScope) -> None:
     if scope not in SUPPORTED_SELECTION_SCOPES:
         raise ValueError(f"Invalid selection scope '{scope}'.")
@@ -454,6 +458,17 @@ def validate_selection_scope(scope: SelectionScope) -> None:
 def validate_product_set_mode(mode: ProductSetMode) -> None:
     if mode not in SUPPORTED_PRODUCT_SET_MODES:
         raise ValueError(f"Unknown product selection mode: {mode}")
+
+
+def expected_question_count(format_id: WorksheetFormatId) -> int:
+    validate_worksheet_format_id(format_id)
+
+    if format_id == "one_product_10":
+        return 10
+    if format_id == "three_product_12":
+        return 12
+
+    raise ValueError(f"Unknown worksheet format '{format_id}'.")
 
 
 @dataclass
