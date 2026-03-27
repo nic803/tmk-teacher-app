@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal, Sequence
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, root_validator, validator
 
 
 # ============================================================
@@ -67,25 +67,24 @@ class ProductSelectionRequest(BaseModel):
 
     rotation_index: int = 0
 
-    @field_validator("recap_count")
-    @classmethod
+    @validator("recap_count")
     def _validate_recap_count(cls, value: int) -> int:
         if value < 0:
             raise ValueError("recap_count cannot be negative")
         return value
 
-    @field_validator("rotation_index")
-    @classmethod
+    @validator("rotation_index")
     def _validate_rotation_index(cls, value: int) -> int:
         if value < 0:
             raise ValueError("rotation_index cannot be negative")
         return value
 
-    @model_validator(mode="after")
-    def _normalize_recap(self) -> "ProductSelectionRequest":
-        if not self.include_recap:
-            self.recap_count = 0
-        return self
+    @root_validator
+    def _normalize_recap(cls, values: dict) -> dict:
+        include_recap = values.get("include_recap", False)
+        if not include_recap:
+            values["recap_count"] = 0
+        return values
 
 
 class ProductSelectionResult(BaseModel):
@@ -102,8 +101,7 @@ class ProductSelectionResult(BaseModel):
     vocab_supported: tuple[str, ...] = Field(default_factory=tuple)
     structural_tags: tuple[str, ...] = Field(default_factory=tuple)
 
-    @field_validator("selected_products", "recap_products")
-    @classmethod
+    @validator("selected_products", "recap_products")
     def _validate_products_are_positive(cls, values: tuple[int, ...]) -> tuple[int, ...]:
         for value in values:
             if not isinstance(value, int) or value <= 0:
@@ -113,8 +111,6 @@ class ProductSelectionResult(BaseModel):
 
 # ============================================================
 # Worksheet payload models
-# These are intentionally permissive so services can build
-# student/teacher outputs without structural friction.
 # ============================================================
 
 class WorksheetQuestion(BaseModel):
@@ -201,16 +197,10 @@ def validate_selection_request(request: ProductSelectionRequest) -> None:
 def validate_selection_result(result: ProductSelectionResult) -> None:
     if result.format_id == "one_product_10":
         if len(result.selected_products) != 1:
-            raise ValueError(
-                "one_product_10 requires exactly 1 selected product"
-            )
-
+            raise ValueError("one_product_10 requires exactly 1 selected product")
     elif result.format_id == "three_product_12":
         if len(result.selected_products) != 3:
-            raise ValueError(
-                "three_product_12 requires exactly 3 selected products"
-            )
-
+            raise ValueError("three_product_12 requires exactly 3 selected products")
     else:
         raise ValueError(f"Unknown worksheet format: {result.format_id}")
 
