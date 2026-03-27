@@ -4,6 +4,8 @@ from itertools import combinations
 from typing import Final, Iterable
 
 from domain.product_banks import (
+    CLOSURE_PRODUCTS,
+    COMPARISON_READY_PRODUCTS,
     CURATED_STAGE_TRIPLES,
     DOUBLING_CHAIN_PRODUCTS,
     DOUBLING_CHAIN_TRIPLES,
@@ -11,8 +13,10 @@ from domain.product_banks import (
     RECAP_FAMILY_BANKS,
     SPECIAL_FOCUS_PRODUCTS,
     SQUARE_PRODUCTS,
-    STAGE_PRODUCT_BANKS,
+    STAGE_BRIDGE_PRODUCTS,
     TMK_ALL_PRODUCTS,
+    BENCHMARK_PRODUCTS,
+    BOUNDARY_FOCUS_PRODUCTS,
     cumulative_products_for_stage,
     products_for_stage,
     recap_products_for_stage,
@@ -42,7 +46,15 @@ from models.worksheet_models import (
 _ALLOWED_MODES_BY_FORMAT: Final[dict[WorksheetFormatId, tuple[ProductSetMode, ...]]] = {
     "one_product_10": (
         "single_hub",
-        "square_or_special_focus",
+        "multi_route_hub",
+        "square_product",
+        "special_focus",
+        "doubling_chain_product",
+        "stage_bridge",
+        "closure_product",
+        "boundary_focus",
+        "benchmark_product",
+        "comparison_ready",
     ),
     "three_product_12": (
         "same_factor_family",
@@ -60,36 +72,137 @@ _TIER_PREFERRED_MODES: Final[dict[WorksheetTier, tuple[ProductSetMode, ...]]] = 
         "same_factor_family",
         "same_stage_products",
         "doubling_chain",
+        "square_product",
+        "special_focus",
+        "multi_route_hub",
+        "doubling_chain_product",
+        "stage_bridge",
+        "closure_product",
+        "boundary_focus",
+        "benchmark_product",
+        "comparison_ready",
         "square_or_special_focus",
+        "multi_route_compare",
+        "interleave_compare",
     ),
     "Core": (
         "single_hub",
+        "multi_route_hub",
+        "square_product",
+        "special_focus",
+        "doubling_chain_product",
+        "stage_bridge",
+        "closure_product",
         "same_factor_family",
         "same_stage_products",
         "multi_route_compare",
-        "square_or_special_focus",
-        "interleave_compare",
         "doubling_chain",
+        "interleave_compare",
+        "square_or_special_focus",
+        "boundary_focus",
+        "benchmark_product",
+        "comparison_ready",
     ),
     "Extension": (
+        "multi_route_hub",
+        "comparison_ready",
+        "stage_bridge",
+        "square_product",
+        "special_focus",
+        "closure_product",
+        "boundary_focus",
+        "benchmark_product",
+        "single_hub",
         "multi_route_compare",
         "interleave_compare",
         "square_or_special_focus",
         "same_factor_family",
         "same_stage_products",
         "doubling_chain",
-        "single_hub",
+        "doubling_chain_product",
     ),
 }
 
 _STAGE_COMPATIBLE_MODES: Final[dict[StageId, tuple[ProductSetMode, ...]]] = {
-    "A": ("single_hub", "square_or_special_focus"),
-    "B": ("single_hub", "same_factor_family", "square_or_special_focus"),
-    "C": ("single_hub", "same_stage_products", "same_factor_family", "square_or_special_focus"),
-    "D": ("single_hub", "same_stage_products", "same_factor_family", "multi_route_compare", "square_or_special_focus"),
-    "E": ("single_hub", "same_stage_products", "doubling_chain", "multi_route_compare", "square_or_special_focus"),
-    "F": ("single_hub", "same_stage_products", "interleave_compare", "multi_route_compare", "same_factor_family", "square_or_special_focus"),
-    "G": ("single_hub", "square_or_special_focus", "multi_route_compare", "interleave_compare", "same_factor_family"),
+    "A": (
+        "single_hub",
+        "multi_route_hub",
+        "square_product",
+        "special_focus",
+        "boundary_focus",
+        "benchmark_product",
+    ),
+    "B": (
+        "single_hub",
+        "multi_route_hub",
+        "square_product",
+        "special_focus",
+        "benchmark_product",
+        "same_factor_family",
+        "boundary_focus",
+    ),
+    "C": (
+        "single_hub",
+        "multi_route_hub",
+        "square_product",
+        "special_focus",
+        "benchmark_product",
+        "same_factor_family",
+        "same_stage_products",
+        "comparison_ready",
+    ),
+    "D": (
+        "single_hub",
+        "multi_route_hub",
+        "square_product",
+        "special_focus",
+        "same_factor_family",
+        "same_stage_products",
+        "multi_route_compare",
+        "comparison_ready",
+        "benchmark_product",
+    ),
+    "E": (
+        "single_hub",
+        "multi_route_hub",
+        "square_product",
+        "special_focus",
+        "doubling_chain_product",
+        "stage_bridge",
+        "same_stage_products",
+        "same_factor_family",
+        "multi_route_compare",
+        "doubling_chain",
+        "square_or_special_focus",
+        "comparison_ready",
+    ),
+    "F": (
+        "single_hub",
+        "multi_route_hub",
+        "square_product",
+        "special_focus",
+        "stage_bridge",
+        "same_stage_products",
+        "same_factor_family",
+        "multi_route_compare",
+        "interleave_compare",
+        "square_or_special_focus",
+        "comparison_ready",
+    ),
+    "G": (
+        "single_hub",
+        "multi_route_hub",
+        "square_product",
+        "special_focus",
+        "stage_bridge",
+        "closure_product",
+        "same_factor_family",
+        "multi_route_compare",
+        "interleave_compare",
+        "square_or_special_focus",
+        "boundary_focus",
+        "comparison_ready",
+    ),
 }
 
 
@@ -169,6 +282,7 @@ def available_selection_modes(
     tier: WorksheetTier,
 ) -> tuple[ProductSetMode, ...]:
     validate_product_banks()
+
     allowed_for_format = set(_ALLOWED_MODES_BY_FORMAT[format_id])
     allowed_for_stage = set(_STAGE_COMPATIBLE_MODES[stage])
     preferred_for_tier = _TIER_PREFERRED_MODES[tier]
@@ -226,7 +340,7 @@ def _choose_default_mode(
 ) -> ProductSetMode:
     if format_id == "three_product_12":
         stage_defaults: dict[StageId, ProductSetMode] = {
-            "A": "square_or_special_focus",
+            "A": "same_stage_products",
             "B": "same_factor_family",
             "C": "same_factor_family",
             "D": "same_stage_products",
@@ -239,9 +353,18 @@ def _choose_default_mode(
             return preferred
 
     if format_id == "one_product_10":
-        if stage == "G":
-            return "square_or_special_focus"
-        return "single_hub"
+        stage_defaults: dict[StageId, ProductSetMode] = {
+            "A": "single_hub",
+            "B": "benchmark_product",
+            "C": "special_focus",
+            "D": "multi_route_hub",
+            "E": "doubling_chain_product",
+            "F": "stage_bridge",
+            "G": "closure_product",
+        }
+        preferred = stage_defaults[stage]
+        if preferred in _ALLOWED_MODES_BY_FORMAT[format_id] and preferred in _STAGE_COMPATIBLE_MODES[stage]:
+            return preferred
 
     allowed = available_selection_modes(stage=stage, format_id=format_id, tier=tier)
     if not allowed:
@@ -310,18 +433,15 @@ def _select_single_product(
     rotation_index: int,
 ) -> int:
     pool = _primary_scope_pool(stage, selection_scope)
+    candidates = _single_mode_candidates(stage, mode, pool)
+
+    if not candidates:
+        raise ValueError(
+            f"No valid single-product candidates for stage '{stage}', mode '{mode}', scope '{selection_scope}'."
+        )
+
     stage_new = set(products_for_stage(stage))
     stage_recap = set(recap_products_for_stage(stage))
-    special_focus = set(SQUARE_PRODUCTS) | set(SPECIAL_FOCUS_PRODUCTS)
-
-    if mode == "single_hub":
-        candidates = list(pool)
-    elif mode == "square_or_special_focus":
-        candidates = [p for p in pool if p in special_focus]
-        if not candidates:
-            candidates = list(pool)
-    else:
-        raise ValueError(f"Mode '{mode}' is not valid for one-product selection.")
 
     ranked = sorted(
         _ordered_unique(candidates),
@@ -332,16 +452,52 @@ def _select_single_product(
             selection_scope=selection_scope,
             is_stage_new=(p in stage_new),
             is_stage_recap=(p in stage_recap),
+            mode=mode,
         ),
         reverse=True,
     )
 
-    if not ranked:
-        raise ValueError(
-            f"No valid single-product candidates for stage '{stage}', mode '{mode}', scope '{selection_scope}'."
-        )
-
     return ranked[rotation_index % len(ranked)]
+
+
+def _single_mode_candidates(
+    stage: StageId,
+    mode: ProductSetMode,
+    pool: list[int],
+) -> list[int]:
+    cumulative = set(cumulative_products_for_stage(stage))
+
+    if mode == "single_hub":
+        return list(pool)
+
+    if mode == "multi_route_hub":
+        return [p for p in pool if p in MULTI_ROUTE_PRODUCTS]
+
+    if mode == "square_product":
+        return [p for p in pool if p in SQUARE_PRODUCTS]
+
+    if mode == "special_focus":
+        return [p for p in pool if p in SPECIAL_FOCUS_PRODUCTS]
+
+    if mode == "doubling_chain_product":
+        return [p for p in pool if p in DOUBLING_CHAIN_PRODUCTS]
+
+    if mode == "stage_bridge":
+        return [p for p in pool if p in STAGE_BRIDGE_PRODUCTS]
+
+    if mode == "closure_product":
+        return [p for p in pool if p in CLOSURE_PRODUCTS]
+
+    if mode == "boundary_focus":
+        return [p for p in pool if p in BOUNDARY_FOCUS_PRODUCTS]
+
+    if mode == "benchmark_product":
+        return [p for p in pool if p in BENCHMARK_PRODUCTS]
+
+    if mode == "comparison_ready":
+        return [p for p in pool if p in COMPARISON_READY_PRODUCTS]
+
+    raise ValueError(f"Unsupported single-product selection mode '{mode}'.")
 
 
 def _select_three_products(
@@ -400,8 +556,6 @@ def _three_product_candidates(
         if triples:
             return _rank_preserving_dedupe(triples)
 
-        # F and G do not have enough new products for pure same-stage triples.
-        # Use the stage-shaped focus pool, not arbitrary cumulative products.
         triples = _generate_combinations(pool, 3)
         return _filter_scope_triples(
             triples=triples,
@@ -461,9 +615,10 @@ def _three_product_candidates(
         )
 
     if mode == "square_or_special_focus":
-        focus_pool = [p for p in pool if p in set(SQUARE_PRODUCTS) | set(SPECIAL_FOCUS_PRODUCTS)]
+        focus_bank = set(SQUARE_PRODUCTS) | set(SPECIAL_FOCUS_PRODUCTS)
+        focus_pool = [p for p in pool if p in focus_bank]
         if len(focus_pool) < 3:
-            focus_pool = [p for p in cumulative if p in set(SQUARE_PRODUCTS) | set(SPECIAL_FOCUS_PRODUCTS)]
+            focus_pool = [p for p in cumulative if p in focus_bank]
         triples = _generate_combinations(focus_pool, 3)
         return _filter_scope_triples(
             triples=triples,
@@ -484,11 +639,9 @@ def _primary_scope_pool(stage: StageId, selection_scope: SelectionScope) -> list
         return _ordered_unique(stage_new)
 
     if selection_scope == "available_mixed":
-        # stage-shaped and cumulative, but still centered on stage focus
         return _ordered_unique(stage_focus + cumulative)
 
     if selection_scope == "hybrid":
-        # hybrid should stay stage-shaped, not drift into arbitrary cumulative products
         return _ordered_unique(stage_new + stage_focus)
 
     raise ValueError(f"Unsupported selection scope '{selection_scope}'.")
@@ -497,6 +650,7 @@ def _primary_scope_pool(stage: StageId, selection_scope: SelectionScope) -> list
 def _stage_focus_pool(stage: StageId) -> list[int]:
     stage_new = list(products_for_stage(stage))
     recap_family = list(recap_products_for_stage(stage))
+    cumulative = set(cumulative_products_for_stage(stage))
 
     if stage == "A":
         return _ordered_unique(stage_new)
@@ -515,11 +669,11 @@ def _stage_focus_pool(stage: StageId) -> list[int]:
 
     if stage == "F":
         base = stage_new + recap_family + [24, 27, 30, 36, 45, 54]
-        return _ordered_unique([p for p in base if p in cumulative_products_for_stage(stage)])
+        return _ordered_unique([p for p in base if p in cumulative])
 
     if stage == "G":
         base = stage_new + recap_family + [36, 42, 56]
-        return _ordered_unique([p for p in base if p in cumulative_products_for_stage(stage)])
+        return _ordered_unique([p for p in base if p in cumulative])
 
     raise ValueError(f"Unknown stage '{stage}'.")
 
@@ -578,7 +732,6 @@ def _select_recap_products(
     if not include_recap:
         return ()
 
-    # Recap is now family-driven and intended for a recap box / separate recap worksheet.
     recap_pool = [p for p in recap_products_for_stage(stage) if p not in selected_products]
     return tuple(recap_pool)
 
@@ -599,6 +752,22 @@ def _selection_reasons(
         f"Tier: {tier}.",
         f"Selected products: {', '.join(str(p) for p in selected_products)}.",
     ]
+
+    single_mode_reason_map: dict[str, str] = {
+        "single_hub": "Single-hub mode chooses a normal stage-shaped product.",
+        "multi_route_hub": "Multi-route-hub mode chooses from the canonical multiple-route bank.",
+        "square_product": "Square-product mode chooses from the canonical square bank.",
+        "special_focus": "Special-focus mode chooses from the canonical landmark bank.",
+        "doubling_chain_product": "Doubling-chain-product mode chooses from the canonical Stage E doubling bank.",
+        "stage_bridge": "Stage-bridge mode chooses from products that strongly connect stages or families.",
+        "closure_product": "Closure-product mode foregrounds Stage G closure.",
+        "boundary_focus": "Boundary-focus mode foregrounds strong in-world structural boundary products.",
+        "benchmark_product": "Benchmark-product mode foregrounds benchmark anchors such as 10, 25, 50, 90, and 100.",
+        "comparison_ready": "Comparison-ready mode foregrounds products that support route comparison.",
+    }
+
+    if mode in single_mode_reason_map:
+        reasons.append(single_mode_reason_map[mode])
 
     if stage == "C":
         reasons.append("Stage C recap is family-driven from the 5× structure, not arbitrary earlier products.")
@@ -678,6 +847,7 @@ def _single_hub_score(
     selection_scope: SelectionScope,
     is_stage_new: bool,
     is_stage_recap: bool,
+    mode: ProductSetMode,
 ) -> int:
     record = product_metadata(product)
     score = 0
@@ -695,6 +865,20 @@ def _single_hub_score(
         score += 4
     if product in SPECIAL_FOCUS_PRODUCTS:
         score += 4
+
+    mode_bonus_map: dict[str, int] = {
+        "multi_route_hub": 10 if product in MULTI_ROUTE_PRODUCTS else -20,
+        "square_product": 12 if product in SQUARE_PRODUCTS else -20,
+        "special_focus": 10 if product in SPECIAL_FOCUS_PRODUCTS else -20,
+        "doubling_chain_product": 12 if product in DOUBLING_CHAIN_PRODUCTS else -20,
+        "stage_bridge": 12 if product in STAGE_BRIDGE_PRODUCTS else -20,
+        "closure_product": 20 if product in CLOSURE_PRODUCTS else -40,
+        "boundary_focus": 10 if product in BOUNDARY_FOCUS_PRODUCTS else -20,
+        "benchmark_product": 10 if product in BENCHMARK_PRODUCTS else -20,
+        "comparison_ready": 10 if product in COMPARISON_READY_PRODUCTS else -20,
+    }
+    score += mode_bonus_map.get(mode, 0)
+
     if stage == "F" and product in (21, 42, 24, 27, 30, 36, 45, 54):
         score += 12
     if stage == "G" and product in (49, 42, 56, 35, 63, 70, 36):
