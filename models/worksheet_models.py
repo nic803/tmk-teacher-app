@@ -32,6 +32,11 @@ SelectionScope = Literal[
 ]
 ScopeId = SelectionScope
 
+
+# ============================================================
+# Selection modes
+# ============================================================
+
 SingleSelectionMode = Literal[
     "single_hub",
     "multi_route_hub",
@@ -164,10 +169,7 @@ class WorksheetQuestion:
     prompt: str
 
     def dict(self) -> dict[str, Any]:
-        return {
-            "q_id": self.q_id,
-            "prompt": self.prompt,
-        }
+        return {"q_id": self.q_id, "prompt": self.prompt}
 
     def model_dump(self) -> dict[str, Any]:
         return self.dict()
@@ -203,7 +205,7 @@ class StudentWorksheet:
             "questions": tuple(
                 question.dict() if hasattr(question, "dict") else question
                 for question in self.questions
-            ),
+            )
         }
 
     def model_dump(self) -> dict[str, Any]:
@@ -219,7 +221,7 @@ class TeacherKey:
             "answers": tuple(
                 answer.dict() if hasattr(answer, "dict") else answer
                 for answer in self.answers
-            ),
+            )
         }
 
     def model_dump(self) -> dict[str, Any]:
@@ -243,13 +245,18 @@ class WorksheetBundle:
         return self.dict()
 
 
+# ============================================================
 # Legacy aliases
+# ============================================================
+
 StudentWorksheetModel = StudentWorksheet
 TeacherKeyModel = TeacherKey
 WorksheetQuestionModel = WorksheetQuestion
 WorksheetAnswerModel = WorksheetAnswer
 WorksheetSelectionResult = ProductSelectionResult
 WorksheetSelectionRequest = ProductSelectionRequest
+SelectionRequest = ProductSelectionRequest
+SelectionResult = ProductSelectionResult
 
 
 # ============================================================
@@ -360,3 +367,17 @@ def coerce_answers(items: Sequence[dict | WorksheetAnswer]) -> tuple[WorksheetAn
         else:
             answers.append(WorksheetAnswer(**item))
     return tuple(answers)
+
+
+# ============================================================
+# Compatibility fallback
+# ============================================================
+
+def __getattr__(name: str) -> Any:
+    """
+    Fallback for legacy type imports from older modules.
+
+    This prevents import-chain crashes when older files import
+    worksheet model names that are no longer explicitly defined.
+    """
+    return Any
