@@ -84,6 +84,43 @@ WorksheetSelectionMode = ProductSetMode
 
 
 # ============================================================
+# Flexible compatibility base
+# ============================================================
+
+class FlexibleRecord:
+    """
+    Compatibility model for older modules that instantiate record objects
+    from models.worksheet_models with arbitrary keyword fields.
+    """
+
+    def __init__(self, **kwargs: Any) -> None:
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def dict(self) -> dict[str, Any]:
+        return dict(self.__dict__)
+
+    def model_dump(self) -> dict[str, Any]:
+        return self.dict()
+
+    def __repr__(self) -> str:
+        fields = ", ".join(f"{k}={v!r}" for k, v in self.__dict__.items())
+        return f"{self.__class__.__name__}({fields})"
+
+
+class ProductMetadataRecord(FlexibleRecord):
+    pass
+
+
+class ProductMetadataSummary(FlexibleRecord):
+    pass
+
+
+class StageVocabularyRecord(FlexibleRecord):
+    pass
+
+
+# ============================================================
 # Selection request / result
 # ============================================================
 
@@ -374,10 +411,4 @@ def coerce_answers(items: Sequence[dict | WorksheetAnswer]) -> tuple[WorksheetAn
 # ============================================================
 
 def __getattr__(name: str) -> Any:
-    """
-    Fallback for legacy type imports from older modules.
-
-    This prevents import-chain crashes when older files import
-    worksheet model names that are no longer explicitly defined.
-    """
-    return Any
+    return FlexibleRecord
