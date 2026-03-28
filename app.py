@@ -599,17 +599,14 @@ def _render_stage_cards(current_stage: str) -> None:
         product_count = len(stage_record.products)
         marker = "Current stage" if is_current else f"{product_count} products"
 
-        value_class = "tmk-value"
         note_style = "margin-top:0.2rem;"
-
         if is_current:
-            value_class = "tmk-value"
             note_style = "margin-top:0.2rem;font-weight:700;color:var(--tmk-accent);"
 
         st.markdown(
             f"""
             <div class="tmk-answer-box">
-                <div class="{value_class}">{escape(stage_record.label)}</div>
+                <div class="tmk-value">{escape(stage_record.label)}</div>
                 <div class="tmk-note" style="margin-top:0.2rem;">{escape(stage_name)}</div>
                 <div class="tmk-note" style="{note_style}">{escape(marker)}</div>
             </div>
@@ -626,11 +623,15 @@ def _render_stage_cards(current_stage: str) -> None:
 def _render_product_lab(product: int) -> None:
     record = product_record(product)
     compare = product_record(st.session_state.compare_product)
+    selected_routes = tuple(distinct_factor_routes(record.product))
+    compare_routes = tuple(distinct_factor_routes(compare.product))
+    inverse_family = tuple(inverse_labels(record.product))
+    shared = tuple(shared_factors(record.product, compare.product))
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Product Lab</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="tmk-section-subtitle">Hub overview, entry routes, division exits, inverse labels, patterns, and comparisons.</div>',
+        '<div class="tmk-section-subtitle">Selected product first, with local routes, inverse family, whole-product context, and controlled comparison.</div>',
         unsafe_allow_html=True,
     )
 
@@ -656,6 +657,8 @@ def _render_product_lab(product: int) -> None:
     if st.session_state.compare_product not in compare_options:
         st.session_state.compare_product = compare_options[0]
         compare = product_record(st.session_state.compare_product)
+        compare_routes = tuple(distinct_factor_routes(compare.product))
+        shared = tuple(shared_factors(record.product, compare.product))
 
     with control_col2:
         compare_value = st.selectbox(
@@ -684,63 +687,118 @@ def _render_product_lab(product: int) -> None:
 
     _metric_card_row(
         [
-            ("Product", str(record.product)),
+            ("Selected product", str(record.product)),
             ("Stage", stage_label(record.stage)),
-            ("Distinct routes", str(len(distinct_factor_routes(record.product)))),
+            ("Intro route", _format_route(record.intro_route)),
             ("Compare with", str(compare.product)),
         ]
     )
 
-    col_a, col_b = st.columns(2)
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-small-label">Selected product</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="tmk-value">{record.product}</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="tmk-note" style="margin-top:0.35rem;">Intro route: {escape(_format_route(record.intro_route))}</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div class="tmk-note">Structural role: {escape(record.structural_role)}</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div class="tmk-note">Stage introduced: {escape(stage_label(record.stage))}</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="tmk-note" style="margin-top:0.5rem;">Teaching order note: lead with the intro route before opening wider route comparison.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    col_a, col_b = st.columns((1.3, 0.7))
 
     with col_a:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Hub overview</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="tmk-value">{record.product}</div>', unsafe_allow_html=True)
-        st.markdown(
-            f'<div class="tmk-note">Intro route: {escape(_format_route(record.intro_route))}. Structural role: {escape(record.structural_role)}.</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
-
+        st.markdown('<div class="tmk-small-label">Radial hub</div>', unsafe_allow_html=True)
         _render_route_inspector(record.product)
-
-        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Inverse labels</div>', unsafe_allow_html=True)
-        labels = inverse_labels(record.product)
-        if labels:
-            for label in labels:
-                st.markdown(f'<div class="tmk-answer-box">{escape(_stringify(label))}</div>', unsafe_allow_html=True)
-        else:
-            st.markdown('<div class="tmk-note">No inverse labels available.</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col_b:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Compare products</div>', unsafe_allow_html=True)
-        shared = shared_factors(record.product, compare.product)
+        st.markdown('<div class="tmk-small-label">Inverse family</div>', unsafe_allow_html=True)
+        if inverse_family:
+            for label in inverse_family:
+                st.markdown(f'<div class="tmk-answer-box">{escape(_stringify(label))}</div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="tmk-note">No inverse family available.</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    _render_structure_explorer(record.product, compare.product)
+
+    lower_left, lower_right = st.columns((1.0, 1.0))
+
+    with lower_left:
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">Connected products</div>', unsafe_allow_html=True)
         st.markdown(
-            f'<div class="tmk-note">Shared factors: {escape(", ".join(str(value) for value in shared) if shared else "None")}</div>',
+            f'<div class="tmk-note">Shared factors with {compare.product}: {escape(", ".join(str(value) for value in shared) if shared else "None")}</div>',
             unsafe_allow_html=True,
         )
+
+        connected_products = _connected_products_for(record.product, compare.product)
+        if connected_products:
+            _render_pill_list(connected_products, selected=record.product)
+        else:
+            st.markdown('<div class="tmk-note">No connected products available.</div>', unsafe_allow_html=True)
+
         st.markdown("</div>", unsafe_allow_html=True)
 
+    with lower_right:
+        with st.expander("Additional lawful forms", expanded=False):
+            st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+            st.markdown('<div class="tmk-small-label">Additional lawful forms</div>', unsafe_allow_html=True)
+
+            commutative = _commutative_form(record.intro_route)
+            st.markdown(
+                f'<div class="tmk-note"><strong>Commutative form:</strong> {escape(commutative)}</div>',
+                unsafe_allow_html=True,
+            )
+
+            comparison_route = _comparison_route_text(compare_routes)
+            st.markdown(
+                f'<div class="tmk-note" style="margin-top:0.35rem;"><strong>Later comparison route:</strong> {escape(comparison_route)}</div>',
+                unsafe_allow_html=True,
+            )
+
+            if inverse_family:
+                st.markdown('<div class="tmk-note" style="margin-top:0.35rem;"><strong>Inverse family:</strong></div>', unsafe_allow_html=True)
+                for label in inverse_family:
+                    st.markdown(f'<div class="tmk-answer-box">{escape(_stringify(label))}</div>', unsafe_allow_html=True)
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    with st.expander("Selected product routes", expanded=False):
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
         st.markdown('<div class="tmk-small-label">Selected product routes</div>', unsafe_allow_html=True)
-        for route in distinct_factor_routes(record.product):
+        for route in selected_routes:
             st.markdown(
                 f'<div class="tmk-answer-box">{escape(_format_route(route))}</div>',
                 unsafe_allow_html=True,
             )
+        if not selected_routes:
+            st.markdown('<div class="tmk-note">No routes available.</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
+    with st.expander("Compare product routes", expanded=False):
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
         st.markdown('<div class="tmk-small-label">Compare product routes</div>', unsafe_allow_html=True)
-        for route in distinct_factor_routes(compare.product):
+        for route in compare_routes:
             st.markdown(
                 f'<div class="tmk-answer-box">{escape(_format_route(route))}</div>',
                 unsafe_allow_html=True,
             )
+        if not compare_routes:
+            st.markdown('<div class="tmk-note">No routes available.</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
@@ -770,7 +828,6 @@ def _render_route_inspector(product: int) -> None:
 
     selected_item = items[st.session_state.selected_route_index]
 
-    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
     title = st.session_state.route_view_mode[:-1] if st.session_state.route_view_mode.endswith("s") else st.session_state.route_view_mode
     st.markdown(f'<div class="tmk-small-label">{escape(title)}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="tmk-value">{escape(selected_item["headline"])}</div>', unsafe_allow_html=True)
@@ -778,7 +835,6 @@ def _render_route_inspector(product: int) -> None:
         f'<div class="tmk-note" style="margin-top:0.55rem;">{escape(selected_item["explanation"])}</div>',
         unsafe_allow_html=True,
     )
-    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def _route_items_for_product(product: int, mode: str) -> list[dict[str, str]]:
@@ -805,6 +861,86 @@ def _route_items_for_product(product: int, mode: str) -> list[dict[str, str]]:
             }
         )
     return items
+
+
+def _render_structure_explorer(selected_product: int, compare_product: int) -> None:
+    selected_record = product_record(selected_product)
+    compare_record = product_record(compare_product)
+
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-small-label">Structure explorer</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="tmk-note">Selected product {selected_product} sits in {escape(stage_label(selected_record.stage))}. Comparison product {compare_product} sits in {escape(stage_label(compare_record.stage))}.</div>',
+        unsafe_allow_html=True,
+    )
+
+    stage_rows: list[str] = []
+    for stage in [stage for stage in STAGE_ORDER if stage in STAGES]:
+        stage_products = STAGES[stage].products
+        pills: list[str] = []
+        for product in stage_products:
+            cls = "tmk-pill"
+            if product == selected_product:
+                cls = "tmk-pill tmk-pill-accent"
+            elif product == compare_product:
+                cls = "tmk-pill"
+            pills.append(f'<span class="{cls}">{product}</span>')
+
+        marker = ""
+        if stage == selected_record.stage and stage == compare_record.stage:
+            marker = "Selected and compare stage"
+        elif stage == selected_record.stage:
+            marker = "Selected product stage"
+        elif stage == compare_record.stage:
+            marker = "Compare product stage"
+
+        marker_html = f'<div class="tmk-note" style="margin-top:0.2rem;">{escape(marker)}</div>' if marker else ""
+
+        stage_rows.append(
+            f"""
+            <div class="tmk-answer-box">
+                <div class="tmk-value">{escape(STAGES[stage].label)}</div>
+                <div class="tmk-note" style="margin-top:0.2rem;">{escape(stage_label(stage))}</div>
+                {marker_html}
+                <div class="tmk-soft-list" style="margin-top:0.45rem;">{''.join(pills)}</div>
+            </div>
+            """
+        )
+
+    st.markdown("".join(stage_rows), unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def _connected_products_for(selected_product: int, compare_product: int) -> tuple[int, ...]:
+    connected: list[int] = []
+    selected_factors = set(shared_factors(selected_product, selected_product))
+    compare_shared = set(shared_factors(selected_product, compare_product))
+
+    for product in ALL_PRODUCTS:
+        if product == selected_product:
+            continue
+        product_shared = set(shared_factors(selected_product, product))
+        if product_shared & (selected_factors | compare_shared):
+            connected.append(product)
+
+    deduped = []
+    seen = set()
+    for product in connected:
+        if product not in seen:
+            seen.add(product)
+            deduped.append(product)
+
+    return tuple(deduped[:12])
+
+
+def _commutative_form(route: tuple[int, int]) -> str:
+    return f"{route[1]} × {route[0]}"
+
+
+def _comparison_route_text(compare_routes: tuple[tuple[int, int], ...]) -> str:
+    if not compare_routes:
+        return "No comparison route available."
+    return _format_route(compare_routes[0])
 
 
 # -----------------------------
