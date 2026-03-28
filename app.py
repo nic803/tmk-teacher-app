@@ -49,6 +49,10 @@ from services.worksheet_generation_service import (
     generate_worksheet_bundle,
 )
 
+from UI.instruction_planner_page import (
+    render_instruction_planner_page,
+)
+
 APP_TITLE = "TMK Teacher App"
 SURFACES = ("Structural Planner", "Product Lab", "Instruction Planner", "Worksheet Studio")
 TIERS = ("Support", "Core", "Extension")
@@ -894,100 +898,42 @@ def _render_structure_explorer(selected_product: int, compare_product: int) -> N
 
 
 def _render_instruction_planner(product: int) -> None:
+    render_instruction_planner_page(
+        _build_instruction_planner_view_model(product)
+    )
+
+
+def _build_instruction_planner_view_model(product: int) -> dict[str, Any]:
     record = product_record(product)
     stage_record = get_stage_vocabulary(record.stage)
-    intro_route = record.intro_route
-    intro_left = intro_route[0]
-    intro_right = intro_route[1]
+    intro_left, intro_right = record.intro_route
 
-    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-section-title">Instruction Planner</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="tmk-section-subtitle">Teacher explanation flow, stage vocabulary, teacher prompts, and example questions for the current product.</div>',
-        unsafe_allow_html=True,
-    )
+    return {
+        "title": "Instruction Planner",
+        "subtitle": "Teacher explanation flow, stage vocabulary, teacher prompts, and example questions for the current product.",
+        "selected_product": record.product,
+        "selected_stage_label": stage_label(record.stage),
+        "intro_route_label": _format_route(record.intro_route),
+        "product_options": ALL_PRODUCTS,
+        "selected_product_index": ALL_PRODUCTS.index(st.session_state.selected_product),
+        "product_format_func": _product_option_label,
+        "product_select_key": "instruction_product_select_v20",
+        "on_product_change": _on_instruction_product_change,
+        "explanation_steps": _build_explanation_sequence(record.product, intro_left, intro_right),
+        "teach_now_vocab": list(getattr(stage_record, "new_vocab", ()) or ()),
+        "teacher_prompts": _build_teacher_prompts(record.product, intro_left, intro_right),
+        "introduce_if_needed": list(getattr(stage_record, "available_vocab", ()) or ()),
+        "example_questions": _instruction_example_questions(stage_record, record.product, intro_left, intro_right),
+        "delay_vocab": list(getattr(stage_record, "required_vocab_focus", ()) or ()),
+        "teaching_warning": "Do not open route comparison or wider product-network discussion until the entry explanation is secure.",
+    }
 
-    control_col1, control_col2 = st.columns((1.2, 0.8))
 
-    with control_col1:
-        selected = st.selectbox(
-            "Selected product",
-            options=ALL_PRODUCTS,
-            index=ALL_PRODUCTS.index(st.session_state.selected_product),
-            format_func=_product_option_label,
-            key="instruction_product_select_v20",
-        )
-        if selected != st.session_state.selected_product:
-            st.session_state.selected_product = selected
-            st.session_state.selected_stage = product_record(selected).stage
-            st.rerun()
-
-    with control_col2:
-        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Structural dependency reminder</div>', unsafe_allow_html=True)
-        st.markdown(
-            f'<div class="tmk-note">Uses intro route {escape(_format_route(record.intro_route))} in {escape(stage_label(record.stage))}.</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-small-label">Explanation sequence</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="tmk-value">{record.product}</div>', unsafe_allow_html=True)
-
-    explanation_steps = _build_explanation_sequence(record.product, intro_left, intro_right)
-    for index, step in enumerate(explanation_steps, start=1):
-        st.markdown(
-            f'<div class="tmk-answer-box"><strong>{index}.</strong> {escape(step)}</div>',
-            unsafe_allow_html=True,
-        )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    top_left, top_right = st.columns(2)
-    bottom_left, bottom_right = st.columns(2)
-
-    with top_left:
-        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Teach now vocabulary</div>', unsafe_allow_html=True)
-        _render_word_list(stage_record.new_vocab)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with top_right:
-        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Teacher prompt bank</div>', unsafe_allow_html=True)
-        prompts = _build_teacher_prompts(record.product, intro_left, intro_right)
-        for prompt in prompts:
-            st.markdown(f'<div class="tmk-answer-box">{escape(prompt)}</div>', unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with bottom_left:
-        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Introduce if needed</div>', unsafe_allow_html=True)
-        _render_word_list(stage_record.available_vocab)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with bottom_right:
-        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Example questions</div>', unsafe_allow_html=True)
-        example_questions = _instruction_example_questions(stage_record, record.product, intro_left, intro_right)
-        for question in example_questions:
-            st.markdown(f'<div class="tmk-answer-box">{escape(question)}</div>', unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-small-label">Delay vocabulary</div>', unsafe_allow_html=True)
-    _render_word_list(stage_record.required_vocab_focus)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-small-label">Teaching warning</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="tmk-note">Do not open route comparison or wider product-network discussion until the entry explanation is secure.</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)
+def _on_instruction_product_change() -> None:
+    selected = st.session_state.get("instruction_product_select_v20")
+    if selected in ALL_PRODUCTS and selected != st.session_state.selected_product:
+        st.session_state.selected_product = selected
+        st.session_state.selected_stage = product_record(selected).stage
 
 
 def _connected_products_for(selected_product: int, compare_product: int) -> tuple[int, ...]:
