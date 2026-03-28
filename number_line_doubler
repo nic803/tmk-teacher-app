@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMK Number Line Doubler - Race Mode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        tmk: {
+                            structure: '#497379',
+                            data: '#83B8BE',
+                            hover: '#A9CED2',
+                            canvas: '#E8E1D5',
+                            card: '#F7F4EE',
+                            highlight: '#ECA159',
+                            action: '#FF5E57',
+                            border: '#D9D4C8',
+                            text: '#2F3A3C',
+                            textSoft: '#6C7A7D'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #E8E1D5; }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+            height: 500px;
+            background: #F7F4EE;
+            border-radius: 12px;
+            border: 1px solid #D9D4C8;
+            overflow: hidden;
+        }
+        canvas { display: block; width: 100%; height: 100%; }
+        .control-btn {
+            transition: all 0.2s;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        .control-btn:active { transform: scale(0.95); }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex flex-col min-h-screen">
+
+<div class="max-w-5xl mx-auto w-full flex flex-col gap-6">
+    
+    <header class="flex flex-col gap-2">
+        <h1 class="text-3xl font-bold text-tmk-text">Number Line Doubler</h1>
+        <p class="text-tmk-textSoft">Compare how different numbers "jump" across the line. Who reaches 80 first?</p>
+    </header>
+
+    <main class="chart-container shadow-sm relative">
+        <canvas id="stage"></canvas>
+        
+        <!-- Interactive Overlay for equations -->
+        <div id="equation-display" class="absolute top-6 left-6 p-4 bg-white/90 backdrop-blur rounded-lg border border-tmk-border shadow-sm hidden">
+            <div class="flex flex-col gap-1" id="equation-list">
+                <!-- Dynamic equation lines -->
+            </div>
+        </div>
+    </main>
+
+    <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-tmk-card p-4 rounded-xl border border-tmk-border flex flex-col gap-3">
+            <h3 class="font-bold text-tmk-structure flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-tmk-structure"></span> 2x Table
+            </h3>
+            <button onclick="startSingle(2)" class="control-btn bg-tmk-structure text-white px-4 py-3 hover:brightness-110">Jump 2s</button>
+        </div>
+        
+        <div class="bg-tmk-card p-4 rounded-xl border border-tmk-border flex flex-col gap-3">
+            <h3 class="font-bold text-tmk-data flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-tmk-data"></span> 4x Table
+            </h3>
+            <button onclick="startSingle(4)" class="control-btn bg-tmk-data text-white px-4 py-3 hover:brightness-110">Jump 4s</button>
+        </div>
+
+        <div class="bg-tmk-card p-4 rounded-xl border border-tmk-border flex flex-col gap-3">
+            <h3 class="font-bold text-tmk-action flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-tmk-action"></span> 8x Table
+            </h3>
+            <button onclick="startSingle(8)" class="control-btn bg-tmk-action text-white px-4 py-3 hover:brightness-110">Jump 8s</button>
+        </div>
+
+        <div class="bg-tmk-structure p-4 rounded-xl border border-tmk-border flex flex-col gap-3 shadow-lg">
+            <h3 class="font-bold text-white flex items-center gap-2">
+                🏆 Race Mode
+            </h3>
+            <button onclick="startRace()" class="control-btn bg-tmk-highlight text-tmk-text px-4 py-3 hover:brightness-105 border-b-4 border-tmk-text/20">Race All Three!</button>
+        </div>
+    </section>
+
+    <footer class="flex justify-between items-center p-4 bg-tmk-structure/10 rounded-lg border border-tmk-structure/20">
+        <div class="flex gap-4">
+            <button onclick="reset()" class="text-sm font-bold text-tmk-structure hover:underline">Clear Line</button>
+            <button onclick="toggleAll()" class="text-sm font-bold text-tmk-structure hover:underline">Static View</button>
+        </div>
+        <p class="text-xs text-tmk-textSoft uppercase tracking-widest font-bold">TMK Instructional Asset</p>
+    </footer>
+</div>
+
+<script>
+    const canvas = document.getElementById('stage');
+    const ctx = canvas.getContext('2d');
+    const display = document.getElementById('equation-display');
+    const equationList = document.getElementById('equation-list');
+
+    let width, height;
+    let completedJumps = []; 
+    let activeJumpers = []; 
+
+    const colors = {
+        2: '#497379',
+        4: '#83B8BE',
+        8: '#FF5E57',
+        line: '#D9D4C8',
+        text: '#2F3A3C'
+    };
+
+    const emojis = {
+        2: '🥈',
+        4: '🥇',
+        8: '🚀'
+    };
+
+    function resize() {
+        width = canvas.offsetWidth * window.devicePixelRatio;
+        height = canvas.offsetHeight * window.devicePixelRatio;
+        canvas.width = width;
+        canvas.height = height;
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        // Correcting for CSS pixels in logic
+        width = canvas.offsetWidth;
+        height = canvas.offsetHeight;
+    }
+
+    window.addEventListener('resize', () => {
+        resize();
+        drawAll();
+    });
+    resize();
+
+    function drawLine() {
+        const padding = 60;
+        const lineY = height * 0.85;
+        const lineWidth = width - (padding * 2);
+        
+        ctx.strokeStyle = colors.line;
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        
+        ctx.beginPath();
+        ctx.moveTo(padding, lineY);
+        ctx.lineTo(width - padding, lineY);
+        ctx.stroke();
+
+        const maxNum = 80;
+        ctx.fillStyle = colors.text;
+        ctx.textAlign = 'center';
+        ctx.font = `${Math.max(10, 14 * (width/1000))}px Inter`;
+
+        for (let i = 0; i <= maxNum; i++) {
+            const x = padding + (i / maxNum) * lineWidth;
+            if (i % 2 === 0) {
+                ctx.beginPath();
+                ctx.moveTo(x, lineY - 5);
+                ctx.lineTo(x, lineY + 5);
+                ctx.stroke();
+                
+                if (i % 4 === 0 || i === 0) {
+                    ctx.fillText(i, x, lineY + 25);
+                }
+            }
+        }
+    }
+
+    function getX(num) {
+        const padding = 60;
+        const lineWidth = width - (padding * 2);
+        return padding + (num / 80) * lineWidth;
+    }
+
+    function drawJump(from, to, multiplier, progress, isGhost = false) {
+        const x1 = getX(from);
+        const x2 = getX(to);
+        
+        const baseHeight = height * 0.85;
+        const jumpHeight = (multiplier === 2 ? 60 : multiplier === 4 ? 140 : 280) * (height / 600);
+        
+        ctx.strokeStyle = colors[multiplier];
+        ctx.globalAlpha = isGhost ? 0.2 : 1.0;
+        ctx.lineWidth = multiplier === 8 ? 5 : multiplier === 4 ? 3 : 2;
+        
+        ctx.beginPath();
+        ctx.moveTo(x1, baseHeight);
+        for(let t = 0; t <= progress; t += 0.01) {
+            const tx = x1 + (x2 - x1) * t;
+            const ty = baseHeight - (jumpHeight * Math.sin(t * Math.PI));
+            ctx.lineTo(tx, ty);
+        }
+        ctx.stroke();
+        
+        if (!isGhost && progress > 0) {
+            const tx = x1 + (x2 - x1) * progress;
+            const ty = baseHeight - (jumpHeight * Math.sin(progress * Math.PI));
+            ctx.font = '28px Inter';
+            ctx.fillText(emojis[multiplier], tx, ty - 10);
+        }
+        ctx.globalAlpha = 1.0;
+    }
+
+    function drawAll() {
+        ctx.clearRect(0, 0, width, height);
+        drawLine();
+
+        completedJumps.forEach(j => {
+            drawJump(j.from, j.to, j.multiplier, 1, true);
+        });
+
+        activeJumpers.forEach((jumper) => {
+            const from = jumper.step * jumper.multiplier;
+            const to = (jumper.step + 1) * jumper.multiplier;
+            drawJump(from, to, jumper.multiplier, jumper.progress);
+        });
+    }
+
+    function animate() {
+        let active = false;
+        
+        activeJumpers.forEach((jumper) => {
+            if (jumper.finished) return;
+            active = true;
+            
+            jumper.progress += jumper.speed;
+            
+            if (jumper.progress >= 1) {
+                const from = jumper.step * jumper.multiplier;
+                const to = (jumper.step + 1) * jumper.multiplier;
+                
+                completedJumps.push({
+                    from: from,
+                    to: to,
+                    multiplier: jumper.multiplier
+                });
+                
+                jumper.step++;
+                jumper.progress = 0;
+                
+                if (to >= 80) {
+                    jumper.finished = true;
+                }
+            }
+        });
+
+        drawAll();
+
+        if (activeJumpers.length > 0 || completedJumps.length > 0) {
+            display.classList.remove('hidden');
+            updateUI();
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    function updateUI() {
+        const summaries = [2, 4, 8].map(m => {
+            const steps = completedJumps.filter(j => j.multiplier === m).length;
+            return {m, val: steps * m};
+        });
+
+        equationList.innerHTML = summaries
+            .filter(s => s.val > 0)
+            .map(s => `
+                <p class="text-sm font-bold" style="color: ${colors[s.m]}">
+                    ${s.m}x Table: ${s.val / s.m} × ${s.m} = ${s.val}
+                </p>
+            `).join('');
+    }
+
+    window.startSingle = function(m) {
+        reset();
+        activeJumpers.push({
+            multiplier: m,
+            step: 0,
+            progress: 0,
+            speed: 0.03,
+            finished: false
+        });
+    };
+
+    window.startRace = function() {
+        reset();
+        activeJumpers.push({ multiplier: 2, step: 0, progress: 0, speed: 0.06, finished: false });
+        activeJumpers.push({ multiplier: 4, step: 0, progress: 0, speed: 0.04, finished: false });
+        activeJumpers.push({ multiplier: 8, step: 0, progress: 0, speed: 0.02, finished: false });
+    };
+
+    window.reset = function() {
+        completedJumps = [];
+        activeJumpers = [];
+        display.classList.add('hidden');
+    };
+
+    window.toggleAll = function() {
+        reset();
+        for(let i=0; i<40; i++) completedJumps.push({from: i*2, to: (i+1)*2, multiplier: 2});
+        for(let i=0; i<20; i++) completedJumps.push({from: i*4, to: (i+1)*4, multiplier: 4});
+        for(let i=0; i<10; i++) completedJumps.push({from: i*8, to: (i+1)*8, multiplier: 8});
+    };
+
+    requestAnimationFrame(animate);
+</script>
+
+</body>
+</html>
