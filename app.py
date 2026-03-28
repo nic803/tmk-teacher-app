@@ -30,6 +30,10 @@ from domain.product_metadata import (
     product_metadata,
 )
 
+from domain.stage_vocabulary import (
+    get_stage_vocabulary,
+)
+
 # -----------------------------
 # WORKSHEET SYSTEM IMPORTS
 # -----------------------------
@@ -46,13 +50,14 @@ from services.worksheet_generation_service import (
 )
 
 APP_TITLE = "TMK Teacher App"
-SURFACES = ("Structural Planner", "Product Lab", "Worksheet Studio")
+SURFACES = ("Structural Planner", "Product Lab", "Instruction Planner", "Worksheet Studio")
 TIERS = ("Support", "Core", "Extension")
 WORKSHEET_FORMATS = ("one_product_10", "three_product_12")
 SELECTION_SCOPES = ("new_only", "available_mixed", "hybrid")
 PLANNER_LINK_MODES = ("Selected links", "Show selected atlas", "No links")
 PLANNER_ZOOM_MODES = ("Selected stage only", "Whole world")
 ROUTE_VIEW_MODES = ("Entry routes", "Exit routes")
+
 
 LIGHT_THEME = {
     "bg": "#E8E1D5",
@@ -68,6 +73,7 @@ LIGHT_THEME = {
     "hover": "#A9CED2",
 }
 
+
 DARK_THEME = {
     "bg": "#2F3A3C",
     "surface": "#344244",
@@ -81,6 +87,7 @@ DARK_THEME = {
     "danger": "#FF5E57",
     "hover": "#497379",
 }
+
 
 st.set_page_config(
     page_title=APP_TITLE,
@@ -115,6 +122,8 @@ def main() -> None:
         _render_structural_planner(st.session_state.selected_product)
     elif st.session_state.surface == "Product Lab":
         _render_product_lab(st.session_state.selected_product)
+    elif st.session_state.surface == "Instruction Planner":
+        _render_instruction_planner(st.session_state.selected_product)
     else:
         _render_worksheet_studio()
 
@@ -460,6 +469,10 @@ def _render_sidebar() -> None:
             compare = product_record(st.session_state.compare_product)
             st.write(f"**Compare with:** {compare.product}")
             st.write(f"**Route view:** {st.session_state.route_view_mode}")
+        elif st.session_state.surface == "Instruction Planner":
+            st.write(f"**Stage:** {stage_label(record.stage)}")
+            st.write(f"**Product:** {record.product}")
+            st.write(f"**Intro route:** {_format_route(record.intro_route)}")
         else:
             st.write(f"**Stage:** {st.session_state.selected_stage}")
             st.write(f"**Tier:** {st.session_state.selected_tier}")
@@ -893,6 +906,103 @@ def _render_structure_explorer(selected_product: int, compare_product: int) -> N
     st.markdown("</div>", unsafe_allow_html=True)
 
 
+def _render_instruction_planner(product: int) -> None:
+    record = product_record(product)
+    stage_record = get_stage_vocabulary(record.stage)
+    intro_route = record.intro_route
+    intro_left = intro_route[0]
+    intro_right = intro_route[1]
+
+    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-section-title">Instruction Planner</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="tmk-section-subtitle">Teacher explanation flow, stage vocabulary, teacher prompts, and example questions for the current product.</div>',
+        unsafe_allow_html=True,
+    )
+
+    control_col1, control_col2 = st.columns((1.2, 0.8))
+
+    with control_col1:
+        selected = st.selectbox(
+            "Selected product",
+            options=ALL_PRODUCTS,
+            index=ALL_PRODUCTS.index(st.session_state.selected_product),
+            format_func=_product_option_label,
+            key="instruction_product_select_v20",
+        )
+        if selected != st.session_state.selected_product:
+            st.session_state.selected_product = selected
+            st.session_state.selected_stage = product_record(selected).stage
+            st.rerun()
+
+    with control_col2:
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">Structural dependency reminder</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="tmk-note">Uses intro route {escape(_format_route(record.intro_route))} in {escape(stage_label(record.stage))}.</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-small-label">Explanation sequence</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="tmk-value">{record.product}</div>', unsafe_allow_html=True)
+
+    explanation_steps = _build_explanation_sequence(record.product, intro_left, intro_right)
+    for index, step in enumerate(explanation_steps, start=1):
+        st.markdown(
+            f'<div class="tmk-answer-box"><strong>{index}.</strong> {escape(step)}</div>',
+            unsafe_allow_html=True,
+        )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    top_left, top_right = st.columns(2)
+    bottom_left, bottom_right = st.columns(2)
+
+    with top_left:
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">Teach now vocabulary</div>', unsafe_allow_html=True)
+        _render_word_list(stage_record.new_vocab)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with top_right:
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">Teacher prompt bank</div>', unsafe_allow_html=True)
+        prompts = _build_teacher_prompts(record.product, intro_left, intro_right)
+        for prompt in prompts:
+            st.markdown(f'<div class="tmk-answer-box">{escape(prompt)}</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with bottom_left:
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">Introduce if needed</div>', unsafe_allow_html=True)
+        _render_word_list(stage_record.available_vocab)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with bottom_right:
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">Example questions</div>', unsafe_allow_html=True)
+        example_questions = _instruction_example_questions(stage_record, record.product, intro_left, intro_right)
+        for question in example_questions:
+            st.markdown(f'<div class="tmk-answer-box">{escape(question)}</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-small-label">Delay vocabulary</div>', unsafe_allow_html=True)
+    _render_word_list(stage_record.required_vocab_focus)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-small-label">Teaching warning</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="tmk-note">Do not open route comparison or wider product-network discussion until the entry explanation is secure.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
 def _connected_products_for(selected_product: int, compare_product: int) -> tuple[int, ...]:
     connected: list[int] = []
     selected_factors = set(shared_factors(selected_product, selected_product))
@@ -923,6 +1033,68 @@ def _comparison_route_text(compare_routes: tuple[tuple[int, int], ...]) -> str:
     if not compare_routes:
         return "No comparison route available."
     return _format_route(compare_routes[0])
+
+
+def _build_explanation_sequence(product: int, left: int, right: int) -> list[str]:
+    if right == 9:
+        base = left
+        ten_value = base * 10
+        one_value = base
+        return [
+            f"What is 10 × {base}?",
+            f"What is 1 × {base}?",
+            f"What is {ten_value} − {one_value}?",
+            f"So what is 9 × {base}?",
+        ]
+
+    if left == 9:
+        base = right
+        ten_value = base * 10
+        one_value = base
+        return [
+            f"What is 10 × {base}?",
+            f"What is 1 × {base}?",
+            f"What is {ten_value} − {one_value}?",
+            f"So what is 9 × {base}?",
+        ]
+
+    return [
+        f"State the intro route: {_format_route((left, right))}.",
+        f"Identify the product: {product}.",
+        f"Explain how {_format_route((left, right))} builds {product}.",
+        f"Check the product again: {product}.",
+    ]
+
+
+def _build_teacher_prompts(product: int, left: int, right: int) -> list[str]:
+    prompts = [
+        f"What do we already know about {_format_route((left, right))}?",
+        f"What product are we building?",
+        f"How can we say {_format_route((left, right))} clearly?",
+    ]
+
+    if right == 9 or left == 9:
+        base = left if right == 9 else right
+        prompts.extend(
+            [
+                f"What is 10 groups of {base}?",
+                f"How do we adjust from 10× to 9×?",
+            ]
+        )
+
+    return prompts
+
+
+def _instruction_example_questions(stage_record: Any, product: int, left: int, right: int) -> list[str]:
+    from_stage = list(getattr(stage_record, "example_child_friendly_questions", []) or [])
+    if from_stage:
+        return [str(item) for item in from_stage]
+
+    return [
+        f"{left} × {right} = □",
+        f"□ = {product}",
+        f"{product} ÷ {left} = □",
+    ]
 
 
 # -----------------------------
