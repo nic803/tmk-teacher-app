@@ -1104,9 +1104,12 @@ def _render_worksheet_studio() -> None:
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Worksheet Studio</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="tmk-section-subtitle">Generate worksheets from stage, format, tier, selection scope, optional mode, and recap controls.</div>',
+        '<div class="tmk-section-subtitle">Configure the worksheet first, then generate and review the selected product set, pupil sheet, rationale, teacher key, vocabulary, and structural tags.</div>',
         unsafe_allow_html=True,
     )
+
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-small-label">Worksheet configuration</div>', unsafe_allow_html=True)
 
     top_left, top_mid, top_right = st.columns(3)
     bottom_left, bottom_mid, bottom_right = st.columns(3)
@@ -1224,7 +1227,12 @@ def _render_worksheet_studio() -> None:
 
     generate_label = "Generate worksheet" if st.session_state.worksheet_rotation_index == 0 else "Generate next worksheet"
 
-    if st.button(generate_label, type="primary"):
+    st.markdown(
+        f'<div class="tmk-note" style="margin-top:0.35rem;">Current setup: {escape(stage_label(st.session_state.selected_stage))} · {escape("One product (10)" if st.session_state.worksheet_format == "one_product_10" else "Three products (12)")} · {escape(st.session_state.selected_tier)} · {escape(st.session_state.selection_scope)}</div>',
+        unsafe_allow_html=True,
+    )
+
+    if st.button(generate_label, type="primary", key="worksheet_generate_button_v20"):
         try:
             previous_bundle = st.session_state.last_bundle
             previous_selection = _bundle_part(previous_bundle, "selection") if previous_bundle else None
@@ -1282,6 +1290,8 @@ def _render_worksheet_studio() -> None:
             st.markdown("</div>", unsafe_allow_html=True)
             return
 
+    st.markdown("</div>", unsafe_allow_html=True)
+
     bundle = st.session_state.last_bundle
     if bundle is None:
         st.markdown(
@@ -1318,11 +1328,54 @@ def _render_worksheet_studio() -> None:
         ]
     )
 
-    col_a, col_b = st.columns((1.15, 0.85))
+    upper_left, upper_right = st.columns((0.95, 1.05))
 
-    with col_a:
+    with upper_left:
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">Selected product set</div>', unsafe_allow_html=True)
+        if selected_products:
+            _render_pill_list(selected_products)
+        else:
+            st.markdown('<div class="tmk-note">No selected products available.</div>', unsafe_allow_html=True)
+
+        if recap_products:
+            st.markdown('<div class="tmk-small-label" style="margin-top:0.7rem;">Recap products</div>', unsafe_allow_html=True)
+            _render_pill_list(recap_products)
+        else:
+            st.markdown('<div class="tmk-note" style="margin-top:0.45rem;">No recap products included.</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with upper_right:
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">Structural audit</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="tmk-note"><strong>Stage integrity:</strong> {escape(stage_label(st.session_state.selected_stage))}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f'<div class="tmk-note"><strong>Selection mode:</strong> {escape(st.session_state.selection_mode)}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f'<div class="tmk-note"><strong>Selection scope:</strong> {escape(st.session_state.selection_scope)}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f'<div class="tmk-note"><strong>Recap included:</strong> {escape("Yes" if st.session_state.include_recap else "No")}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f'<div class="tmk-note"><strong>Rotation index:</strong> {escape(str(st.session_state.worksheet_rotation_index))}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    lower_left, lower_right = st.columns((1.15, 0.85))
+
+    with lower_left:
         st.markdown('<div class="tmk-worksheet-frame">', unsafe_allow_html=True)
-        st.markdown("### Pupil worksheet")
+        st.markdown("### Output preview")
+        st.markdown('<div class="tmk-small-label">Pupil worksheet</div>', unsafe_allow_html=True)
         questions = list(_field(student, "questions", default=[]))
         for index, question in enumerate(questions, start=1):
             q_id = _field(question, "q_id", default=index)
@@ -1350,7 +1403,7 @@ def _render_worksheet_studio() -> None:
             st.markdown('<div class="tmk-note">No selection reasons available.</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    with col_b:
+    with lower_right:
         st.markdown('<div class="tmk-worksheet-frame">', unsafe_allow_html=True)
         st.markdown("### Teacher key")
         answers = list(_field(teacher, "answers", default=[]))
