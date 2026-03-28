@@ -54,18 +54,6 @@ PLANNER_LINK_MODES = ("Selected links", "Show selected atlas", "No links")
 PLANNER_ZOOM_MODES = ("Selected stage only", "Whole world")
 ROUTE_VIEW_MODES = ("Entry routes", "Exit routes")
 
-# Locked TMK palette
-# Blue Slate — #497379
-# Mid Blue — #83B8BE
-# Light Blue — #A9CED2
-# Cream Stone — #E8E1D5
-# Soft Paper — #F7F4EE
-# Amber Sand — #ECA159
-# Coral — #FF5E57
-# Mist Grey — #D9D4C8
-# Charcoal Ink — #2F3A3C
-# Slate Grey — #6C7A7D
-# White — #FFFFFF
 LIGHT_THEME = {
     "bg": "#E8E1D5",
     "surface": "#F7F4EE",
@@ -874,18 +862,7 @@ def _render_structure_explorer(selected_product: int, compare_product: int) -> N
         unsafe_allow_html=True,
     )
 
-    stage_rows: list[str] = []
     for stage in [stage for stage in STAGE_ORDER if stage in STAGES]:
-        stage_products = STAGES[stage].products
-        pills: list[str] = []
-        for product in stage_products:
-            cls = "tmk-pill"
-            if product == selected_product:
-                cls = "tmk-pill tmk-pill-accent"
-            elif product == compare_product:
-                cls = "tmk-pill"
-            pills.append(f'<span class="{cls}">{product}</span>')
-
         marker = ""
         if stage == selected_record.stage and stage == compare_record.stage:
             marker = "Selected and compare stage"
@@ -894,20 +871,25 @@ def _render_structure_explorer(selected_product: int, compare_product: int) -> N
         elif stage == compare_record.stage:
             marker = "Compare product stage"
 
-        marker_html = f'<div class="tmk-note" style="margin-top:0.2rem;">{escape(marker)}</div>' if marker else ""
+        st.markdown('<div class="tmk-answer-box">', unsafe_allow_html=True)
+        st.markdown(f'<div class="tmk-value">{escape(STAGES[stage].label)}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="tmk-note" style="margin-top:0.2rem;">{escape(stage_label(stage))}</div>', unsafe_allow_html=True)
 
-        stage_rows.append(
-            f"""
-            <div class="tmk-answer-box">
-                <div class="tmk-value">{escape(STAGES[stage].label)}</div>
-                <div class="tmk-note" style="margin-top:0.2rem;">{escape(stage_label(stage))}</div>
-                {marker_html}
-                <div class="tmk-soft-list" style="margin-top:0.45rem;">{''.join(pills)}</div>
-            </div>
-            """
-        )
+        if marker:
+            st.markdown(f'<div class="tmk-note" style="margin-top:0.2rem;">{escape(marker)}</div>', unsafe_allow_html=True)
 
-    st.markdown("".join(stage_rows), unsafe_allow_html=True)
+        st.markdown('<div style="margin-top:0.45rem;">', unsafe_allow_html=True)
+        _render_pill_list(STAGES[stage].products, selected=selected_product)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        if compare_product in STAGES[stage].products and compare_product != selected_product:
+            st.markdown(
+                f'<div class="tmk-note" style="margin-top:0.35rem;">Compare product highlighted by stage context: {compare_product}</div>',
+                unsafe_allow_html=True,
+            )
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
     st.markdown("</div>", unsafe_allow_html=True)
 
 
