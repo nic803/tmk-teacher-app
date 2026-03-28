@@ -1,160 +1,228 @@
+# domain/worksheet_taxonomy.py
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Dict, Tuple
+from dataclasses import dataclass, field
+from typing import Dict, FrozenSet, Iterable, Optional
 
-from models.worksheet_models import (
-    APPROVED_PUPIL_ITEM_FAMILIES,
-    APPROVED_QUIZ_FORMATS,
-    FORBIDDEN_PUPIL_ITEM_TYPES,
-    QuizFormat,
-    WorksheetItemFamily,
-    WorksheetTier,
-    validate_item_family,
-    validate_quiz_format,
-    validate_tier,
-)
+
+# ---------------------------------------------------------------------------
+# Data classes
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class ItemFamilyDefinition:
+    family: str
+    label: str
+    allowed_tiers: FrozenSet[str] = field(default_factory=frozenset)
 
 
 @dataclass(frozen=True)
-class WorksheetTaxonomyPolicy:
-    approved_item_families: Tuple[WorksheetItemFamily, ...]
-    approved_quiz_formats: Tuple[QuizFormat, ...]
-    forbidden_pupil_item_types: Tuple[str, ...]
+class QuizFormatDefinition:
+    format_id: str
+    label: str
 
 
-_CANONICAL_POLICY = WorksheetTaxonomyPolicy(
-    approved_item_families=APPROVED_PUPIL_ITEM_FAMILIES,
-    approved_quiz_formats=APPROVED_QUIZ_FORMATS,
-    forbidden_pupil_item_types=FORBIDDEN_PUPIL_ITEM_TYPES,
-)
+@dataclass(frozen=True)
+class FamilyFormatRule:
+    family: str
+    allowed_support_formats: FrozenSet[str] = field(default_factory=frozenset)
+    allowed_core_formats: FrozenSet[str] = field(default_factory=frozenset)
+    allowed_extension_formats: FrozenSet[str] = field(default_factory=frozenset)
 
 
-def taxonomy_policy() -> WorksheetTaxonomyPolicy:
-    return _CANONICAL_POLICY
+@dataclass(frozen=True)
+class TierExplanationConstraint:
+    tier: str
+    allowed_formats: FrozenSet[str] = field(default_factory=frozenset)
 
 
-def approved_item_families() -> Tuple[WorksheetItemFamily, ...]:
-    return APPROVED_PUPIL_ITEM_FAMILIES
+# ---------------------------------------------------------------------------
+# Canonical definitions
+# ---------------------------------------------------------------------------
+
+ALL_TIERS = frozenset({"Support", "Core", "Extension"})
+
+ITEM_FAMILY_DEFINITIONS: Dict[str, ItemFamilyDefinition] = {
+    "product_recognition": ItemFamilyDefinition(
+        family="product_recognition",
+        label="Recognise the product / representation",
+        allowed_tiers=ALL_TIERS,
+    ),
+    "missing_factor": ItemFamilyDefinition(
+        family="missing_factor",
+        label="Find a missing factor",
+        allowed_tiers=ALL_TIERS,
+    ),
+    "another_way": ItemFamilyDefinition(
+        family="another_way",
+        label="Represent or solve in another way",
+        allowed_tiers=ALL_TIERS,
+    ),
+    "error_repair": ItemFamilyDefinition(
+        family="error_repair",
+        label="Repair an incorrect method or statement",
+        allowed_tiers=ALL_TIERS,
+    ),
+    "final_explanation": ItemFamilyDefinition(
+        family="final_explanation",
+        label="Final explanation / justification",
+        allowed_tiers=ALL_TIERS,
+    ),
+}
+
+QUIZ_FORMAT_DEFINITIONS: Dict[str, QuizFormatDefinition] = {
+    "choose": QuizFormatDefinition("choose", "Multiple choice"),
+    "match": QuizFormatDefinition("match", "Matching"),
+    "sort": QuizFormatDefinition("sort", "Sorting / ordering"),
+    "label_from_options": QuizFormatDefinition("label_from_options", "Label from options"),
+    "fill_box": QuizFormatDefinition("fill_box", "Fill in box"),
+    "short_answer": QuizFormatDefinition("short_answer", "Short answer"),
+    "write_expression": QuizFormatDefinition("write_expression", "Write an expression"),
+    "number_entry": QuizFormatDefinition("number_entry", "Numeric entry"),
+}
+
+# These rules are the contract used by worksheet_formats.py.
+FAMILY_FORMAT_RULES: Dict[str, FamilyFormatRule] = {
+    "product_recognition": FamilyFormatRule(
+        family="product_recognition",
+        allowed_support_formats=frozenset({"choose", "match"}),
+        allowed_core_formats=frozenset({"choose", "match", "label_from_options"}),
+        allowed_extension_formats=frozenset({"choose", "match", "label_from_options"}),
+    ),
+    "missing_factor": FamilyFormatRule(
+        family="missing_factor",
+        allowed_support_formats=frozenset({"choose", "fill_box", "number_entry"}),
+        allowed_core_formats=frozenset({"choose", "match", "fill_box", "number_entry"}),
+        allowed_extension_formats=frozenset({"choose", "match", "fill_box", "number_entry"}),
+    ),
+    "another_way": FamilyFormatRule(
+        family="another_way",
+        allowed_support_formats=frozenset({"choose", "label_from_options"}),
+        allowed_core_formats=frozenset({"choose", "label_from_options", "short_answer"}),
+        allowed_extension_formats=frozenset({"choose", "label_from_options", "short_answer", "write_expression"}),
+    ),
+    "error_repair": FamilyFormatRule(
+        family="error_repair",
+        allowed_support_formats=frozenset({"choose", "match"}),
+        allowed_core_formats=frozenset({"choose", "match", "sort"}),
+        allowed_extension_formats=frozenset({"choose", "match", "sort", "short_answer"}),
+    ),
+    "final_explanation": FamilyFormatRule(
+        family="final_explanation",
+        allowed_support_formats=frozenset({"choose", "short_answer"}),
+        allowed_core_formats=frozenset({"short_answer", "fill_box"}),
+        allowed_extension_formats=frozenset({"fill_box", "short_answer", "write_expression"}),
+    ),
+}
+
+TIER_EXPLANATION_CONSTRAINTS: Dict[str, TierExplanationConstraint] = {
+    "Support": TierExplanationConstraint(
+        tier="Support",
+        allowed_formats=frozenset({"choose", "short_answer"}),
+    ),
+    "Core": TierExplanationConstraint(
+        tier="Core",
+        allowed_formats=frozenset({"short_answer", "fill_box"}),
+    ),
+    "Extension": TierExplanationConstraint(
+        tier="Extension",
+        allowed_formats=frozenset({"fill_box", "short_answer", "write_expression"}),
+    ),
+}
 
 
-def approved_quiz_formats() -> Tuple[QuizFormat, ...]:
-    return APPROVED_QUIZ_FORMATS
+# ---------------------------------------------------------------------------
+# Validation helpers
+# ---------------------------------------------------------------------------
+
+def validate_taxonomy_consistency() -> None:
+    for family, item_def in ITEM_FAMILY_DEFINITIONS.items():
+        if family not in FAMILY_FORMAT_RULES:
+            raise ValueError(f"Missing FAMILY_FORMAT_RULES entry for family '{family}'")
+        unknown_tiers = set(item_def.allowed_tiers) - set(ALL_TIERS)
+        if unknown_tiers:
+            raise ValueError(
+                f"Family '{family}' references unknown tiers: {sorted(unknown_tiers)}"
+            )
+
+    for family, rule in FAMILY_FORMAT_RULES.items():
+        if family not in ITEM_FAMILY_DEFINITIONS:
+            raise ValueError(f"FAMILY_FORMAT_RULES references unknown family '{family}'")
+
+        for fmt in (
+            set(rule.allowed_support_formats)
+            | set(rule.allowed_core_formats)
+            | set(rule.allowed_extension_formats)
+        ):
+            if fmt not in QUIZ_FORMAT_DEFINITIONS:
+                raise ValueError(
+                    f"Family '{family}' references unknown quiz format '{fmt}'"
+                )
+
+    for tier, constraint in TIER_EXPLANATION_CONSTRAINTS.items():
+        if tier not in ALL_TIERS:
+            raise ValueError(f"Unknown explanation tier '{tier}'")
+        for fmt in constraint.allowed_formats:
+            if fmt not in QUIZ_FORMAT_DEFINITIONS:
+                raise ValueError(
+                    f"Tier '{tier}' explanation constraint uses unknown format '{fmt}'"
+                )
 
 
-def forbidden_pupil_item_types() -> Tuple[str, ...]:
-    return FORBIDDEN_PUPIL_ITEM_TYPES
+def family_allowed_for_tier(family: str, tier: str) -> bool:
+    item_def = ITEM_FAMILY_DEFINITIONS.get(family)
+    if item_def is None:
+        return False
+    return tier in item_def.allowed_tiers
 
 
-def validate_taxonomy_item_family(item_family: WorksheetItemFamily) -> None:
-    validate_item_family(item_family)
+def format_allowed_for_family(family: str, fmt: str, tier: Optional[str] = None) -> bool:
+    rule = FAMILY_FORMAT_RULES.get(family)
+    if rule is None:
+        return False
+
+    if tier == "Support":
+        return fmt in rule.allowed_support_formats
+    if tier == "Core":
+        return fmt in rule.allowed_core_formats
+    if tier == "Extension":
+        return fmt in rule.allowed_extension_formats
+
+    return (
+        fmt in rule.allowed_support_formats
+        or fmt in rule.allowed_core_formats
+        or fmt in rule.allowed_extension_formats
+    )
 
 
-def validate_taxonomy_quiz_format(quiz_format: QuizFormat) -> None:
-    validate_quiz_format(quiz_format)
+def explanation_format_allowed_for_tier(tier: str, fmt: str) -> bool:
+    constraint = TIER_EXPLANATION_CONSTRAINTS.get(tier)
+    if constraint is None:
+        return False
+    return fmt in constraint.allowed_formats
 
 
-def validate_taxonomy_tier(tier: WorksheetTier) -> None:
-    validate_tier(tier)
-
-
-def item_family_explanations() -> Dict[WorksheetItemFamily, str]:
-    return {
-        "product_recognition": "Find or identify the product.",
-        "route_in": "Build the product through a multiplication route.",
-        "missing_factor": "Complete a multiplication with one value missing.",
-        "another_way": "Find a different route to the same product.",
-        "compare_routes": "Compare two or more ways that make the same product.",
-        "route_out": "Leave the product through a division route.",
-        "check_match": "Check whether a route matches the product.",
-        "correct_incorrect": "Decide whether a route is correct or not.",
-        "error_repair": "Fix a broken route or explain why it is outside TMK World.",
-        "structural_grouping": "Sort, group, or classify items structurally.",
-        "final_explanation": "Give one short final explanation.",
-    }
-
-
-def recommended_quiz_formats_by_family() -> Dict[WorksheetItemFamily, Tuple[QuizFormat, ...]]:
-    return {
-        "product_recognition": ("circle", "tick", "choose"),
-        "route_in": ("fill_box", "write_equation", "match"),
-        "missing_factor": ("fill_box", "write_number"),
-        "another_way": ("write_equation", "label_route", "choose"),
-        "compare_routes": ("sort", "match", "route_sort"),
-        "route_out": ("fill_box", "write_number", "match"),
-        "check_match": ("yes_no", "tick", "choose"),
-        "correct_incorrect": ("yes_no", "tick", "choose"),
-        "error_repair": ("open_response", "write_word", "choose"),
-        "structural_grouping": ("sort", "route_sort", "match"),
-        "final_explanation": ("write_word", "open_response"),
-    }
-
-
-def permitted_quiz_formats_for_family(
-    item_family: WorksheetItemFamily,
-) -> Tuple[QuizFormat, ...]:
-    validate_item_family(item_family)
-    result = recommended_quiz_formats_by_family()[item_family]
-    for fmt in result:
-        validate_quiz_format(fmt)
-    return result
-
-
-def family_allowed_for_tier(
-    family: WorksheetItemFamily,
-    tier: WorksheetTier,
-) -> bool:
-    validate_item_family(family)
-    validate_tier(tier)
-    return family in APPROVED_PUPIL_ITEM_FAMILIES
-
-
-def format_allowed_for_family(
-    family: WorksheetItemFamily,
-    quiz_format: QuizFormat,
-) -> bool:
-    validate_item_family(family)
-    validate_quiz_format(quiz_format)
-    return quiz_format in permitted_quiz_formats_for_family(family)
-
-
-def explanation_format_allowed_for_tier(
-    quiz_format: QuizFormat,
-    tier: WorksheetTier,
-) -> bool:
-    validate_quiz_format(quiz_format)
-    validate_tier(tier)
-
-    allowed_by_tier: dict[WorksheetTier, tuple[QuizFormat, ...]] = {
-        "Support": ("choose", "tick", "yes_no"),
-        "Core": ("fill_box", "choose", "write_word"),
-        "Extension": ("fill_box", "write_word", "open_response"),
-    }
-    return quiz_format in allowed_by_tier[tier]
-
-
-def choose_default_quiz_format(
-    family: WorksheetItemFamily,
-    tier: WorksheetTier,
-) -> QuizFormat:
-    validate_item_family(family)
-    validate_tier(tier)
-
-    family_map = recommended_quiz_formats_by_family()[family]
-    if not family_map:
-        raise ValueError(f"No quiz formats defined for family '{family}'.")
+def choose_default_quiz_format(family: str, tier: str) -> str:
+    rule = FAMILY_FORMAT_RULES[family]
+    if tier == "Support":
+        allowed = tuple(rule.allowed_support_formats)
+    elif tier == "Core":
+        allowed = tuple(rule.allowed_core_formats)
+    elif tier == "Extension":
+        allowed = tuple(rule.allowed_extension_formats)
+    else:
+        raise ValueError(f"Unknown tier '{tier}'")
 
     if family == "final_explanation":
-        for fmt in family_map:
-            if explanation_format_allowed_for_tier(fmt, tier):
-                return fmt
+        allowed = tuple(
+            fmt for fmt in allowed if explanation_format_allowed_for_tier(tier, fmt)
+        )
 
-    return family_map[0]
+    if not allowed:
+        raise ValueError(
+            f"No default quiz format available for family '{family}' at tier '{tier}'"
+        )
+    return allowed[0]
 
 
-def item_family_allowed_for_pupils(item_family: str) -> bool:
-    return item_family in APPROVED_PUPIL_ITEM_FAMILIES
-
-
-def item_type_forbidden_for_pupils(item_type: str) -> bool:
-    return item_type in FORBIDDEN_PUPIL_ITEM_TYPES
+validate_taxonomy_consistency()
