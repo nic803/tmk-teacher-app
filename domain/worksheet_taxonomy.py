@@ -1,13 +1,8 @@
-# domain/worksheet_taxonomy.py
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, FrozenSet, Iterable, Optional
+from typing import Dict, FrozenSet, Optional
 
-
-# ---------------------------------------------------------------------------
-# Data classes
-# ---------------------------------------------------------------------------
 
 @dataclass(frozen=True)
 class ItemFamilyDefinition:
@@ -36,52 +31,50 @@ class TierExplanationConstraint:
     allowed_formats: FrozenSet[str] = field(default_factory=frozenset)
 
 
-# ---------------------------------------------------------------------------
-# Canonical definitions
-# ---------------------------------------------------------------------------
-
 ALL_TIERS = frozenset({"Support", "Core", "Extension"})
+
 
 ITEM_FAMILY_DEFINITIONS: Dict[str, ItemFamilyDefinition] = {
     "product_recognition": ItemFamilyDefinition(
         family="product_recognition",
-        label="Recognise the product / representation",
+        label="Recognise the product",
         allowed_tiers=ALL_TIERS,
     ),
     "missing_factor": ItemFamilyDefinition(
         family="missing_factor",
-        label="Find a missing factor",
+        label="Find the missing factor",
         allowed_tiers=ALL_TIERS,
     ),
     "another_way": ItemFamilyDefinition(
         family="another_way",
-        label="Represent or solve in another way",
+        label="Another way / another representation",
         allowed_tiers=ALL_TIERS,
     ),
     "error_repair": ItemFamilyDefinition(
         family="error_repair",
-        label="Repair an incorrect method or statement",
+        label="Repair an error",
         allowed_tiers=ALL_TIERS,
     ),
     "final_explanation": ItemFamilyDefinition(
         family="final_explanation",
-        label="Final explanation / justification",
+        label="Final explanation",
         allowed_tiers=ALL_TIERS,
     ),
 }
 
+
 QUIZ_FORMAT_DEFINITIONS: Dict[str, QuizFormatDefinition] = {
-    "choose": QuizFormatDefinition("choose", "Multiple choice"),
-    "match": QuizFormatDefinition("match", "Matching"),
-    "sort": QuizFormatDefinition("sort", "Sorting / ordering"),
+    "choose": QuizFormatDefinition("choose", "Choose from options"),
+    "match": QuizFormatDefinition("match", "Match"),
+    "sort": QuizFormatDefinition("sort", "Sort"),
     "label_from_options": QuizFormatDefinition("label_from_options", "Label from options"),
-    "fill_box": QuizFormatDefinition("fill_box", "Fill in box"),
+    "fill_box": QuizFormatDefinition("fill_box", "Fill box"),
     "short_answer": QuizFormatDefinition("short_answer", "Short answer"),
-    "write_expression": QuizFormatDefinition("write_expression", "Write an expression"),
-    "number_entry": QuizFormatDefinition("number_entry", "Numeric entry"),
+    "write_expression": QuizFormatDefinition("write_expression", "Write expression"),
+    "number_entry": QuizFormatDefinition("number_entry", "Number entry"),
 }
 
-# These rules are the contract used by worksheet_formats.py.
+
 FAMILY_FORMAT_RULES: Dict[str, FamilyFormatRule] = {
     "product_recognition": FamilyFormatRule(
         family="product_recognition",
@@ -99,7 +92,9 @@ FAMILY_FORMAT_RULES: Dict[str, FamilyFormatRule] = {
         family="another_way",
         allowed_support_formats=frozenset({"choose", "label_from_options"}),
         allowed_core_formats=frozenset({"choose", "label_from_options", "short_answer"}),
-        allowed_extension_formats=frozenset({"choose", "label_from_options", "short_answer", "write_expression"}),
+        allowed_extension_formats=frozenset(
+            {"choose", "label_from_options", "short_answer", "write_expression"}
+        ),
     ),
     "error_repair": FamilyFormatRule(
         family="error_repair",
@@ -114,6 +109,7 @@ FAMILY_FORMAT_RULES: Dict[str, FamilyFormatRule] = {
         allowed_extension_formats=frozenset({"fill_box", "short_answer", "write_expression"}),
     ),
 }
+
 
 TIER_EXPLANATION_CONSTRAINTS: Dict[str, TierExplanationConstraint] = {
     "Support": TierExplanationConstraint(
@@ -131,41 +127,39 @@ TIER_EXPLANATION_CONSTRAINTS: Dict[str, TierExplanationConstraint] = {
 }
 
 
-# ---------------------------------------------------------------------------
-# Validation helpers
-# ---------------------------------------------------------------------------
-
 def validate_taxonomy_consistency() -> None:
     for family, item_def in ITEM_FAMILY_DEFINITIONS.items():
         if family not in FAMILY_FORMAT_RULES:
-            raise ValueError(f"Missing FAMILY_FORMAT_RULES entry for family '{family}'")
+            raise ValueError(f"Missing FAMILY_FORMAT_RULES entry for family '{family}'.")
+
         unknown_tiers = set(item_def.allowed_tiers) - set(ALL_TIERS)
         if unknown_tiers:
             raise ValueError(
-                f"Family '{family}' references unknown tiers: {sorted(unknown_tiers)}"
+                f"Family '{family}' references unknown tiers: {sorted(unknown_tiers)}."
             )
 
     for family, rule in FAMILY_FORMAT_RULES.items():
         if family not in ITEM_FAMILY_DEFINITIONS:
-            raise ValueError(f"FAMILY_FORMAT_RULES references unknown family '{family}'")
+            raise ValueError(f"FAMILY_FORMAT_RULES references unknown family '{family}'.")
 
-        for fmt in (
+        all_formats = (
             set(rule.allowed_support_formats)
             | set(rule.allowed_core_formats)
             | set(rule.allowed_extension_formats)
-        ):
+        )
+        for fmt in all_formats:
             if fmt not in QUIZ_FORMAT_DEFINITIONS:
                 raise ValueError(
-                    f"Family '{family}' references unknown quiz format '{fmt}'"
+                    f"Family '{family}' references unknown quiz format '{fmt}'."
                 )
 
     for tier, constraint in TIER_EXPLANATION_CONSTRAINTS.items():
         if tier not in ALL_TIERS:
-            raise ValueError(f"Unknown explanation tier '{tier}'")
+            raise ValueError(f"Unknown explanation tier '{tier}'.")
         for fmt in constraint.allowed_formats:
             if fmt not in QUIZ_FORMAT_DEFINITIONS:
                 raise ValueError(
-                    f"Tier '{tier}' explanation constraint uses unknown format '{fmt}'"
+                    f"Tier '{tier}' explanation constraint uses unknown format '{fmt}'."
                 )
 
 
@@ -204,6 +198,7 @@ def explanation_format_allowed_for_tier(tier: str, fmt: str) -> bool:
 
 def choose_default_quiz_format(family: str, tier: str) -> str:
     rule = FAMILY_FORMAT_RULES[family]
+
     if tier == "Support":
         allowed = tuple(rule.allowed_support_formats)
     elif tier == "Core":
@@ -211,17 +206,19 @@ def choose_default_quiz_format(family: str, tier: str) -> str:
     elif tier == "Extension":
         allowed = tuple(rule.allowed_extension_formats)
     else:
-        raise ValueError(f"Unknown tier '{tier}'")
+        raise ValueError(f"Unknown tier '{tier}'.")
 
     if family == "final_explanation":
         allowed = tuple(
-            fmt for fmt in allowed if explanation_format_allowed_for_tier(tier, fmt)
+            fmt for fmt in allowed
+            if explanation_format_allowed_for_tier(tier, fmt)
         )
 
     if not allowed:
         raise ValueError(
-            f"No default quiz format available for family '{family}' at tier '{tier}'"
+            f"No default quiz format available for family '{family}' at tier '{tier}'."
         )
+
     return allowed[0]
 
 
