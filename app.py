@@ -30,10 +30,6 @@ from domain.product_metadata import (
     product_metadata,
 )
 
-from domain.stage_vocabulary import (
-    get_stage_vocabulary,
-)
-
 # -----------------------------
 # WORKSHEET SYSTEM IMPORTS
 # -----------------------------
@@ -493,13 +489,16 @@ def _render_sidebar() -> None:
 # -----------------------------
 def _render_structural_planner(product: int) -> None:
     record = product_record(product)
-    admissible_routes = distinct_factor_routes(record.product)
-    stage_record = get_stage_vocabulary(record.stage)
+    current_stage_products = tuple(STAGES[record.stage].products)
+    new_stage_products = tuple(metadata_new_products(record.stage))
+    earlier_secured_products = tuple(
+        value for value in metadata_available_products(record.stage) if value not in current_stage_products
+    )
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Structural Planner</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="tmk-section-subtitle">Fixed stage order, stage introductions, admissible routes, cumulative products, and the stage word bank.</div>',
+        '<div class="tmk-section-subtitle">Stage focus, products introduced at this stage, compact stage sequence, and cumulative support products.</div>',
         unsafe_allow_html=True,
     )
 
@@ -542,98 +541,77 @@ def _render_structural_planner(product: int) -> None:
 
     _metric_card_row(
         [
-            ("Selected stage", stage_label(record.stage)),
-            ("Introduced here", str(len(STAGES[record.stage].products))),
-            ("Full routes", str(len(admissible_routes))),
-            ("Division exits", str(len(getattr(record, "ways_out", ())))),
+            ("Current stage", stage_label(record.stage)),
+            ("Selected product", str(record.product)),
+            ("Intro route", _format_route(record.intro_route)),
+            ("New here", str(len(new_stage_products))),
         ]
     )
 
-    col_a, col_b = st.columns((1.2, 1.0))
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-small-label">Stage focus</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="tmk-value">{escape(stage_label(record.stage))}</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="tmk-note" style="margin-top:0.35rem;">Selected product: {record.product}. Intro route: {escape(_format_route(record.intro_route))}. Structural role: {escape(record.structural_role)}.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div class="tmk-note" style="margin-top:0.5rem;">Products introduced in this stage: {escape(", ".join(str(value) for value in new_stage_products) if new_stage_products else "None")}</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="tmk-note" style="margin-top:0.5rem;">Teacher warning: keep first exposure focused on current-stage products before opening cumulative support.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    col_a, col_b = st.columns((1.35, 0.85))
 
     with col_a:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Selected product</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="tmk-value">{record.product}</div>', unsafe_allow_html=True)
-        st.markdown(
-            f'<div class="tmk-note">Intro route: {escape(_format_route(record.intro_route))}. Structural role: {escape(record.structural_role)}.</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Stage-introduced products</div>', unsafe_allow_html=True)
-        _render_pill_list(STAGES[record.stage].products, selected=record.product)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Cumulative available products</div>', unsafe_allow_html=True)
-        _render_pill_list(metadata_available_products(record.stage), selected=record.product)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">New products at this stage</div>', unsafe_allow_html=True)
-        _render_pill_list(metadata_new_products(record.stage), selected=record.product)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Admissible routes</div>', unsafe_allow_html=True)
-        route_labels = [_format_route(route) for route in admissible_routes]
-        st.markdown(
-            f'<div class="tmk-note">{escape(", ".join(route_labels) if route_labels else "No routes available.")}</div>',
-            unsafe_allow_html=True,
-        )
+        st.markdown('<div class="tmk-small-label">Products introduced in this stage</div>', unsafe_allow_html=True)
+        _render_pill_list(current_stage_products, selected=record.product)
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col_b:
-        _render_stage_cards(record.product)
+        _render_stage_cards(record.stage)
 
+    with st.expander("Earlier secured products available for support", expanded=False):
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Word bank</div>', unsafe_allow_html=True)
-
-        st.markdown("**New vocabulary**")
-        _render_word_list(stage_record.new_vocab)
-
-        st.markdown("**Available cumulative vocabulary**")
-        _render_word_list(stage_record.available_vocab)
-
-        st.markdown("**Required worksheet vocabulary focus**")
-        _render_word_list(stage_record.required_vocab_focus)
-
-        st.markdown("**Preferred quiz formats**")
-        _render_word_list(stage_record.preferred_quiz_formats)
-
-        st.markdown("**Preferred vocab task types**")
-        _render_word_list(stage_record.preferred_vocab_task_types)
-
-        st.markdown("**Example child-friendly questions**")
-        for prompt in stage_record.example_child_friendly_questions:
-            st.markdown(
-                f'<div class="tmk-answer-box">{escape(prompt)}</div>',
-                unsafe_allow_html=True,
-            )
-
+        st.markdown('<div class="tmk-small-label">Earlier secured products</div>', unsafe_allow_html=True)
+        if earlier_secured_products:
+            _render_pill_list(earlier_secured_products, selected=record.product)
+        else:
+            st.markdown('<div class="tmk-note">No earlier secured products available.</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
 
-def _render_stage_cards(selected_product: int) -> None:
+def _render_stage_cards(current_stage: str) -> None:
     st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-small-label">Stage sequence</div>', unsafe_allow_html=True)
 
     for stage in [stage for stage in STAGE_ORDER if stage in STAGES]:
         stage_record = STAGES[stage]
-        pills: list[str] = []
-        for product in stage_record.products:
-            cls = "tmk-pill tmk-pill-accent" if product == selected_product else "tmk-pill"
-            pills.append(f'<span class="{cls}">{product}</span>')
+        is_current = stage == current_stage
+        stage_name = stage_label(stage)
+        product_count = len(stage_record.products)
+        marker = "Current stage" if is_current else f"{product_count} products"
+
+        value_class = "tmk-value"
+        note_style = "margin-top:0.2rem;"
+
+        if is_current:
+            value_class = "tmk-value"
+            note_style = "margin-top:0.2rem;font-weight:700;color:var(--tmk-accent);"
+
         st.markdown(
             f"""
             <div class="tmk-answer-box">
-                <div class="tmk-value">{escape(stage_record.label)}</div>
-                <div class="tmk-note" style="margin-bottom:0.35rem;">{escape(stage_label(stage))}</div>
-                <div class="tmk-soft-list">{''.join(pills)}</div>
+                <div class="{value_class}">{escape(stage_record.label)}</div>
+                <div class="tmk-note" style="margin-top:0.2rem;">{escape(stage_name)}</div>
+                <div class="tmk-note" style="{note_style}">{escape(marker)}</div>
             </div>
             """,
             unsafe_allow_html=True,
