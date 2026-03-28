@@ -49,7 +49,7 @@ from services.worksheet_generation_service import (
     generate_worksheet_bundle,
 )
 
-from UI.instruction_planner_page import (
+from ui.instruction_planner_page import (
     render_instruction_planner_page,
 )
 
