@@ -443,21 +443,11 @@ def _render_sidebar() -> None:
     with st.sidebar:
         record = product_record(st.session_state.selected_product)
 
-        st.markdown("## TMK summary")
+        st.markdown("## TMK context")
+        st.write(f"**Surface:** {st.session_state.surface}")
         st.write(f"**Product:** {record.product}")
         st.write(f"**Stage:** {stage_label(record.stage)}")
         st.write(f"**Intro route:** {_format_route(record.intro_route)}")
-        st.write(f"**Full routes:** {len(distinct_factor_routes(record.product))}")
-        st.write(f"**Division exits:** {len(getattr(record, 'ways_out', ()))}")
-        st.write(f"**Role:** {record.structural_role}")
-
-        try:
-            meta = product_metadata(record.product)
-            st.write(f"**Square:** {'Yes' if meta.is_square else 'No'}")
-            st.write(f"**Factor 7:** {'Yes' if meta.has_factor_7 else 'No'}")
-            st.write(f"**Multiple routes:** {'Yes' if meta.has_multiple_routes else 'No'}")
-        except Exception:
-            pass
 
         st.markdown("---")
         st.markdown("### Current surface")
@@ -470,19 +460,16 @@ def _render_sidebar() -> None:
             st.write(f"**Compare with:** {compare.product}")
             st.write(f"**Route view:** {st.session_state.route_view_mode}")
         elif st.session_state.surface == "Instruction Planner":
-            st.write(f"**Stage:** {stage_label(record.stage)}")
-            st.write(f"**Product:** {record.product}")
-            st.write(f"**Intro route:** {_format_route(record.intro_route)}")
+            st.write("**Focus:** explanation and vocabulary")
+            st.write(f"**Current stage:** {stage_label(record.stage)}")
         else:
-            st.write(f"**Stage:** {st.session_state.selected_stage}")
+            st.write(f"**Worksheet stage:** {stage_label(st.session_state.selected_stage)}")
             st.write(f"**Tier:** {st.session_state.selected_tier}")
             st.write(f"**Format:** {st.session_state.worksheet_format}")
             st.write(f"**Scope:** {st.session_state.selection_scope}")
-            st.write(f"**Mode:** {st.session_state.selection_mode}")
-            st.write(f"**Include recap:** {'Yes' if st.session_state.include_recap else 'No'}")
-            if st.session_state.include_recap:
-                st.write(f"**Recap count:** {st.session_state.recap_count}")
-            st.write(f"**Next worksheet rotation:** {st.session_state.worksheet_rotation_index}")
+            if st.session_state.selection_mode != "Auto":
+                st.write(f"**Mode:** {st.session_state.selection_mode}")
+            st.write(f"**Recap:** {'On' if st.session_state.include_recap else 'Off'}")
 
 
 # -----------------------------
