@@ -58,26 +58,44 @@ PLANNER_LINK_MODES = ("Selected links", "Show selected atlas", "No links")
 PLANNER_ZOOM_MODES = ("Selected stage only", "Whole world")
 ROUTE_VIEW_MODES = ("Entry routes", "Exit routes")
 
+# Locked TMK palette
+# Blue Slate — #497379
+# Mid Blue — #83B8BE
+# Light Blue — #A9CED2
+# Cream Stone — #E8E1D5
+# Soft Paper — #F7F4EE
+# Amber Sand — #ECA159
+# Coral — #FF5E57
+# Mist Grey — #D9D4C8
+# Charcoal Ink — #2F3A3C
+# Slate Grey — #6C7A7D
+# White — #FFFFFF
 LIGHT_THEME = {
-    "bg": "#FAF7F2",
-    "surface": "#FFFFFF",
-    "surface_strong": "#F3ECE3",
-    "border": "#DED3C5",
-    "text": "#1F2937",
-    "text_soft": "#667085",
-    "accent": "#C76412",
-    "accent_soft": "#E89A3A",
+    "bg": "#E8E1D5",
+    "surface": "#F7F4EE",
+    "surface_strong": "#FFFFFF",
+    "border": "#D9D4C8",
+    "text": "#2F3A3C",
+    "text_soft": "#6C7A7D",
+    "accent": "#497379",
+    "accent_soft": "#83B8BE",
+    "highlight": "#ECA159",
+    "danger": "#FF5E57",
+    "hover": "#A9CED2",
 }
 
 DARK_THEME = {
-    "bg": "#10151C",
-    "surface": "#18212B",
-    "surface_strong": "#121922",
-    "border": "#2D3948",
-    "text": "#F3F6FB",
-    "text_soft": "#B7C2D0",
-    "accent": "#E89A3A",
-    "accent_soft": "#C76412",
+    "bg": "#2F3A3C",
+    "surface": "#344244",
+    "surface_strong": "#3E4D4F",
+    "border": "#6C7A7D",
+    "text": "#F7F4EE",
+    "text_soft": "#D9D4C8",
+    "accent": "#83B8BE",
+    "accent_soft": "#A9CED2",
+    "highlight": "#ECA159",
+    "danger": "#FF5E57",
+    "hover": "#497379",
 }
 
 st.set_page_config(
@@ -207,6 +225,10 @@ def _apply_styles() -> None:
                 }}
             }}
 
+            .stApp {{
+                background: var(--tmk-bg);
+            }}
+
             .tmk-shell {{
                 max-width: 1480px;
                 margin: 0 auto;
@@ -214,11 +236,12 @@ def _apply_styles() -> None:
             }}
 
             .tmk-header {{
-                background: var(--tmk-surface);
+                background: linear-gradient(180deg, var(--tmk-surface-strong) 0%, var(--tmk-surface) 100%);
                 border: 1px solid var(--tmk-border);
                 border-radius: 20px;
                 padding: 1.25rem 1.4rem;
                 margin-bottom: 1rem;
+                box-shadow: 0 8px 24px rgba(47, 58, 60, 0.05);
             }}
 
             .tmk-kicker {{
@@ -249,6 +272,7 @@ def _apply_styles() -> None:
                 border-radius: 20px;
                 padding: 1.1rem 1.2rem;
                 margin-bottom: 1rem;
+                box-shadow: 0 6px 18px rgba(47, 58, 60, 0.04);
             }}
 
             .tmk-card {{
@@ -260,7 +284,7 @@ def _apply_styles() -> None:
             }}
 
             .tmk-answer-box {{
-                background: var(--tmk-surface-strong);
+                background: var(--tmk-surface);
                 border: 1px solid var(--tmk-border);
                 border-radius: 16px;
                 padding: 0.85rem 0.95rem;
@@ -313,8 +337,9 @@ def _apply_styles() -> None:
             }}
 
             .tmk-pill-accent {{
-                border-color: var(--tmk-accent);
-                color: var(--tmk-accent);
+                border-color: var(--tmk-highlight);
+                background: color-mix(in srgb, var(--tmk-highlight) 16%, var(--tmk-surface-strong) 84%);
+                color: var(--tmk-text);
             }}
 
             .tmk-soft-list {{
@@ -327,6 +352,54 @@ def _apply_styles() -> None:
                 border-radius: 20px;
                 padding: 1rem;
                 margin-top: 1rem;
+                box-shadow: 0 6px 18px rgba(47, 58, 60, 0.04);
+            }}
+
+            section[data-testid="stSidebar"] {{
+                background: var(--tmk-accent);
+                border-right: 1px solid color-mix(in srgb, var(--tmk-accent) 70%, white 30%);
+            }}
+
+            section[data-testid="stSidebar"] * {{
+                color: #FFFFFF;
+            }}
+
+            section[data-testid="stSidebar"] hr {{
+                border-color: color-mix(in srgb, white 28%, var(--tmk-accent) 72%);
+            }}
+
+            section[data-testid="stSidebar"] .stSelectbox label,
+            section[data-testid="stSidebar"] .stRadio label,
+            section[data-testid="stSidebar"] .stCheckbox label,
+            section[data-testid="stSidebar"] .stNumberInput label {{
+                color: #FFFFFF !important;
+            }}
+
+            .stButton > button {{
+                border-radius: 12px;
+                border: 1px solid var(--tmk-border);
+            }}
+
+            .stButton > button[kind="primary"] {{
+                background: var(--tmk-danger);
+                border-color: var(--tmk-danger);
+                color: #FFFFFF;
+            }}
+
+            .stButton > button[kind="secondary"] {{
+                background: var(--tmk-surface-strong);
+                color: var(--tmk-text);
+                border-color: var(--tmk-border);
+            }}
+
+            .stSelectbox div[data-baseweb="select"] > div,
+            .stMultiSelect div[data-baseweb="select"] > div,
+            .stNumberInput input,
+            .stTextInput input,
+            .stTextArea textarea {{
+                background: var(--tmk-surface-strong);
+                border-color: var(--tmk-border);
+                color: var(--tmk-text);
             }}
         </style>
         """,
@@ -345,6 +418,9 @@ def _theme_css_vars(theme: dict[str, str]) -> str:
             f"--tmk-text-soft: {theme['text_soft']};",
             f"--tmk-accent: {theme['accent']};",
             f"--tmk-accent-soft: {theme['accent_soft']};",
+            f"--tmk-highlight: {theme['highlight']};",
+            f"--tmk-danger: {theme['danger']};",
+            f"--tmk-hover: {theme['hover']};",
         ]
     )
 
