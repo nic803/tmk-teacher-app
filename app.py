@@ -121,18 +121,6 @@ def main() -> None:
     _apply_styles()
 
     st.markdown('<div class="tmk-shell">', unsafe_allow_html=True)
-    st.markdown(
-        """
-        <div class="tmk-header">
-            <div>
-                <div class="tmk-kicker">Teacher App</div>
-                <h1>TMK Teacher App</h1>
-                <p>Structural planner first. Product hubs visible. Worksheets generated from stage, format, tier, and product-set logic.</p>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
 
     _render_nav()
     _render_sidebar()
@@ -305,6 +293,7 @@ def _apply_styles() -> None:
                 border-radius: 16px;
                 padding: 0.85rem 0.95rem;
                 margin-bottom: 0.75rem;
+                box-shadow: 0 6px 18px rgba(47, 58, 60, 0.04);
             }}
 
             .tmk-section-title {{
