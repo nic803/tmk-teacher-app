@@ -33,7 +33,11 @@
     </script>
 
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #E8E1D5; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #E8E1D5;
+        }
+
         .chart-container {
             position: relative;
             width: 100%;
@@ -45,20 +49,53 @@
             border: 1px solid #D9D4C8;
             overflow: hidden;
         }
-        canvas { display: block; width: 100%; height: 100%; }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
         .control-btn {
             transition: all 0.2s;
             border-radius: 8px;
             font-weight: 600;
         }
-        .control-btn:active { transform: scale(0.95); }
-        .toggle-checkbox:checked { right: 0; border-color: #497379; }
-        .toggle-checkbox:checked + .toggle-label { background-color: #497379; }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #497379;
+        }
+
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #497379;
+        }
+
+        .fullscreen-target:fullscreen,
+        .fullscreen-target:-webkit-full-screen,
+        .fullscreen-target:-moz-full-screen,
+        .fullscreen-target:-ms-fullscreen {
+            background: #E8E1D5;
+            padding: 24px;
+            overflow: auto;
+        }
+
+        .fullscreen-target:fullscreen .chart-container,
+        .fullscreen-target:-webkit-full-screen .chart-container,
+        .fullscreen-target:-moz-full-screen .chart-container,
+        .fullscreen-target:-ms-fullscreen .chart-container {
+            max-width: 100%;
+            height: calc(100vh - 220px);
+        }
     </style>
 </head>
 <body class="p-4 md:p-8 flex flex-col min-h-screen">
 
-<div class="max-w-5xl mx-auto w-full flex flex-col gap-6">
+<div id="resource-shell" class="fullscreen-target max-w-5xl mx-auto w-full flex flex-col gap-6">
     
     <header class="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div class="flex flex-col gap-2">
@@ -66,7 +103,6 @@
             <p class="text-tmk-textSoft">Visualize how products build upon each other through doubling.</p>
         </div>
         
-        <!-- TMK Specific Toggle -->
         <div class="flex items-center gap-3 bg-white px-4 py-2 rounded-lg border border-tmk-border shadow-sm">
             <span class="text-sm font-bold text-tmk-structure">Show Internal Structure</span>
             <label class="relative inline-flex items-center cursor-pointer">
@@ -79,10 +115,8 @@
     <main class="chart-container shadow-sm relative">
         <canvas id="stage"></canvas>
         
-        <!-- Interactive Overlay for equations -->
         <div id="equation-display" class="absolute top-6 left-6 p-4 bg-white/90 backdrop-blur rounded-lg border border-tmk-border shadow-sm hidden">
             <div class="flex flex-col gap-1" id="equation-list">
-                <!-- Dynamic equation lines -->
             </div>
         </div>
 
@@ -121,10 +155,13 @@
         </div>
     </section>
 
-    <footer class="flex justify-between items-center p-4 bg-tmk-structure/10 rounded-lg border border-tmk-structure/20">
-        <div class="flex gap-4">
+    <footer class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 p-4 bg-tmk-structure/10 rounded-lg border border-tmk-structure/20">
+        <div class="flex flex-wrap gap-4 items-center">
             <button onclick="reset()" class="text-sm font-bold text-tmk-structure hover:underline">Clear Line</button>
             <button onclick="toggleAll()" class="text-sm font-bold text-tmk-structure hover:underline">Show Full Pattern</button>
+            <button id="fullscreen-btn" onclick="toggleFullscreen()" class="text-sm font-bold text-tmk-structure hover:underline">
+                Enter Full Screen
+            </button>
         </div>
         <p class="text-xs text-tmk-textSoft uppercase tracking-widest font-bold">TMK Instructional Asset • Doubling Relationships</p>
     </footer>
@@ -136,10 +173,12 @@
     const display = document.getElementById('equation-display');
     const equationList = document.getElementById('equation-list');
     const structureToggle = document.getElementById('structure-toggle');
+    const resourceShell = document.getElementById('resource-shell');
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
 
     let width, height;
-    let completedJumps = []; 
-    let activeJumpers = []; 
+    let completedJumps = [];
+    let activeJumpers = [];
 
     const colors = {
         2: '#497379',
@@ -161,14 +200,114 @@
         height = canvas.offsetHeight;
         canvas.width = width * dpr;
         canvas.height = height * dpr;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.scale(dpr, dpr);
     }
+
+    function isFullscreenActive() {
+        return !!(
+            document.fullscreenElement ||
+            document.webkitFullscreenElement ||
+            document.mozFullScreenElement ||
+            document.msFullscreenElement
+        );
+    }
+
+    function updateFullscreenButton() {
+        if (!fullscreenBtn) {
+            return;
+        }
+        fullscreenBtn.textContent = isFullscreenActive() ? 'Exit Full Screen' : 'Enter Full Screen';
+    }
+
+    async function requestFullscreen(element) {
+        if (element.requestFullscreen) {
+            await element.requestFullscreen();
+            return;
+        }
+        if (element.webkitRequestFullscreen) {
+            element.webkitRequestFullscreen();
+            return;
+        }
+        if (element.mozRequestFullScreen) {
+            element.mozRequestFullScreen();
+            return;
+        }
+        if (element.msRequestFullscreen) {
+            element.msRequestFullscreen();
+            return;
+        }
+        throw new Error('Fullscreen not supported');
+    }
+
+    async function exitFullscreen() {
+        if (document.exitFullscreen) {
+            await document.exitFullscreen();
+            return;
+        }
+        if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+            return;
+        }
+        if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+            return;
+        }
+        if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+            return;
+        }
+        throw new Error('Fullscreen exit not supported');
+    }
+
+    window.toggleFullscreen = async function() {
+        try {
+            if (isFullscreenActive()) {
+                await exitFullscreen();
+            } else {
+                await requestFullscreen(resourceShell);
+            }
+            setTimeout(() => {
+                resize();
+                drawAll();
+                updateFullscreenButton();
+            }, 100);
+        } catch (error) {
+            console.warn('Fullscreen request failed:', error);
+        }
+    };
 
     window.addEventListener('resize', () => {
         resize();
         drawAll();
     });
+
+    document.addEventListener('fullscreenchange', () => {
+        updateFullscreenButton();
+        resize();
+        drawAll();
+    });
+
+    document.addEventListener('webkitfullscreenchange', () => {
+        updateFullscreenButton();
+        resize();
+        drawAll();
+    });
+
+    document.addEventListener('mozfullscreenchange', () => {
+        updateFullscreenButton();
+        resize();
+        drawAll();
+    });
+
+    document.addEventListener('MSFullscreenChange', () => {
+        updateFullscreenButton();
+        resize();
+        drawAll();
+    });
+
     resize();
+    updateFullscreenButton();
 
     function drawLine() {
         const padding = 60;
@@ -187,7 +326,7 @@
         const maxNum = 80;
         ctx.fillStyle = colors.text;
         ctx.textAlign = 'center';
-        ctx.font = `${Math.max(10, 14 * (width/1000))}px Inter`;
+        ctx.font = `${Math.max(10, 14 * (width / 1000))}px Inter`;
 
         for (let i = 0; i <= maxNum; i++) {
             const x = padding + (i / maxNum) * lineWidth;
@@ -215,7 +354,6 @@
         const x2 = getX(to);
         
         const baseHeight = height * 0.85;
-        // Different heights to distinguish tables
         const jumpHeight = (multiplier === 2 ? 50 : multiplier === 4 ? 120 : 250) * (height / 600);
         
         ctx.strokeStyle = colors[multiplier];
@@ -226,21 +364,14 @@
         ctx.beginPath();
         ctx.moveTo(x1, baseHeight);
         
-        // Use quadratic curve for a more natural "jump" look
-        const midX = x1 + (x2 - x1) * 0.5;
-        const peakY = baseHeight - jumpHeight;
-        
-        // We draw the arc in segments for the progress animation
-        for(let t = 0; t <= progress; t += 0.01) {
+        for (let t = 0; t <= progress; t += 0.01) {
             const tx = x1 + (x2 - x1) * t;
-            // Parabolic jump: y = h * 4 * t * (1-t)
             const ty = baseHeight - (jumpHeight * 4 * t * (1 - t));
             ctx.lineTo(tx, ty);
         }
         ctx.stroke();
         ctx.setLineDash([]);
         
-        // If it's a primary jump and not a ghost, draw the emoji at the current peak/tip
         if (!isGhost && !isNesting && progress > 0) {
             const tx = x1 + (x2 - x1) * progress;
             const ty = baseHeight - (jumpHeight * 4 * progress * (1 - progress));
@@ -256,31 +387,25 @@
 
         const showNesting = structureToggle.checked;
 
-        // 1. Draw completed jumps first (background)
-        completedJumps.forEach(j => {
+        completedJumps.forEach((j) => {
             drawJump(j.from, j.to, j.multiplier, 1, true);
         });
 
-        // 2. Draw active jumpers and their internal structure
         activeJumpers.forEach((jumper) => {
             const from = jumper.step * jumper.multiplier;
             const to = (jumper.step + 1) * jumper.multiplier;
             
-            // If jump is 8, show two 4s and four 2s nesting
             if (showNesting) {
                 if (jumper.multiplier === 8) {
-                    // Draw four 2s
                     for (let i = 0; i < 4; i++) {
-                        drawJump(from + (i*2), from + ((i+1)*2), 2, 1, false, true);
+                        drawJump(from + (i * 2), from + ((i + 1) * 2), 2, 1, false, true);
                     }
-                    // Draw two 4s
                     for (let i = 0; i < 2; i++) {
-                        drawJump(from + (i*4), from + ((i+1)*4), 4, 1, false, true);
+                        drawJump(from + (i * 4), from + ((i + 1) * 4), 4, 1, false, true);
                     }
                 } else if (jumper.multiplier === 4) {
-                    // Draw two 2s
                     for (let i = 0; i < 2; i++) {
-                        drawJump(from + (i*2), from + ((i+1)*2), 2, 1, false, true);
+                        drawJump(from + (i * 2), from + ((i + 1) * 2), 2, 1, false, true);
                     }
                 }
             }
@@ -328,14 +453,14 @@
     }
 
     function updateUI() {
-        const summaries = [2, 4, 8].map(m => {
-            const steps = completedJumps.filter(j => j.multiplier === m).length;
-            return {m, val: steps * m};
+        const summaries = [2, 4, 8].map((m) => {
+            const steps = completedJumps.filter((j) => j.multiplier === m).length;
+            return { m, val: steps * m };
         });
 
         equationList.innerHTML = summaries
-            .filter(s => s.val > 0)
-            .map(s => `
+            .filter((s) => s.val > 0)
+            .map((s) => `
                 <div class="flex items-center gap-2">
                     <div class="w-2 h-2 rounded-full" style="background-color: ${colors[s.m]}"></div>
                     <p class="text-xs font-bold" style="color: ${colors[s.m]}">
@@ -358,7 +483,6 @@
 
     window.startRace = function() {
         reset();
-        // Synced start to show relationship
         activeJumpers.push({ multiplier: 2, step: 0, progress: 0, speed: 0.05, finished: false });
         activeJumpers.push({ multiplier: 4, step: 0, progress: 0, speed: 0.035, finished: false });
         activeJumpers.push({ multiplier: 8, step: 0, progress: 0, speed: 0.02, finished: false });
@@ -368,13 +492,16 @@
         completedJumps = [];
         activeJumpers = [];
         display.classList.add('hidden');
+        updateUI();
     };
 
     window.toggleAll = function() {
         reset();
-        for(let i=0; i<40; i++) completedJumps.push({from: i*2, to: (i+1)*2, multiplier: 2});
-        for(let i=0; i<20; i++) completedJumps.push({from: i*4, to: (i+1)*4, multiplier: 4});
-        for(let i=0; i<10; i++) completedJumps.push({from: i*8, to: (i+1)*8, multiplier: 8});
+        for (let i = 0; i < 40; i++) completedJumps.push({ from: i * 2, to: (i + 1) * 2, multiplier: 2 });
+        for (let i = 0; i < 20; i++) completedJumps.push({ from: i * 4, to: (i + 1) * 4, multiplier: 4 });
+        for (let i = 0; i < 10; i++) completedJumps.push({ from: i * 8, to: (i + 1) * 8, multiplier: 8 });
+        updateUI();
+        drawAll();
     };
 
     requestAnimationFrame(animate);
