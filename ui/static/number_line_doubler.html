@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TMK Number Line Doubler - Race Mode</title>
+    <title>TMK Number Line Doubler - Relational Mode</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,7 +39,7 @@
             width: 100%;
             max-width: 1000px;
             margin: 0 auto;
-            height: 500px;
+            height: 520px;
             background: #F7F4EE;
             border-radius: 12px;
             border: 1px solid #D9D4C8;
@@ -52,15 +52,28 @@
             font-weight: 600;
         }
         .control-btn:active { transform: scale(0.95); }
+        .toggle-checkbox:checked { right: 0; border-color: #497379; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #497379; }
     </style>
 </head>
 <body class="p-4 md:p-8 flex flex-col min-h-screen">
 
 <div class="max-w-5xl mx-auto w-full flex flex-col gap-6">
     
-    <header class="flex flex-col gap-2">
-        <h1 class="text-3xl font-bold text-tmk-text">Number Line Doubler</h1>
-        <p class="text-tmk-textSoft">Compare how different numbers "jump" across the line. Who reaches 80 first?</p>
+    <header class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div class="flex flex-col gap-2">
+            <h1 class="text-3xl font-bold text-tmk-text">Number Line Doubler</h1>
+            <p class="text-tmk-textSoft">Visualize how products build upon each other through doubling.</p>
+        </div>
+        
+        <!-- TMK Specific Toggle -->
+        <div class="flex items-center gap-3 bg-white px-4 py-2 rounded-lg border border-tmk-border shadow-sm">
+            <span class="text-sm font-bold text-tmk-structure">Show Internal Structure</span>
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="structure-toggle" class="sr-only peer" checked>
+                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-tmk-structure"></div>
+            </label>
+        </div>
     </header>
 
     <main class="chart-container shadow-sm relative">
@@ -71,6 +84,10 @@
             <div class="flex flex-col gap-1" id="equation-list">
                 <!-- Dynamic equation lines -->
             </div>
+        </div>
+
+        <div id="instruction-hint" class="absolute bottom-6 left-1/2 -translate-x-1/2 text-xs font-bold text-tmk-textSoft uppercase tracking-widest bg-white/50 px-3 py-1 rounded-full">
+            Watch the products nest inside each other
         </div>
     </main>
 
@@ -96,20 +113,20 @@
             <button onclick="startSingle(8)" class="control-btn bg-tmk-action text-white px-4 py-3 hover:brightness-110">Jump 8s</button>
         </div>
 
-        <div class="bg-tmk-structure p-4 rounded-xl border border-tmk-border flex flex-col gap-3 shadow-lg">
+        <div class="bg-tmk-structure p-4 rounded-xl border border-tmk-border flex flex-col gap-3 shadow-lg group">
             <h3 class="font-bold text-white flex items-center gap-2">
-                🏆 Race Mode
+                🚀 Compare All
             </h3>
-            <button onclick="startRace()" class="control-btn bg-tmk-highlight text-tmk-text px-4 py-3 hover:brightness-105 border-b-4 border-tmk-text/20">Race All Three!</button>
+            <button onclick="startRace()" class="control-btn bg-tmk-highlight text-tmk-text px-4 py-3 hover:brightness-105 border-b-4 border-tmk-text/20">Sync Jumps</button>
         </div>
     </section>
 
     <footer class="flex justify-between items-center p-4 bg-tmk-structure/10 rounded-lg border border-tmk-structure/20">
         <div class="flex gap-4">
             <button onclick="reset()" class="text-sm font-bold text-tmk-structure hover:underline">Clear Line</button>
-            <button onclick="toggleAll()" class="text-sm font-bold text-tmk-structure hover:underline">Static View</button>
+            <button onclick="toggleAll()" class="text-sm font-bold text-tmk-structure hover:underline">Show Full Pattern</button>
         </div>
-        <p class="text-xs text-tmk-textSoft uppercase tracking-widest font-bold">TMK Instructional Asset</p>
+        <p class="text-xs text-tmk-textSoft uppercase tracking-widest font-bold">TMK Instructional Asset • Doubling Relationships</p>
     </footer>
 </div>
 
@@ -118,6 +135,7 @@
     const ctx = canvas.getContext('2d');
     const display = document.getElementById('equation-display');
     const equationList = document.getElementById('equation-list');
+    const structureToggle = document.getElementById('structure-toggle');
 
     let width, height;
     let completedJumps = []; 
@@ -138,14 +156,12 @@
     };
 
     function resize() {
-        width = canvas.offsetWidth * window.devicePixelRatio;
-        height = canvas.offsetHeight * window.devicePixelRatio;
-        canvas.width = width;
-        canvas.height = height;
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-        // Correcting for CSS pixels in logic
+        const dpr = window.devicePixelRatio || 1;
         width = canvas.offsetWidth;
         height = canvas.offsetHeight;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
     }
 
     window.addEventListener('resize', () => {
@@ -194,31 +210,42 @@
         return padding + (num / 80) * lineWidth;
     }
 
-    function drawJump(from, to, multiplier, progress, isGhost = false) {
+    function drawJump(from, to, multiplier, progress, isGhost = false, isNesting = false) {
         const x1 = getX(from);
         const x2 = getX(to);
         
         const baseHeight = height * 0.85;
-        const jumpHeight = (multiplier === 2 ? 60 : multiplier === 4 ? 140 : 280) * (height / 600);
+        // Different heights to distinguish tables
+        const jumpHeight = (multiplier === 2 ? 50 : multiplier === 4 ? 120 : 250) * (height / 600);
         
         ctx.strokeStyle = colors[multiplier];
-        ctx.globalAlpha = isGhost ? 0.2 : 1.0;
-        ctx.lineWidth = multiplier === 8 ? 5 : multiplier === 4 ? 3 : 2;
+        ctx.globalAlpha = isGhost ? 0.15 : (isNesting ? 0.4 : 1.0);
+        ctx.lineWidth = isNesting ? 1.5 : (multiplier === 8 ? 6 : multiplier === 4 ? 4 : 2.5);
+        ctx.setLineDash(isNesting ? [5, 5] : []);
         
         ctx.beginPath();
         ctx.moveTo(x1, baseHeight);
+        
+        // Use quadratic curve for a more natural "jump" look
+        const midX = x1 + (x2 - x1) * 0.5;
+        const peakY = baseHeight - jumpHeight;
+        
+        // We draw the arc in segments for the progress animation
         for(let t = 0; t <= progress; t += 0.01) {
             const tx = x1 + (x2 - x1) * t;
-            const ty = baseHeight - (jumpHeight * Math.sin(t * Math.PI));
+            // Parabolic jump: y = h * 4 * t * (1-t)
+            const ty = baseHeight - (jumpHeight * 4 * t * (1 - t));
             ctx.lineTo(tx, ty);
         }
         ctx.stroke();
+        ctx.setLineDash([]);
         
-        if (!isGhost && progress > 0) {
+        // If it's a primary jump and not a ghost, draw the emoji at the current peak/tip
+        if (!isGhost && !isNesting && progress > 0) {
             const tx = x1 + (x2 - x1) * progress;
-            const ty = baseHeight - (jumpHeight * Math.sin(progress * Math.PI));
-            ctx.font = '28px Inter';
-            ctx.fillText(emojis[multiplier], tx, ty - 10);
+            const ty = baseHeight - (jumpHeight * 4 * progress * (1 - progress));
+            ctx.font = '24px Inter';
+            ctx.fillText(emojis[multiplier], tx, ty - 15);
         }
         ctx.globalAlpha = 1.0;
     }
@@ -227,13 +254,37 @@
         ctx.clearRect(0, 0, width, height);
         drawLine();
 
+        const showNesting = structureToggle.checked;
+
+        // 1. Draw completed jumps first (background)
         completedJumps.forEach(j => {
             drawJump(j.from, j.to, j.multiplier, 1, true);
         });
 
+        // 2. Draw active jumpers and their internal structure
         activeJumpers.forEach((jumper) => {
             const from = jumper.step * jumper.multiplier;
             const to = (jumper.step + 1) * jumper.multiplier;
+            
+            // If jump is 8, show two 4s and four 2s nesting
+            if (showNesting) {
+                if (jumper.multiplier === 8) {
+                    // Draw four 2s
+                    for (let i = 0; i < 4; i++) {
+                        drawJump(from + (i*2), from + ((i+1)*2), 2, 1, false, true);
+                    }
+                    // Draw two 4s
+                    for (let i = 0; i < 2; i++) {
+                        drawJump(from + (i*4), from + ((i+1)*4), 4, 1, false, true);
+                    }
+                } else if (jumper.multiplier === 4) {
+                    // Draw two 2s
+                    for (let i = 0; i < 2; i++) {
+                        drawJump(from + (i*2), from + ((i+1)*2), 2, 1, false, true);
+                    }
+                }
+            }
+
             drawJump(from, to, jumper.multiplier, jumper.progress);
         });
     }
@@ -285,9 +336,12 @@
         equationList.innerHTML = summaries
             .filter(s => s.val > 0)
             .map(s => `
-                <p class="text-sm font-bold" style="color: ${colors[s.m]}">
-                    ${s.m}x Table: ${s.val / s.m} × ${s.m} = ${s.val}
-                </p>
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full" style="background-color: ${colors[s.m]}"></div>
+                    <p class="text-xs font-bold" style="color: ${colors[s.m]}">
+                        ${s.val / s.m} groups of ${s.m} = ${s.val}
+                    </p>
+                </div>
             `).join('');
     }
 
@@ -297,15 +351,16 @@
             multiplier: m,
             step: 0,
             progress: 0,
-            speed: 0.03,
+            speed: m === 8 ? 0.015 : m === 4 ? 0.025 : 0.04,
             finished: false
         });
     };
 
     window.startRace = function() {
         reset();
-        activeJumpers.push({ multiplier: 2, step: 0, progress: 0, speed: 0.06, finished: false });
-        activeJumpers.push({ multiplier: 4, step: 0, progress: 0, speed: 0.04, finished: false });
+        // Synced start to show relationship
+        activeJumpers.push({ multiplier: 2, step: 0, progress: 0, speed: 0.05, finished: false });
+        activeJumpers.push({ multiplier: 4, step: 0, progress: 0, speed: 0.035, finished: false });
         activeJumpers.push({ multiplier: 8, step: 0, progress: 0, speed: 0.02, finished: false });
     };
 
