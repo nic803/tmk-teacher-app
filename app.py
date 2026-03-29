@@ -1,4 +1,3 @@
-File: app.py
 from __future__ import annotations
 
 from html import escape
