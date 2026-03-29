@@ -26,15 +26,18 @@
             background-color: var(--tmk-canvas); 
             color: var(--tmk-text);
             overflow-x: hidden;
+            margin: 0;
+            padding: 0;
         }
 
         #meadow-shell {
             transition: padding 0.3s ease;
+            width: 100%;
         }
 
         #meadow-shell:fullscreen {
             background-color: var(--tmk-canvas);
-            padding: 40px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -42,13 +45,12 @@
 
         .chart-container {
             position: relative;
-            width: 100%;
-            max-width: 1000px;
-            margin: 0 auto;
+            width: 100%; /* Spans full width */
+            margin: 0;
             height: 520px;
             background: var(--tmk-card);
-            border-radius: 40px;
-            border: 8px solid var(--tmk-border);
+            border-top: 8px solid var(--tmk-border);
+            border-bottom: 8px solid var(--tmk-border);
             overflow: hidden;
             box-shadow: inset 0 4px 15px rgba(0,0,0,0.05);
         }
@@ -82,11 +84,16 @@
             min-width: 280px;
             z-index: 50;
         }
+
+        header, section, footer {
+            padding-left: 2rem;
+            padding-right: 2rem;
+        }
     </style>
 </head>
-<body class="p-4 md:p-8 flex flex-col min-h-screen">
+<body class="flex flex-col min-h-screen">
 
-<div id="meadow-shell" class="max-w-5xl mx-auto w-full flex flex-col gap-6">
+<div id="meadow-shell" class="w-full flex flex-col gap-6 py-8">
     <header class="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
             <h1 class="text-5xl font-black text-tmk-text uppercase tracking-tighter">Number Line Doubler</h1>
@@ -116,7 +123,7 @@
         <button onclick="startRace()" class="control-btn bg-white text-tmk-text px-4 py-5 border-4">Sync Jumps 🥕</button>
     </section>
 
-    <footer class="flex justify-between items-center p-8 bg-white/20 rounded-3xl border-2 border-tmk-border">
+    <footer class="flex justify-between items-center p-8 bg-white/20 rounded-3xl border-t-2 border-tmk-border">
         <div class="flex gap-6">
             <button onclick="reset()" class="text-xs font-black text-tmk-text uppercase tracking-widest hover:underline">Clear the Meadow</button>
             <button id="fullscreen-btn" onclick="toggleFullscreen()" class="text-xs font-black text-tmk-text uppercase tracking-widest hover:underline">Enter Full Screen</button>
@@ -180,7 +187,7 @@
     resize();
 
     function drawLine() {
-        const padding = 60;
+        const padding = 100; // Increased padding for wide screen
         const lineY = height * 0.82;
         const lineWidth = width - (padding * 2);
         ctx.strokeStyle = colors.line;
@@ -207,7 +214,7 @@
     }
 
     function getX(num) {
-        const padding = 60;
+        const padding = 100;
         const lineWidth = width - (padding * 2);
         return padding + (num / 80) * lineWidth;
     }
