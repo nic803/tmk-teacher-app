@@ -1,3 +1,4 @@
+File: app.py
 from __future__ import annotations
 
 from html import escape
@@ -72,7 +73,6 @@ PLANNER_LINK_MODES = ("Selected links", "Show selected atlas", "No links")
 PLANNER_ZOOM_MODES = ("Selected stage only", "Whole world")
 ROUTE_VIEW_MODES = ("Entry routes", "Exit routes")
 
-
 LIGHT_THEME = {
     "bg": "#E8E1D5",
     "surface": "#F7F4EE",
@@ -85,8 +85,11 @@ LIGHT_THEME = {
     "highlight": "#ECA159",
     "danger": "#FF5E57",
     "hover": "#A9CED2",
+    "sidebar_bg": "#91CBCA",
+    "sidebar_text": "#2F3A3C",
+    "sidebar_text_soft": "#4F6063",
+    "sidebar_border": "#6FAFAE",
 }
-
 
 DARK_THEME = {
     "bg": "#2F3A3C",
@@ -100,8 +103,11 @@ DARK_THEME = {
     "highlight": "#ECA159",
     "danger": "#FF5E57",
     "hover": "#497379",
+    "sidebar_bg": "#497379",
+    "sidebar_text": "#F7F4EE",
+    "sidebar_text_soft": "#E8E1D5",
+    "sidebar_border": "#6C7A7D",
 }
-
 
 st.set_page_config(
     page_title=APP_TITLE,
@@ -367,23 +373,42 @@ def _apply_styles() -> None:
             }}
 
             section[data-testid="stSidebar"] {{
-                background: var(--tmk-accent);
-                border-right: 1px solid color-mix(in srgb, var(--tmk-accent) 70%, white 30%);
+                background: var(--tmk-sidebar-bg);
+                border-right: 1px solid var(--tmk-sidebar-border);
             }}
 
             section[data-testid="stSidebar"] * {{
-                color: #FFFFFF;
+                color: var(--tmk-sidebar-text);
             }}
 
             section[data-testid="stSidebar"] hr {{
-                border-color: color-mix(in srgb, white 28%, var(--tmk-accent) 72%);
+                border-color: var(--tmk-sidebar-border);
+            }}
+
+            section[data-testid="stSidebar"] .stMarkdown,
+            section[data-testid="stSidebar"] .stText,
+            section[data-testid="stSidebar"] p,
+            section[data-testid="stSidebar"] li,
+            section[data-testid="stSidebar"] span,
+            section[data-testid="stSidebar"] label,
+            section[data-testid="stSidebar"] div {{
+                color: var(--tmk-sidebar-text);
             }}
 
             section[data-testid="stSidebar"] .stSelectbox label,
             section[data-testid="stSidebar"] .stRadio label,
             section[data-testid="stSidebar"] .stCheckbox label,
             section[data-testid="stSidebar"] .stNumberInput label {{
-                color: #FFFFFF !important;
+                color: var(--tmk-sidebar-text) !important;
+            }}
+
+            section[data-testid="stSidebar"] h1,
+            section[data-testid="stSidebar"] h2,
+            section[data-testid="stSidebar"] h3,
+            section[data-testid="stSidebar"] h4,
+            section[data-testid="stSidebar"] h5,
+            section[data-testid="stSidebar"] h6 {{
+                color: var(--tmk-sidebar-text) !important;
             }}
 
             .stButton > button {{
@@ -432,6 +457,10 @@ def _theme_css_vars(theme: dict[str, str]) -> str:
             f"--tmk-highlight: {theme['highlight']};",
             f"--tmk-danger: {theme['danger']};",
             f"--tmk-hover: {theme['hover']};",
+            f"--tmk-sidebar-bg: {theme['sidebar_bg']};",
+            f"--tmk-sidebar-text: {theme['sidebar_text']};",
+            f"--tmk-sidebar-text-soft: {theme['sidebar_text_soft']};",
+            f"--tmk-sidebar-border: {theme['sidebar_border']};",
         ]
     )
 
