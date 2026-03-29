@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import streamlit as st
-
 from ui.components import (
     render_html_resource,
     resource_child_prompt_strip,
@@ -44,15 +42,17 @@ def render_number_line_doubler_page() -> None:
     resource_equation_box(
         title="Equation / product box",
         equations=(
+            "Doubling Route:",
             "6 → 12 → 24 → 48",
+            "Matching Products:",
             "2 × 6 = 12",
-            "2 × 12 = 24",
-            "2 × 24 = 48",
+            "4 × 6 = 24",
+            "8 × 6 = 48",
         ),
     )
 
     resource_child_prompt_strip(
-        "What do you notice each time the value doubles?"
+        "What do you notice each time the multiplier doubles?"
     )
 
     resource_pattern_focus_strip(
@@ -61,19 +61,19 @@ def render_number_line_doubler_page() -> None:
 
     resource_teacher_panel(
         msvwa={
-            "marker": "The pupil notices that each step is built by doubling the previous value.",
-            "sequence": "The pupil can follow the order of the chain from start value to later products.",
-            "variation": "The pupil can recognise doubling structure across more than one starting value.",
-            "working_memory": "The pupil keeps the current value in mind while building the next doubled value.",
-            "attention": "The pupil attends to the multiplicative growth pattern rather than isolated answers.",
+            "marker": "The pupil notices that the same factor stays fixed while the multiplier doubles.",
+            "sequence": "The pupil can follow the chain in order and link each product to the same starting factor.",
+            "variation": "The pupil can say what changes and what stays the same across 2×, 4×, and 8×.",
+            "working_memory": "The pupil holds the fixed factor and the growing products together while tracking the doubling pattern.",
+            "attention": "The pupil attends first to the fixed factor and then to how doubling the multiplier doubles the product.",
         },
         diagnostics={
-            "look_for": "Whether the pupil can say what changes at each step and identify the next doubled value.",
-            "secure_if": "The pupil can track the chain accurately and explain that each new value is double the previous one.",
-            "watch_for": "Losing the current value, skipping a step, or treating the chain as unrelated facts.",
-            "prompt_if_stuck": "What is double this number? What would the next step be?",
-            "if_knowledge_is_missing": "Return to one clear doubling step with concrete examples before extending the chain.",
-            "next_move": "Move from one visible doubling chain to related TMK products that share the same structural idea.",
+            "look_for": "Whether the pupil can identify the fixed factor and explain how the products grow as the multiplier doubles.",
+            "secure_if": "The pupil can say, for example, 2 × 6 = 12, 4 × 6 = 24, 8 × 6 = 48, and explain that the 6 stays the same.",
+            "watch_for": "Treating each new product as a new starting number, losing the fixed factor, or seeing the facts as unrelated.",
+            "prompt_if_stuck": "What stays the same in all three facts? Which number doubles each time? What happens to the product when the multiplier doubles?",
+            "if_knowledge_is_missing": "Return to one fixed-factor set and compare the equations side by side, for example: 2 × 6 = 12, 4 × 6 = 24, 8 × 6 = 48, before extending to another factor such as 7.",
+            "next_move": "Try another fixed-factor chain and compare it to the first one, for example: 2 × 6 = 12, 4 × 6 = 24, 8 × 6 = 48, then 2 × 7 = 14, 4 × 7 = 28, 8 × 7 = 56. Ask what stays fixed and what changes.",
         },
         expanded=False,
         label="Teacher panel",
