@@ -53,8 +53,18 @@ from ui.instruction_planner_page import (
     render_instruction_planner_page,
 )
 
+from ui.number_line_doubler_page import (
+    render_number_line_doubler_page,
+)
+
 APP_TITLE = "TMK Teacher App"
-SURFACES = ("Structural Planner", "Product Lab", "Instruction Planner", "Worksheet Studio")
+SURFACES = (
+    "Structural Planner",
+    "Product Lab",
+    "Instruction Planner",
+    "Worksheet Studio",
+    "Number Line Doubler",
+)
 TIERS = ("Support", "Core", "Extension")
 WORKSHEET_FORMATS = ("one_product_10", "three_product_12")
 SELECTION_SCOPES = ("new_only", "available_mixed", "hybrid")
@@ -128,8 +138,12 @@ def main() -> None:
         _render_product_lab(st.session_state.selected_product)
     elif st.session_state.surface == "Instruction Planner":
         _render_instruction_planner(st.session_state.selected_product)
-    else:
+    elif st.session_state.surface == "Worksheet Studio":
         _render_worksheet_studio()
+    elif st.session_state.surface == "Number Line Doubler":
+        render_number_line_doubler_page()
+    else:
+        _render_structural_planner(st.session_state.selected_product)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -466,7 +480,7 @@ def _render_sidebar() -> None:
         elif st.session_state.surface == "Instruction Planner":
             st.write("**Focus:** explanation and vocabulary")
             st.write(f"**Current stage:** {stage_label(record.stage)}")
-        else:
+        elif st.session_state.surface == "Worksheet Studio":
             st.write(f"**Worksheet stage:** {stage_label(st.session_state.selected_stage)}")
             st.write(f"**Tier:** {st.session_state.selected_tier}")
             st.write(f"**Format:** {st.session_state.worksheet_format}")
@@ -474,6 +488,12 @@ def _render_sidebar() -> None:
             if st.session_state.selection_mode != "Auto":
                 st.write(f"**Mode:** {st.session_state.selection_mode}")
             st.write(f"**Recap:** {'On' if st.session_state.include_recap else 'Off'}")
+        elif st.session_state.surface == "Number Line Doubler":
+            st.write("**Focus:** animated doubling race")
+            st.write("**Asset type:** embedded HTML game")
+            st.write("**TMK link:** doubling chain visual")
+        else:
+            st.write("**Status:** ready")
 
 
 # -----------------------------
