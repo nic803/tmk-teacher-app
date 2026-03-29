@@ -45,7 +45,7 @@
 
         .chart-container {
             position: relative;
-            width: 100%;
+            width: 100%; /* Spans full width */
             margin: 0;
             height: 520px;
             background: var(--tmk-card);
@@ -83,55 +83,29 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             min-width: 280px;
             z-index: 50;
+            transition: opacity 0.3s ease;
         }
 
-        .cue-grid {
-            display: grid;
-            grid-template-columns: repeat(1, minmax(0, 1fr));
-            gap: 12px;
-            margin-top: -2px;
-        }
-
-        .cue-card {
-            background: rgba(247, 244, 238, 0.95);
-            border: 2px solid var(--tmk-border);
-            border-radius: 18px;
-            padding: 14px 16px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
-        }
-
-        .cue-title {
-            font-size: 12px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--tmk-structure);
-            margin-bottom: 6px;
-        }
-
-        .cue-line {
-            font-size: 15px;
-            font-weight: 800;
-            line-height: 1.3;
-            color: var(--tmk-text);
-            margin-bottom: 6px;
-        }
-
-        .cue-example {
-            font-size: 14px;
-            line-height: 1.35;
-            color: var(--tmk-text);
-        }
-
-        @media (min-width: 900px) {
-            .cue-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
+        .hidden-legend {
+            opacity: 0;
+            pointer-events: none;
         }
 
         header, section, footer {
             padding-left: 2rem;
             padding-right: 2rem;
+        }
+
+        /* Custom toggle styles */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            padding: 8px 16px;
+            border-radius: 16px;
+            border: 3px solid var(--tmk-text);
+            box-shadow: 0 2px 0 var(--tmk-text);
         }
     </style>
 </head>
@@ -144,12 +118,33 @@
             <p class="text-xl font-bold italic mt-2" style="color: var(--tmk-structure)">“Double it, then double it again!”</p>
         </div>
         
-        <div class="flex items-center gap-3 bg-white px-6 py-3 rounded-2xl border-4 border-tmk-text shadow-sm">
-            <span class="text-xs font-black text-tmk-text uppercase tracking-wider">Show Internal Structure</span>
-            <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" id="structure-toggle" class="sr-only peer" checked>
-                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-tmk-text"></div>
-            </label>
+        <div class="flex flex-wrap gap-3 justify-end">
+            <!-- Slow Motion Mode -->
+            <div class="toggle-container">
+                <span class="text-[10px] font-black text-tmk-text uppercase tracking-wider">Slow Motion</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="speed-toggle" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-tmk-orange after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                </label>
+            </div>
+
+            <!-- Toggle Equations -->
+            <div class="toggle-container">
+                <span class="text-[10px] font-black text-tmk-text uppercase tracking-wider">Show Equations</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="legend-toggle" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-tmk-teal after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                </label>
+            </div>
+
+            <!-- Structure Toggle -->
+            <div class="toggle-container">
+                <span class="text-[10px] font-black text-tmk-text uppercase tracking-wider">Structure</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="structure-toggle" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-tmk-structure after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                </label>
+            </div>
         </div>
     </header>
 
@@ -159,32 +154,6 @@
         </div>
         <canvas id="stage"></canvas>
     </main>
-
-    <section class="cue-grid">
-        <div class="cue-card">
-            <div class="cue-title">Doubling not secure</div>
-            <div class="cue-line">Rebuild the doubling chain</div>
-            <div class="cue-example">Example: 14 → 28 → 56</div>
-        </div>
-
-        <div class="cue-card">
-            <div class="cue-title">Equation link weak</div>
-            <div class="cue-line">Match each product to its equation</div>
-            <div class="cue-example">Example: 28 = 4 × 7</div>
-        </div>
-
-        <div class="cue-card">
-            <div class="cue-title">Change/stay confusion</div>
-            <div class="cue-line">Name the fixed factor and changing multiplier</div>
-            <div class="cue-example">Example: 7 stays fixed; 2, 4, 8 change</div>
-        </div>
-
-        <div class="cue-card">
-            <div class="cue-title">Factor family not secure</div>
-            <div class="cue-line">Rehearse one family side by side</div>
-            <div class="cue-example">Example: 2 × 7 = 14, 4 × 7 = 28, 8 × 7 = 56</div>
-        </div>
-    </section>
 
     <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <button onclick="startSingle(2)" class="control-btn text-white px-4 py-5" style="background-color: var(--tmk-teal)">Jump 2s</button>
@@ -208,6 +177,8 @@
     const display = document.getElementById('equation-display');
     const equationList = document.getElementById('equation-list');
     const structureToggle = document.getElementById('structure-toggle');
+    const legendToggle = document.getElementById('legend-toggle');
+    const speedToggle = document.getElementById('speed-toggle');
     const shell = document.getElementById('meadow-shell');
     const fsBtn = document.getElementById('fullscreen-btn');
 
@@ -215,10 +186,11 @@
     let completedJumps = []; 
     let activeJumpers = []; 
 
+    // Mapping colors to standard palette
     const colors = { 
-        2: '#91CBCA',
-        4: '#497379',
-        8: '#ECA159',
+        2: '#91CBCA', // TMK Teal
+        4: '#497379', // Dark Teal
+        8: '#ECA159', // TMK Orange
         line: '#D9D4C8', 
         text: '#2F3A3C' 
     };
@@ -256,7 +228,7 @@
     resize();
 
     function drawLine() {
-        const padding = 100;
+        const padding = 100; // Increased padding for wide screen
         const lineY = height * 0.82;
         const lineWidth = width - (padding * 2);
         ctx.strokeStyle = colors.line;
@@ -315,7 +287,7 @@
             
             ctx.save();
             ctx.translate(tx, ty - 12);
-            ctx.scale(-1, 1);
+            ctx.scale(-1, 1); // Flip to face forward (right)
             ctx.font = '36px Inter';
             ctx.textAlign = 'center';
             ctx.fillText('🐇', 0, 0);
@@ -364,7 +336,6 @@
         drawAll();
 
         if (activeJumpers.length > 0 || completedJumps.length > 0) {
-            display.classList.remove('hidden');
             updateUI();
         }
 
@@ -372,6 +343,14 @@
     }
 
     function updateUI() {
+        // Handle showing/hiding based on the legend toggle
+        if (legendToggle.checked) {
+            display.classList.remove('hidden-legend');
+            display.classList.remove('hidden');
+        } else {
+            display.classList.add('hidden-legend');
+        }
+
         const summaries = [2, 4, 8].map(m => {
             const steps = completedJumps.filter(j => j.multiplier === m).length;
             return {m, val: steps * m};
@@ -384,20 +363,27 @@
         `).join('');
     }
 
+    function getSpeed(baseSpeed) {
+        return speedToggle.checked ? baseSpeed * 0.35 : baseSpeed;
+    }
+
     window.startSingle = function(m) {
         reset();
-        activeJumpers.push({ multiplier: m, step: 0, progress: 0, speed: m === 8 ? 0.015 : 0.03, finished: false });
+        const baseSpeed = m === 8 ? 0.015 : 0.03;
+        activeJumpers.push({ multiplier: m, step: 0, progress: 0, speed: getSpeed(baseSpeed), finished: false });
     };
 
     window.startRace = function() {
         reset();
-        activeJumpers.push({ multiplier: 2, step: 0, progress: 0, speed: 0.05, finished: false });
-        activeJumpers.push({ multiplier: 4, step: 0, progress: 0, speed: 0.035, finished: false });
-        activeJumpers.push({ multiplier: 8, step: 0, progress: 0, speed: 0.02, finished: false });
+        activeJumpers.push({ multiplier: 2, step: 0, progress: 0, speed: getSpeed(0.05), finished: false });
+        activeJumpers.push({ multiplier: 4, step: 0, progress: 0, speed: getSpeed(0.035), finished: false });
+        activeJumpers.push({ multiplier: 8, step: 0, progress: 0, speed: getSpeed(0.02), finished: false });
     };
 
     window.reset = function() {
-        completedJumps = []; activeJumpers = []; display.classList.add('hidden');
+        completedJumps = []; 
+        activeJumpers = []; 
+        display.classList.add('hidden');
     };
 
     requestAnimationFrame(animate);
