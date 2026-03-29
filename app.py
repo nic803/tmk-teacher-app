@@ -57,12 +57,17 @@ from ui.number_line_doubler_page import (
     render_number_line_doubler_page,
 )
 
+from ui.resource_library_page import (
+    render_resource_library_page,
+)
+
 APP_TITLE = "TMK Teacher App"
 SURFACES = (
     "Structural Planner",
     "Product Lab",
     "Instruction Planner",
     "Worksheet Studio",
+    "Resource Library",
     "Number Line Doubler",
 )
 TIERS = ("Support", "Core", "Extension")
@@ -133,6 +138,8 @@ def main() -> None:
         _render_instruction_planner(st.session_state.selected_product)
     elif st.session_state.surface == "Worksheet Studio":
         _render_worksheet_studio()
+    elif st.session_state.surface == "Resource Library":
+        render_resource_library_page()
     elif st.session_state.surface == "Number Line Doubler":
         render_number_line_doubler_page()
     else:
@@ -505,6 +512,10 @@ def _render_sidebar() -> None:
             if st.session_state.selection_mode != "Auto":
                 st.write(f"**Mode:** {st.session_state.selection_mode}")
             st.write(f"**Recap:** {'On' if st.session_state.include_recap else 'Off'}")
+        elif st.session_state.surface == "Resource Library":
+            st.write("**Focus:** browse and open structural resources")
+            st.write("**Content source:** core resource registry")
+            st.write("**Mode:** library browser")
         elif st.session_state.surface == "Number Line Doubler":
             st.write("**Focus:** animated doubling race")
             st.write("**Asset type:** embedded HTML game")
