@@ -1,0 +1,41 @@
+{
+    "id": "number_line_doubler",
+    "title": "Number Line Doubler",
+    "stage": "Stage E — Doubling Chain (2× → 4× → 8×)",
+    "theme": "Meadow Stage",
+    "pattern": "Fixed factor, doubled multiplier, doubled product",
+    "purpose": "...",
+    "asset_path": "number_line_doubler.html",
+    "content_path": "stage-e/number-line-doubler",
+    "prompt": "Double it, then double it again!",
+    "equations": {
+        "format": "X × Y = Z",
+        "examples": (
+            "2 × 6 = 12",
+            "4 × 6 = 24",
+            "8 × 6 = 48",
+        ),
+        "toggleable_for_prediction_mode": True,
+    },
+    "controls": (
+        "Select factor",
+        "Show 2× jump",
+        "Show 4× jump",
+        "Show 8× jump",
+        "Sync jumps",
+        "Slow motion",
+        "Show equations",
+        "Show structure",
+        "Full screen",
+        "Reset",
+    ),
+    "teacher_panel": {
+        "msvwa": {...},
+        "diagnostics": {...},
+    },
+    "tags": {
+        "access": (...),
+        "use_case": (...),
+        "status": "In progress",
+    },
+}
