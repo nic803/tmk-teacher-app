@@ -225,6 +225,10 @@
         drawAll();
     });
 
+    // Redraw if toggles change while static
+    legendToggle.addEventListener('change', () => drawAll());
+    structureToggle.addEventListener('change', () => drawAll());
+
     resize();
 
     function drawLine() {
@@ -247,8 +251,12 @@
             const x = padding + (i / maxNum) * lineWidth;
             if (i % 2 === 0) {
                 ctx.beginPath(); ctx.moveTo(x, lineY - 8); ctx.lineTo(x, lineY + 8); ctx.stroke();
-                if (i % 4 === 0 || i === 0) {
-                    ctx.fillText(i, x, lineY + 28);
+                
+                // Prediction Logic: Only show numbers if Show Equations is ON
+                if (legendToggle.checked) {
+                    if (i % 4 === 0 || i === 0) {
+                        ctx.fillText(i, x, lineY + 28);
+                    }
                 }
             }
         }
@@ -317,6 +325,9 @@
             }
             drawJump(from, to, jumper.multiplier, jumper.progress);
         });
+
+        // Always update UI visibility
+        updateUI();
     }
 
     function animate() {
@@ -335,16 +346,12 @@
 
         drawAll();
 
-        if (activeJumpers.length > 0 || completedJumps.length > 0) {
-            updateUI();
-        }
-
         requestAnimationFrame(animate);
     }
 
     function updateUI() {
         // Handle showing/hiding based on the legend toggle
-        if (legendToggle.checked) {
+        if (legendToggle.checked && (activeJumpers.length > 0 || completedJumps.length > 0)) {
             display.classList.remove('hidden-legend');
             display.classList.remove('hidden');
         } else {
@@ -384,6 +391,7 @@
         completedJumps = []; 
         activeJumpers = []; 
         display.classList.add('hidden');
+        drawAll();
     };
 
     requestAnimationFrame(animate);
