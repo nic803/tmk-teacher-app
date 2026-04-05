@@ -49,6 +49,10 @@ from services.worksheet_generation_service import (
     generate_worksheet_bundle,
 )
 
+from ui.instruction_planner_builder import (
+    build_instruction_planner_view_model,
+)
+
 from ui.instruction_planner_page import (
     render_instruction_planner_page,
 )
@@ -60,6 +64,7 @@ from ui.number_line_doubler_page import (
 from ui.resource_library_page import (
     render_resource_library_page,
 )
+
 
 APP_TITLE = "TMK Teacher App"
 SURFACES = (
@@ -76,6 +81,7 @@ SELECTION_SCOPES = ("new_only", "available_mixed", "hybrid")
 PLANNER_LINK_MODES = ("Selected links", "Show selected atlas", "No links")
 PLANNER_ZOOM_MODES = ("Selected stage only", "Whole world")
 ROUTE_VIEW_MODES = ("Entry routes", "Exit routes")
+
 
 LIGHT_THEME = {
     "bg": "#E8E1D5",
@@ -95,6 +101,7 @@ LIGHT_THEME = {
     "sidebar_border": "#6FAFAE",
 }
 
+
 DARK_THEME = {
     "bg": "#2F3A3C",
     "surface": "#344244",
@@ -112,6 +119,7 @@ DARK_THEME = {
     "sidebar_text_soft": "#E8E1D5",
     "sidebar_border": "#6C7A7D",
 }
+
 
 st.set_page_config(
     page_title=APP_TITLE,
@@ -454,7 +462,7 @@ def _theme_css_vars(theme: dict[str, str]) -> str:
             f"--tmk-hover: {theme['hover']};",
             f"--tmk-sidebar-bg: {theme['sidebar_bg']};",
             f"--tmk-sidebar-text: {theme['sidebar_text']};",
-            f"--tmk-sidebar-text-soft: {theme['sidebar_text_soft']};",
+            f"--tmk-sidebar-text_soft: {theme['sidebar_text_soft']};",
             f"--tmk-sidebar-border: {theme['sidebar_border']};",
         ]
     )
@@ -932,7 +940,7 @@ def _render_structure_explorer(selected_product: int, compare_product: int) -> N
 
         st.markdown('<div style="margin-top:0.45rem;">', unsafe_allow_html=True)
         _render_pill_list(STAGES[stage].products, selected=selected_product)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
         if compare_product in STAGES[stage].products and compare_product != selected_product:
             st.markdown(
@@ -947,34 +955,13 @@ def _render_structure_explorer(selected_product: int, compare_product: int) -> N
 
 def _render_instruction_planner(product: int) -> None:
     render_instruction_planner_page(
-        _build_instruction_planner_view_model(product)
+        build_instruction_planner_view_model(
+            product,
+            selected_product=st.session_state.selected_product,
+            product_format_func=_product_option_label,
+            on_product_change=_on_instruction_product_change,
+        )
     )
-
-
-def _build_instruction_planner_view_model(product: int) -> dict[str, Any]:
-    record = product_record(product)
-    stage_record = get_stage_vocabulary(record.stage)
-    intro_left, intro_right = record.intro_route
-
-    return {
-        "title": "Instruction Planner",
-        "subtitle": "Teacher explanation flow, stage vocabulary, teacher prompts, and example questions for the current product.",
-        "selected_product": record.product,
-        "selected_stage_label": stage_label(record.stage),
-        "intro_route_label": _format_route(record.intro_route),
-        "product_options": ALL_PRODUCTS,
-        "selected_product_index": ALL_PRODUCTS.index(st.session_state.selected_product),
-        "product_format_func": _product_option_label,
-        "product_select_key": "instruction_product_select_v20",
-        "on_product_change": _on_instruction_product_change,
-        "explanation_steps": _build_explanation_sequence(record.product, intro_left, intro_right),
-        "teach_now_vocab": list(getattr(stage_record, "new_vocab", ()) or ()),
-        "teacher_prompts": _build_teacher_prompts(record.product, intro_left, intro_right),
-        "introduce_if_needed": list(getattr(stage_record, "available_vocab", ()) or ()),
-        "example_questions": _instruction_example_questions(stage_record, record.product, intro_left, intro_right),
-        "delay_vocab": list(getattr(stage_record, "required_vocab_focus", ()) or ()),
-        "teaching_warning": "Do not open route comparison or wider product-network discussion until the entry explanation is secure.",
-    }
 
 
 def _on_instruction_product_change() -> None:
@@ -1014,68 +1001,6 @@ def _comparison_route_text(compare_routes: tuple[tuple[int, int], ...]) -> str:
     if not compare_routes:
         return "No comparison route available."
     return _format_route(compare_routes[0])
-
-
-def _build_explanation_sequence(product: int, left: int, right: int) -> list[str]:
-    if right == 9:
-        base = left
-        ten_value = base * 10
-        one_value = base
-        return [
-            f"What is 10 × {base}?",
-            f"What is 1 × {base}?",
-            f"What is {ten_value} − {one_value}?",
-            f"So what is 9 × {base}?",
-        ]
-
-    if left == 9:
-        base = right
-        ten_value = base * 10
-        one_value = base
-        return [
-            f"What is 10 × {base}?",
-            f"What is 1 × {base}?",
-            f"What is {ten_value} − {one_value}?",
-            f"So what is 9 × {base}?",
-        ]
-
-    return [
-        f"State the intro route: {_format_route((left, right))}.",
-        f"Identify the product: {product}.",
-        f"Explain how {_format_route((left, right))} builds {product}.",
-        f"Check the product again: {product}.",
-    ]
-
-
-def _build_teacher_prompts(product: int, left: int, right: int) -> list[str]:
-    prompts = [
-        f"What do we already know about {_format_route((left, right))}?",
-        f"What product are we building?",
-        f"How can we say {_format_route((left, right))} clearly?",
-    ]
-
-    if right == 9 or left == 9:
-        base = left if right == 9 else right
-        prompts.extend(
-            [
-                f"What is 10 groups of {base}?",
-                f"How do we adjust from 10× to 9×?",
-            ]
-        )
-
-    return prompts
-
-
-def _instruction_example_questions(stage_record: Any, product: int, left: int, right: int) -> list[str]:
-    from_stage = list(getattr(stage_record, "example_child_friendly_questions", []) or [])
-    if from_stage:
-        return [str(item) for item in from_stage]
-
-    return [
-        f"{left} × {right} = □",
-        f"□ = {product}",
-        f"{product} ÷ {left} = □",
-    ]
 
 
 # -----------------------------
