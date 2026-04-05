@@ -546,7 +546,7 @@ def _render_structural_planner(product: int) -> None:
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Structural Planner</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="tmk-section-subtitle">Stage focus, products introduced at this stage, compact stage sequence, and cumulative support products.</div>',
+        '<div class="tmk-section-subtitle">Stage focus, current-stage products, stage sequence, and cumulative support.</div>',
         unsafe_allow_html=True,
     )
 
@@ -587,15 +587,6 @@ def _render_structural_planner(product: int) -> None:
             st.session_state.planner_zoom_mode = zoom
             st.rerun()
 
-    _metric_card_row(
-        [
-            ("Current stage", stage_label(record.stage)),
-            ("Selected product", str(record.product)),
-            ("Intro route", _format_route(record.intro_route)),
-            ("New here", str(len(new_stage_products))),
-        ]
-    )
-
     st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-small-label">Stage focus</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="tmk-value">{escape(stage_label(record.stage))}</div>', unsafe_allow_html=True)
@@ -604,7 +595,7 @@ def _render_structural_planner(product: int) -> None:
         unsafe_allow_html=True,
     )
     st.markdown(
-        f'<div class="tmk-note" style="margin-top:0.5rem;">Products introduced in this stage: {escape(", ".join(str(value) for value in new_stage_products) if new_stage_products else "None")}</div>',
+        f'<div class="tmk-note" style="margin-top:0.5rem;">New products introduced in this stage: {escape(", ".join(str(value) for value in new_stage_products) if new_stage_products else "None")}</div>',
         unsafe_allow_html=True,
     )
     st.markdown(
@@ -643,19 +634,16 @@ def _render_stage_cards(current_stage: str) -> None:
     for stage in [stage for stage in STAGE_ORDER if stage in STAGES]:
         stage_record = STAGES[stage]
         is_current = stage == current_stage
-        stage_name = stage_label(stage)
-        product_count = len(stage_record.products)
-        marker = "Current stage" if is_current else f"{product_count} products"
+        marker = "Current stage" if is_current else ""
 
-        note_style = "margin-top:0.2rem;"
+        note_style = "margin-top:0.25rem;"
         if is_current:
-            note_style = "margin-top:0.2rem;font-weight:700;color:var(--tmk-accent);"
+            note_style = "margin-top:0.25rem;font-weight:700;color:var(--tmk-accent);"
 
         st.markdown(
             f"""
             <div class="tmk-answer-box">
                 <div class="tmk-value">{escape(stage_record.label)}</div>
-                <div class="tmk-note" style="margin-top:0.2rem;">{escape(stage_name)}</div>
                 <div class="tmk-note" style="{note_style}">{escape(marker)}</div>
             </div>
             """,
