@@ -8,9 +8,39 @@ from domain.products import ALL_PRODUCTS, product_record, stage_label
 from domain.stage_vocabulary import get_stage_vocabulary
 
 
+_STAGE_A_PRODUCTS = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+_STAGE_B_PRODUCTS = (20, 30, 40, 50, 60, 70, 80, 90, 100)
 _STAGE_D_NEW_PRODUCTS = (18, 27, 36, 54, 63, 72, 81)
 _STAGE_E_NEW_PRODUCTS = (12, 14, 16, 24, 28, 32, 48, 56, 64)
 _STAGE_G_SQUARE_EXTENSION = (1, 4, 9, 16, 25, 36, 49, 64, 81, 100)
+
+
+_STAGE_A_PATTERN_BANK = [
+    {
+        "id": "identity",
+        "title": "Identity",
+        "description": "Multiplying by 1 keeps the number the same.",
+    },
+    {
+        "id": "anchor_order",
+        "title": "Anchor order",
+        "description": "The Stage A products from 1 to 10 act as the first stable anchor points in the TMK system.",
+    },
+]
+
+
+_STAGE_B_PATTERN_BANK = [
+    {
+        "id": "ten_times_scaling",
+        "title": "Ten-times scaling",
+        "description": "Multiplying by 10 scales the number into tens.",
+    },
+    {
+        "id": "tens_benchmark",
+        "title": "Tens benchmark",
+        "description": "Stage B products are exact multiples of ten and form a stable benchmark set.",
+    },
+]
 
 
 _STAGE_D_PATTERN_BANK = [
@@ -81,7 +111,6 @@ def build_instruction_planner_view_model(
     stage_record = get_stage_vocabulary(record.stage)
     intro_left, intro_right = record.intro_route
 
-
     view_model: dict[str, Any] = {
         "title": "Instruction Planner",
         "subtitle": "Teacher explanation flow, stage vocabulary, teacher prompts, and example questions for the current product.",
@@ -116,8 +145,23 @@ def build_instruction_planner_view_model(
         "stage_product_sequence": [],
     }
 
-
-    if _is_stage_d_route(intro_left, intro_right):
+    if record.stage == "A":
+        view_model.update(
+            _build_stage_a_content(
+                product=record.product,
+                left=intro_left,
+                right=intro_right,
+            )
+        )
+    elif record.stage == "B":
+        view_model.update(
+            _build_stage_b_content(
+                product=record.product,
+                left=intro_left,
+                right=intro_right,
+            )
+        )
+    elif _is_stage_d_route(intro_left, intro_right):
         view_model.update(
             _build_stage_d_content(
                 product=record.product,
@@ -151,15 +195,361 @@ def build_instruction_planner_view_model(
             )
         )
 
-
     return view_model
 
 
+def _build_stage_a_content(*, product: int, left: int, right: int) -> dict[str, Any]:
+    anchor_value = right if left == 1 else left
+    route_label = _format_route((left, right))
+
+    teach_now_vocab = [
+        "product",
+        "factor",
+        "multiply",
+        "times",
+        "one",
+        "same",
+        "identity",
+        "anchor",
+        "order",
+        "divide",
+        "inverse",
+    ]
+
+    introduce_if_needed = [
+        "equal",
+        "fact",
+        "compare",
+        "before",
+        "after",
+        "groups",
+    ]
+
+    delay_vocab = [
+        "commutative",
+        "factor family beyond the stage set",
+        "route comparison",
+        "bridge hub",
+        "compression hub",
+    ]
+
+    teacher_prompt_groups = [
+        {
+            "title": "Entry prompts",
+            "items": [
+                f"What product are we building when we say {route_label}?",
+                f"What is {route_label}?",
+                "So what is the product?",
+            ],
+        },
+        {
+            "title": "Pattern prompts",
+            "items": [
+                "What happens when we multiply by 1?",
+                "Why does the number stay the same?",
+                f"Where does {product} sit in the Stage A set?",
+                f"Which numbers come before and after {product}?",
+            ],
+        },
+        {
+            "title": "Inverse prompts",
+            "items": [
+                f"If {route_label} = {product}, what is {product} ÷ 1?",
+                f"What is {product} ÷ {product}?",
+                "How does division help us get back out of the product?",
+            ],
+        },
+        {
+            "title": "Extension prompts",
+            "items": [
+                "Which other Stage A products are built through 1 × n?",
+                "How does the whole Stage A set show the identity pattern?",
+                "Which Stage A product comes after 9?",
+            ],
+        },
+    ]
+
+    example_question_groups = [
+        {
+            "title": "Build the product",
+            "items": [
+                f"Complete: {route_label} = □",
+                f"Circle the product in {route_label} = {product}",
+                "Choose the correct statement: multiplying by 1 keeps the number the same",
+            ],
+        },
+        {
+            "title": "Identity and anchor questions",
+            "items": [
+                "Complete: 1 × 8 = □",
+                "Tick the Stage A products: 4, 6, 12, 9",
+                f"Which number comes just before {product}?",
+                f"Which number comes just after {product}?",
+            ],
+        },
+        {
+            "title": "Inverse questions",
+            "items": [
+                f"Complete: {product} ÷ 1 = □",
+                f"Complete: {product} ÷ {product} = □",
+                f"Match {route_label} = {product} to its division facts",
+            ],
+        },
+        {
+            "title": "Explain",
+            "items": [
+                "Explain what happens when we multiply by 1.",
+                f"Explain why {product} belongs in the Stage A set.",
+                f"Explain one division fact that comes from {product}.",
+            ],
+        },
+    ]
+
+    return {
+        "explanation_steps": [
+            f"What is {route_label}?",
+            "So what is the product?",
+            "What happens when we multiply by 1?",
+            f"Where does {product} sit in the Stage A anchor set?",
+            f"How can division help us get back out of the product {product}?",
+        ],
+        "teach_now_vocab": teach_now_vocab,
+        "teacher_prompt_groups": teacher_prompt_groups,
+        "teacher_prompts": _flatten_groups(teacher_prompt_groups),
+        "introduce_if_needed": introduce_if_needed,
+        "example_question_groups": example_question_groups,
+        "example_questions": _flatten_groups(example_question_groups),
+        "delay_vocab": delay_vocab,
+        "teaching_warning": (
+            f"Do not widen into broader route comparison or cross-stage discussion until learners are secure with the entry route "
+            f"{route_label} = {product}, the identity pattern, and the linked inverse facts."
+        ),
+        "lesson_aim": (
+            f"Learners build the product {product} through the identity structure, recognise it as part of the Stage A anchor set, "
+            f"and link the product to its inverse division facts."
+        ),
+        "suggested_lesson_length": "10–15 minutes",
+        "stage_pattern_bank": list(_STAGE_A_PATTERN_BANK),
+        "stage_product_sequence": list(_STAGE_A_PRODUCTS),
+        "teacher_model": [
+            f"{route_label} = {product}",
+            "",
+            "Multiplying by 1 keeps the number the same.",
+            "",
+            f"{product} ÷ 1 = {product}",
+            f"{product} ÷ {product} = 1",
+        ],
+        "teacher_explanation_sentence": (
+            f"One group of {anchor_value} is still {product}."
+        ),
+        "inverse_connection": [
+            f"{route_label} = {product}",
+            f"{product} ÷ 1 = {product}",
+            f"{product} ÷ {product} = 1",
+        ],
+        "check_for_understanding": (
+            f"Learners should be able to state {route_label} = {product}, explain the identity pattern, "
+            f"locate {product} in the Stage A anchor set, and state the linked division facts."
+        ),
+        "support_text": (
+            f"Use one group of {product} objects and show that the amount stays {product}. "
+            f"Keep the language simple: one group, same number, product."
+        ),
+        "core_text": (
+            f"Build {product} as {route_label}, then teach the identity pattern and place {product} in the Stage A anchor set. "
+            f"Finally connect {product} ÷ 1 = {product} and {product} ÷ {product} = 1."
+        ),
+        "extension_text": (
+            f"Extend from the focus product {product} to the full Stage A set: "
+            f"{', '.join(str(value) for value in _STAGE_A_PRODUCTS)}. "
+            f"Ask learners to identify which products come from 1 × n, place the Stage A products in order, "
+            f"and match multiplication facts to division facts."
+        ),
+        "teacher_quick_summary": (
+            f"Today’s product is {product}. We build it as {route_label}, so the number stays the same. "
+            f"Then we teach the identity pattern and place {product} in the Stage A anchor set. "
+            f"Finally, we use division facts to move back out of the product."
+        ),
+    }
+
+
+def _build_stage_b_content(*, product: int, left: int, right: int) -> dict[str, Any]:
+    scale_value = right if left == 10 else left
+    route_label = _format_route((left, right))
+
+    teach_now_vocab = [
+        "product",
+        "factor",
+        "multiply",
+        "times",
+        "ten times",
+        "scale",
+        "tens",
+        "place value",
+        "benchmark",
+        "divide",
+        "inverse",
+    ]
+
+    introduce_if_needed = [
+        "equal",
+        "fact",
+        "compare",
+        "before",
+        "after",
+        "groups of ten",
+    ]
+
+    delay_vocab = [
+        "commutative",
+        "factor family beyond the stage set",
+        "route comparison",
+        "bridge hub",
+        "compression hub",
+    ]
+
+    teacher_prompt_groups = [
+        {
+            "title": "Entry prompts",
+            "items": [
+                f"What product are we building when we say {route_label}?",
+                f"What is {route_label}?",
+                "So what is the product?",
+            ],
+        },
+        {
+            "title": "Pattern prompts",
+            "items": [
+                "What happens when we multiply by 10?",
+                f"Why is {product} a tens product?",
+                "Which Stage B products are multiples of ten?",
+                f"Which Stage B products come before and after {product}?",
+            ],
+        },
+        {
+            "title": "Inverse prompts",
+            "items": [
+                f"If {route_label} = {product}, what is {product} ÷ 10?",
+                f"What is {product} ÷ {scale_value}?",
+                "How does division help us get back out of the product?",
+            ],
+        },
+        {
+            "title": "Extension prompts",
+            "items": [
+                "Which other Stage B products belong to the 10× family?",
+                "How does the whole Stage B set show scaling by ten?",
+                "Which Stage B product comes after 70?",
+            ],
+        },
+    ]
+
+    example_question_groups = [
+        {
+            "title": "Build the product",
+            "items": [
+                f"Complete: {route_label} = □",
+                f"Circle the product in {route_label} = {product}",
+                f"Choose the correct statement: ten groups of {scale_value} make {product}",
+            ],
+        },
+        {
+            "title": "Scaling and tens questions",
+            "items": [
+                "Complete: 10 × 6 = □",
+                "Tick the Stage B products: 40, 45, 60, 100",
+                f"Which number comes just before {product} in the Stage B set?",
+                f"Which number comes just after {product} in the Stage B set?",
+            ],
+        },
+        {
+            "title": "Inverse questions",
+            "items": [
+                f"Complete: {product} ÷ 10 = □",
+                f"Complete: {product} ÷ {scale_value} = □",
+                f"Match {route_label} = {product} to its division facts",
+            ],
+        },
+        {
+            "title": "Explain",
+            "items": [
+                "Explain what happens when we multiply by 10.",
+                f"Explain why {product} belongs in the Stage B set.",
+                f"Explain one division fact that comes from {product}.",
+            ],
+        },
+    ]
+
+    return {
+        "explanation_steps": [
+            f"What is {route_label}?",
+            "So what is the product?",
+            "What happens when we multiply by 10?",
+            f"Why does {product} belong in the Stage B set?",
+            f"How can division help us get back out of the product {product}?",
+        ],
+        "teach_now_vocab": teach_now_vocab,
+        "teacher_prompt_groups": teacher_prompt_groups,
+        "teacher_prompts": _flatten_groups(teacher_prompt_groups),
+        "introduce_if_needed": introduce_if_needed,
+        "example_question_groups": example_question_groups,
+        "example_questions": _flatten_groups(example_question_groups),
+        "delay_vocab": delay_vocab,
+        "teaching_warning": (
+            f"Do not widen into broader route comparison or cross-stage discussion until learners are secure with the entry route "
+            f"{route_label} = {product}, the ten-times scaling pattern, and the linked inverse facts."
+        ),
+        "lesson_aim": (
+            f"Learners build the product {product} through 10× scaling, recognise it as part of the Stage B tens set, "
+            f"and link the product to its inverse division facts."
+        ),
+        "suggested_lesson_length": "10–15 minutes",
+        "stage_pattern_bank": list(_STAGE_B_PATTERN_BANK),
+        "stage_product_sequence": list(_STAGE_B_PRODUCTS),
+        "teacher_model": [
+            f"{route_label} = {product}",
+            "",
+            f"Multiplying by 10 makes {scale_value} groups of ten.",
+            "",
+            f"{product} ÷ 10 = {scale_value}",
+            f"{product} ÷ {scale_value} = 10",
+        ],
+        "teacher_explanation_sentence": (
+            f"Ten groups of {scale_value} make {product}, so {product} is a tens product."
+        ),
+        "inverse_connection": [
+            f"{route_label} = {product}",
+            f"{product} ÷ 10 = {scale_value}",
+            f"{product} ÷ {scale_value} = 10",
+        ],
+        "check_for_understanding": (
+            f"Learners should be able to state {route_label} = {product}, explain the 10× scaling pattern, "
+            f"recognise {product} as a Stage B product, and state the linked division facts."
+        ),
+        "support_text": (
+            f"Use groups of ten objects or a place-value model to show 10 groups of {scale_value}. "
+            f"Keep the language simple: ten groups, tens, product."
+        ),
+        "core_text": (
+            f"Build {product} as {route_label}, then teach the 10× scaling pattern and place {product} in the Stage B set. "
+            f"Finally connect {product} ÷ 10 = {scale_value} and {product} ÷ {scale_value} = 10."
+        ),
+        "extension_text": (
+            f"Extend from the focus product {product} to the full Stage B set: "
+            f"{', '.join(str(value) for value in _STAGE_B_PRODUCTS)}. "
+            f"Ask learners to identify which products come from 10 × n, place the Stage B products in order, "
+            f"and match multiplication facts to division facts."
+        ),
+        "teacher_quick_summary": (
+            f"Today’s product is {product}. We build it as {route_label}, so it becomes a tens product. "
+            f"Then we teach the 10× scaling pattern and place {product} in the Stage B set. "
+            f"Finally, we use division facts to move back out of the product."
+        ),
+    }
 
 
 def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, Any]:
     base = _stage_d_base_value(left, right)
-
 
     teach_now_vocab = [
         "product",
@@ -179,7 +569,6 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
         "inverse",
     ]
 
-
     introduce_if_needed = [
         "equal",
         "same",
@@ -191,7 +580,6 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
         "after",
     ]
 
-
     delay_vocab = [
         "commutative",
         "factor family",
@@ -199,7 +587,6 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
         "bridge hub",
         "compression hub",
     ]
-
 
     teacher_prompt_groups = [
         {
@@ -244,7 +631,6 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
             ],
         },
     ]
-
 
     example_question_groups = [
         {
@@ -292,7 +678,6 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
             ],
         },
     ]
-
 
     return {
         "explanation_steps": [
@@ -371,8 +756,6 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
     }
 
 
-
-
 def _build_stage_e_content(*, product: int, left: int, right: int) -> dict[str, Any]:
     chain_routes = _stage_e_chain_routes(product, left, right)
     chain_products = [route[0] * route[1] for route in chain_routes]
@@ -380,16 +763,13 @@ def _build_stage_e_content(*, product: int, left: int, right: int) -> dict[str, 
     route_labels = [_format_route(route) for route in chain_routes]
     current_route_label = route_labels[focus_index]
 
-
     teacher_model = [f"{label} = {value}" for label, value in zip(route_labels, chain_products)]
-
 
     inverse_connection = [
         f"{current_route_label} = {product}",
         f"{product} ÷ {left} = {right}",
         f"{product} ÷ {right} = {left}",
     ]
-
 
     teach_now_vocab = [
         "product",
@@ -406,7 +786,6 @@ def _build_stage_e_content(*, product: int, left: int, right: int) -> dict[str, 
         "inverse",
     ]
 
-
     introduce_if_needed = [
         "equal",
         "same",
@@ -417,7 +796,6 @@ def _build_stage_e_content(*, product: int, left: int, right: int) -> dict[str, 
         "half",
     ]
 
-
     delay_vocab = [
         "commutative",
         "factor family",
@@ -425,7 +803,6 @@ def _build_stage_e_content(*, product: int, left: int, right: int) -> dict[str, 
         "bridge hub",
         "compression hub",
     ]
-
 
     teacher_prompt_groups = [
         {
@@ -454,7 +831,6 @@ def _build_stage_e_content(*, product: int, left: int, right: int) -> dict[str, 
         },
     ]
 
-
     example_question_groups = [
         {
             "title": "Build the product",
@@ -482,12 +858,10 @@ def _build_stage_e_content(*, product: int, left: int, right: int) -> dict[str, 
         },
     ]
 
-
     lesson_aim = (
         f"Learners build the product {product} through the doubling-chain structure, use repeated doubling "
         f"to connect it to related Stage E products, and link the product to its inverse division facts."
     )
-
 
     check_for_understanding = _stage_e_check_for_understanding(
         product=product,
@@ -497,18 +871,14 @@ def _build_stage_e_content(*, product: int, left: int, right: int) -> dict[str, 
         focus_index=focus_index,
     )
 
-
     support_text = (
         f"Use counters or arrays to show {left} groups of {right}. Then show that doubling the product gives "
         f"the next step in the chain. Keep the language simple: groups, double, product."
     )
 
-
     core_text = _stage_e_core_text(product, left, right, chain_products, route_labels, focus_index)
 
-
     extension_text = _stage_e_extension_text(product, chain_products)
-
 
     teacher_quick_summary = _stage_e_teacher_quick_summary(
         product=product,
@@ -516,7 +886,6 @@ def _build_stage_e_content(*, product: int, left: int, right: int) -> dict[str, 
         route_labels=route_labels,
         focus_index=focus_index,
     )
-
 
     return {
         "explanation_steps": _stage_e_explanation_steps(product, chain_products, route_labels, focus_index),
@@ -546,8 +915,6 @@ def _build_stage_e_content(*, product: int, left: int, right: int) -> dict[str, 
         "extension_text": extension_text,
         "teacher_quick_summary": teacher_quick_summary,
     }
-
-
 
 
 def _build_stage_g_content(*, product: int, left: int, right: int) -> dict[str, Any]:
@@ -722,8 +1089,6 @@ def _build_stage_g_content(*, product: int, left: int, right: int) -> dict[str, 
     }
 
 
-
-
 def _build_general_fallback_content(
     *,
     product: int,
@@ -743,7 +1108,6 @@ def _build_general_fallback_content(
         },
     ]
 
-
     example_question_groups = [
         {
             "title": "Example questions",
@@ -754,7 +1118,6 @@ def _build_general_fallback_content(
             ],
         },
     ]
-
 
     return {
         "teacher_prompt_groups": teacher_prompt_groups,
@@ -803,8 +1166,6 @@ def _build_general_fallback_content(
     }
 
 
-
-
 def _build_explanation_sequence(product: int, left: int, right: int) -> list[str]:
     if right == 9:
         base = left
@@ -817,7 +1178,6 @@ def _build_explanation_sequence(product: int, left: int, right: int) -> list[str
             f"So what is 9 × {base}?",
         ]
 
-
     if left == 9:
         base = right
         ten_value = base * 10
@@ -829,7 +1189,6 @@ def _build_explanation_sequence(product: int, left: int, right: int) -> list[str
             f"So what is 9 × {base}?",
         ]
 
-
     return [
         f"State the intro route: {_format_route((left, right))}.",
         f"Identify the product: {product}.",
@@ -838,15 +1197,12 @@ def _build_explanation_sequence(product: int, left: int, right: int) -> list[str
     ]
 
 
-
-
 def _build_teacher_prompts(product: int, left: int, right: int) -> list[str]:
     prompts = [
         f"What do we already know about {_format_route((left, right))}?",
         "What product are we building?",
         f"How can we say {_format_route((left, right))} clearly?",
     ]
-
 
     if right == 9 or left == 9:
         base = left if right == 9 else right
@@ -857,10 +1213,7 @@ def _build_teacher_prompts(product: int, left: int, right: int) -> list[str]:
             ]
         )
 
-
     return prompts
-
-
 
 
 def _instruction_example_questions(stage_record: Any, product: int, left: int, right: int) -> list[str]:
@@ -868,14 +1221,11 @@ def _instruction_example_questions(stage_record: Any, product: int, left: int, r
     if from_stage:
         return [str(item) for item in from_stage]
 
-
     return [
         f"{left} × {right} = □",
         f"□ = {product}",
         f"{product} ÷ {left} = □",
     ]
-
-
 
 
 def _flatten_groups(groups: list[dict[str, Any]]) -> list[str]:
@@ -892,32 +1242,22 @@ def _flatten_groups(groups: list[dict[str, Any]]) -> list[str]:
     return flattened
 
 
-
-
 def _is_stage_d_route(left: int, right: int) -> bool:
     return left == 9 or right == 9
-
-
 
 
 def _stage_d_base_value(left: int, right: int) -> int:
     return left if right == 9 else right
 
 
-
-
 def _is_stage_e_route(left: int, right: int) -> bool:
     return left in (2, 4, 8) or right in (2, 4, 8)
-
-
 
 
 def _stage_e_chain_factor(left: int, right: int) -> int:
     if left in (2, 4, 8):
         return right
     return left
-
-
 
 
 def _stage_e_chain_routes(product: int, left: int, right: int) -> list[tuple[int, int]]:
@@ -931,8 +1271,6 @@ def _stage_e_chain_routes(product: int, left: int, right: int) -> list[tuple[int
     ]
 
 
-
-
 def _stage_e_explanation_steps(
     product: int,
     chain_products: list[int],
@@ -944,7 +1282,6 @@ def _stage_e_explanation_steps(
         "So what is the product?",
     ]
 
-
     if focus_index < len(chain_products) - 1:
         next_product = chain_products[focus_index + 1]
         next_route = route_labels[focus_index + 1]
@@ -954,7 +1291,6 @@ def _stage_e_explanation_steps(
                 f"So what is {next_route}?",
             ]
         )
-
 
         if focus_index + 1 < len(chain_products) - 1:
             later_product = chain_products[focus_index + 2]
@@ -966,7 +1302,6 @@ def _stage_e_explanation_steps(
                 ]
             )
 
-
     steps.extend(
         [
             "What happens as we move along the doubling chain?",
@@ -974,8 +1309,6 @@ def _stage_e_explanation_steps(
         ]
     )
     return steps
-
-
 
 
 def _stage_e_pattern_prompts(
@@ -986,14 +1319,12 @@ def _stage_e_pattern_prompts(
 ) -> list[str]:
     prompts: list[str] = []
 
-
     if focus_index < len(chain_products) - 1:
         next_product = chain_products[focus_index + 1]
-        next_route = route_labels[focus_index + 1]
         prompts.extend(
             [
                 f"What happens if we double {product}?",
-                f"Which fact does that give us?",
+                "Which fact does that give us?",
             ]
         )
         if focus_index + 1 < len(chain_products) - 1:
@@ -1011,11 +1342,8 @@ def _stage_e_pattern_prompts(
             ]
         )
 
-
     prompts.append(f"Which products are in the same doubling track as {product}?")
     return prompts
-
-
 
 
 def _stage_e_extension_prompts(chain_products: list[int], product: int) -> list[str]:
@@ -1035,15 +1363,12 @@ def _stage_e_extension_prompts(chain_products: list[int], product: int) -> list[
     return prompts
 
 
-
-
 def _stage_e_chain_questions(
     chain_products: list[int],
     route_labels: list[str],
     focus_index: int,
 ) -> list[str]:
     questions: list[str] = []
-
 
     current_product = chain_products[focus_index]
     if focus_index < len(chain_products) - 1:
@@ -1065,16 +1390,12 @@ def _stage_e_chain_questions(
                 ]
             )
 
-
     if len(chain_products) > 1:
         display_items = [str(value) for value in chain_products[:2]]
         display_items.append("□")
         questions.append(f"Complete the chain: {', '.join(display_items)}")
 
-
     return questions
-
-
 
 
 def _stage_e_explain_questions(chain_products: list[int], focus_index: int) -> list[str]:
@@ -1097,8 +1418,6 @@ def _stage_e_explain_questions(chain_products: list[int], focus_index: int) -> l
     return questions
 
 
-
-
 def _stage_e_check_for_understanding(
     *,
     product: int,
@@ -1109,7 +1428,6 @@ def _stage_e_check_for_understanding(
 ) -> str:
     statements = [f"state {_format_route((left, right))} = {product}"]
 
-
     later_products = chain_products[focus_index + 1 :]
     if later_products:
         if len(later_products) == 1:
@@ -1119,11 +1437,8 @@ def _stage_e_check_for_understanding(
                 "use doubling to derive " + " and ".join(str(value) for value in later_products)
             )
 
-
     statements.append(f"state the linked division facts for {product}")
     return "Learners should be able to " + ", ".join(statements) + "."
-
-
 
 
 def _stage_e_core_text(
@@ -1148,8 +1463,6 @@ def _stage_e_core_text(
     return " ".join(sentences)
 
 
-
-
 def _stage_e_extension_text(product: int, chain_products: list[int]) -> str:
     same_track = ", ".join(str(value) for value in chain_products)
     stage_set = ", ".join(str(value) for value in _STAGE_E_NEW_PRODUCTS)
@@ -1161,8 +1474,6 @@ def _stage_e_extension_text(product: int, chain_products: list[int]) -> str:
     )
 
 
-
-
 def _stage_e_teacher_quick_summary(
     *,
     product: int,
@@ -1172,9 +1483,7 @@ def _stage_e_teacher_quick_summary(
 ) -> str:
     current_route = route_labels[focus_index]
     summary = [f"Today’s product is {product}. We first build it as {current_route}."]
-    later_links = [
-        str(value) for value in chain_products[focus_index + 1 :]
-    ]
+    later_links = [str(value) for value in chain_products[focus_index + 1 :]]
     if later_links:
         summary.append(
             "Then we use doubling to connect it to "
@@ -1185,16 +1494,12 @@ def _stage_e_teacher_quick_summary(
     return " ".join(summary)
 
 
-
-
 def _format_instruction_intro_route(route: tuple[int, int]) -> str:
     left, right = route
     if left == 9 or right == 9:
         base = _stage_d_base_value(left, right)
         return f"9 × {base}"
     return _format_route(route)
-
-
 
 
 def _format_route(route: tuple[int, int]) -> str:
