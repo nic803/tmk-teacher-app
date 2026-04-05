@@ -10,6 +10,7 @@ from domain.stage_vocabulary import get_stage_vocabulary
 
 _STAGE_C_NEW_PRODUCTS = (15, 25, 35, 45)
 _STAGE_D_NEW_PRODUCTS = (18, 27, 36, 54, 63, 72, 81)
+_STAGE_F_NEW_PRODUCTS = (21, 42)
 
 
 _STAGE_C_PATTERN_BANK = [
@@ -46,6 +47,40 @@ _STAGE_D_PATTERN_BANK = [
         "id": "nine_rise_fall",
         "title": "Nine rise/fall pattern",
         "description": "Across the 9× sequence, the tens rise and the ones fall.",
+    },
+]
+
+
+_STAGE_F_PATTERN_BANK = [
+    {
+        "id": "interleaving",
+        "title": "Interleaving",
+        "description": "The 3× and 6× families are taught together, so learners can compare how products are related across the stage.",
+    },
+    {
+        "id": "new_product_new_route",
+        "title": "New product / new route",
+        "description": "Not every 3× or 6× fact gives a new product. In this stage, 21 and 42 are the genuinely new products.",
+    },
+    {
+        "id": "six_is_double_three",
+        "title": "Six is double three",
+        "description": "If a 3× product is known, the related 6× product can be built by doubling.",
+    },
+    {
+        "id": "three_times_digit_sum_cycle",
+        "title": "Three-times digit-sum cycle",
+        "description": "3× products belong to the digit-sum cycle 3, 6, 9.",
+    },
+    {
+        "id": "three_times_odd_even_alternation",
+        "title": "Three-times odd/even alternation",
+        "description": "3× products alternate odd, even, odd, even.",
+    },
+    {
+        "id": "six_times_always_even",
+        "title": "Six-times always even",
+        "description": "All 6× products are even.",
     },
 ]
 
@@ -108,6 +143,14 @@ def build_instruction_planner_view_model(
     elif _is_stage_d_route(intro_left, intro_right):
         view_model.update(
             _build_stage_d_content(
+                product=record.product,
+                left=intro_left,
+                right=intro_right,
+            )
+        )
+    elif _is_stage_f_route(intro_left, intro_right):
+        view_model.update(
+            _build_stage_f_content(
                 product=record.product,
                 left=intro_left,
                 right=intro_right,
@@ -535,6 +578,220 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
 
 
 
+def _build_stage_f_content(*, product: int, left: int, right: int) -> dict[str, Any]:
+    base = _stage_f_base_value(left, right)
+    entry_multiplier = 3 if left == 3 or right == 3 else 6
+    partner_multiplier = 6 if entry_multiplier == 3 else 3
+    partner_product = product * 2 if entry_multiplier == 3 else product // 2
+    entry_route = f"{entry_multiplier} × {base}"
+    partner_route = f"{partner_multiplier} × {base}"
+
+    digit_sum = sum(int(ch) for ch in str(product))
+    odd_even_label = "even" if product % 2 == 0 else "odd"
+
+    teach_now_vocab = [
+        "product",
+        "factor",
+        "multiply",
+        "times",
+        "double",
+        "doubling",
+        "pattern",
+        "sequence",
+        "digit sum",
+        "odd",
+        "even",
+        "divide",
+        "inverse",
+        "new product",
+        "new route",
+    ]
+
+    introduce_if_needed = [
+        "equal",
+        "same",
+        "fact",
+        "compare",
+        "before",
+        "after",
+        "family",
+    ]
+
+    delay_vocab = [
+        "commutative",
+        "factor family beyond the stage set",
+        "route comparison beyond the interleaving link",
+        "bridge hub",
+        "compression hub",
+    ]
+
+    teacher_prompt_groups = [
+        {
+            "title": "Entry prompts",
+            "items": [
+                f"What product are we building when we say {entry_route}?",
+                f"What is {entry_route}?",
+                "So what is the product?",
+                f"Is {product} a new product in this stage?",
+            ],
+        },
+        {
+            "title": "Pattern prompts",
+            "items": [
+                f"What do the digits in {product} add to?",
+                f"Does {product} fit the 3× digit-sum cycle?",
+                f"Is {product} odd or even?",
+                f"What happens if we {'double' if entry_multiplier == 3 else 'halve'} {product}?",
+                f"Which fact does that give us?",
+                f"Why is {partner_product} connected to {product}?",
+            ],
+        },
+        {
+            "title": "Inverse prompts",
+            "items": [
+                f"If {entry_route} = {product}, what is {product} ÷ {entry_multiplier}?",
+                f"What is {product} ÷ {base}?",
+                "How does division help us get back out of the product?",
+            ],
+        },
+        {
+            "title": "Extension prompts",
+            "items": [
+                f"Which other new Stage F product belongs with {product}?",
+                f"How does {partner_product} grow from {product}?" if entry_multiplier == 3 else f"How is {product} connected back to {partner_product}?",
+                "Which fact shows that 6 is double 3?",
+                "What is new in this stage: the product, the route, or both?",
+            ],
+        },
+    ]
+
+    example_question_groups = [
+        {
+            "title": "Build the product",
+            "items": [
+                f"Complete: {entry_route} = □",
+                f"Circle the product in {entry_route} = {product}",
+                f"Choose the correct statement: {entry_route} makes {product}",
+            ],
+        },
+        {
+            "title": "Interleaving and doubling",
+            "items": [
+                f"{'Double' if entry_multiplier == 3 else 'Halve'} {product}: □",
+                f"Complete: {partner_route} = □",
+                f"Match {entry_route} = {product} with {partner_route} = {partner_product}",
+                f"Complete: {partner_product} = 2 × □" if entry_multiplier == 3 else f"Complete: {product} = 2 × □",
+            ],
+        },
+        {
+            "title": "Pattern questions",
+            "items": [
+                f"Complete: {' + '.join(ch for ch in str(product))} = □",
+                f"Is {product} odd or even?",
+                "Tick the true statement: 3× products alternate odd and even",
+                "Tick the true statement: 6× products are always even",
+            ],
+        },
+        {
+            "title": "Inverse questions",
+            "items": [
+                f"Complete: {product} ÷ {entry_multiplier} = □",
+                f"Complete: {product} ÷ {base} = □",
+                f"Match {entry_route} = {product} to its division facts",
+            ],
+        },
+        {
+            "title": "Explain",
+            "items": [
+                f"Explain why {product} is a new Stage F product.",
+                f"Explain how {partner_product} can be built from {product}." if entry_multiplier == 3 else f"Explain how {product} links back to {partner_product}.",
+                f"Explain one division fact that comes from {product}.",
+            ],
+        },
+    ]
+
+    teacher_model = [
+        f"{entry_route} = {product}",
+        f"{partner_route} = {partner_product}",
+        f"{partner_product} = 2 × {product}" if entry_multiplier == 3 else f"{product} = 2 × {partner_product}",
+        "",
+        f"The digits in {product} add to:",
+        f"{' + '.join(ch for ch in str(product))} = {digit_sum}",
+        "",
+        f"So {product} fits the 3× digit-sum cycle.",
+        "",
+        f"{product} is {odd_even_label}, so it fits the 3× odd/even alternation." if entry_multiplier == 3 else f"{product} is even, so it fits the 6× always-even pattern.",
+    ]
+
+    return {
+        "explanation_steps": [
+            f"What is {entry_route}?",
+            "So what is the product?",
+            f"Is {product} a new product in Stage F?",
+            f"If we {'double' if entry_multiplier == 3 else 'halve'} {product}, what do we get?",
+            f"So what is {partner_route}?",
+            f"What do the digits in {product} add to?",
+            f"Is {product} odd or even?",
+            f"How can division help us get back out of the product {product}?",
+        ],
+        "teach_now_vocab": teach_now_vocab,
+        "teacher_prompt_groups": teacher_prompt_groups,
+        "teacher_prompts": _flatten_groups(teacher_prompt_groups),
+        "introduce_if_needed": introduce_if_needed,
+        "example_question_groups": example_question_groups,
+        "example_questions": _flatten_groups(example_question_groups),
+        "delay_vocab": delay_vocab,
+        "teaching_warning": (
+            f"Do not widen into broad route comparison across earlier stages until learners are secure with the entry route "
+            f"{entry_route} = {product}, the interleaving link to {partner_product}, and the distinction between a new product and a new route."
+        ),
+        "lesson_aim": (
+            f"Learners build the product {product} through the {entry_multiplier}× structure, recognise it as a genuinely new Stage F product, "
+            f"connect it to {partner_product} through {'doubling' if entry_multiplier == 3 else 'the interleaving link'}, and link the product to its inverse division facts."
+        ),
+        "suggested_lesson_length": "15–20 minutes",
+        "stage_pattern_bank": list(_STAGE_F_PATTERN_BANK),
+        "stage_product_sequence": list(_STAGE_F_NEW_PRODUCTS),
+        "teacher_model": teacher_model,
+        "teacher_explanation_sentence": (
+            f"We build {product} as {entry_route}, then use {'doubling to connect it to ' + str(partner_product) if entry_multiplier == 3 else 'the interleaving link back to ' + str(partner_product)}."
+        ),
+        "inverse_connection": [
+            f"{entry_route} = {product}",
+            f"{product} ÷ {entry_multiplier} = {base}",
+            f"{product} ÷ {base} = {entry_multiplier}",
+        ],
+        "check_for_understanding": (
+            f"Learners should be able to state {entry_route} = {product}, explain why {product} is a genuinely new Stage F product, "
+            f"connect it to {partner_product} through {'doubling' if entry_multiplier == 3 else 'the interleaving relationship'}, and state the linked division facts."
+        ),
+        "support_text": (
+            f"Use counters or arrays to show {entry_multiplier} groups of {base}. Then show that "
+            f"{'doubling the product gives ' + str(partner_product) if entry_multiplier == 3 else str(product) + ' links back to ' + str(partner_product)}. "
+            f"Keep the language simple: groups, double, product."
+        ),
+        "core_text": (
+            f"Build {product} as {entry_route}, then connect it to {partner_product} through the Stage F interleaving link. "
+            f"Teach the Stage F patterns through the product: new product / new route, 3× digit-sum cycle, odd/even behaviour, and inverse facts."
+        ),
+        "extension_text": (
+            f"Extend from the focus product {product} to the full Stage F set: "
+            f"{', '.join(str(value) for value in _STAGE_F_NEW_PRODUCTS)}. "
+            f"Ask learners to compare {entry_route} = {product} and {partner_route} = {partner_product}. "
+            f"Then ask them to identify what is new in Stage F, explain how {partner_product} is built from {product} or linked back to it, "
+            f"check the digit-sum pattern, and compare odd/even behaviour in the 3× and 6× families."
+        ),
+        "teacher_quick_summary": (
+            f"Today’s product is {product}. We first build it as {entry_route}. Then we connect it to {partner_product} "
+            f"through the Stage F interleaving link, showing how the 3× and 6× families work together in this stage. "
+            f"We also teach that {product} is a genuinely new product, that its digits add to {digit_sum}, "
+            f"and that division facts help us move back out of the product."
+        ),
+    }
+
+
+
+
 def _build_general_fallback_content(
     *,
     product: int,
@@ -717,6 +974,12 @@ def _is_stage_d_route(left: int, right: int) -> bool:
 
 
 
+def _is_stage_f_route(left: int, right: int) -> bool:
+    return left in (3, 6) or right in (3, 6)
+
+
+
+
 def _stage_c_base_value(left: int, right: int) -> int:
     return left if right == 5 else right
 
@@ -725,6 +988,14 @@ def _stage_c_base_value(left: int, right: int) -> int:
 
 def _stage_d_base_value(left: int, right: int) -> int:
     return left if right == 9 else right
+
+
+
+
+def _stage_f_base_value(left: int, right: int) -> int:
+    if left in (3, 6):
+        return right
+    return left
 
 
 
