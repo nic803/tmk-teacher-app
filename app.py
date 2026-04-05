@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-
 from html import escape
 from typing import Any, Iterable
 
-
 import streamlit as st
-
 
 # -----------------------------
 # DOMAIN IMPORTS
@@ -19,7 +16,6 @@ from domain.routes import (
     shared_factors,
 )
 
-
 from domain.products import (
     ALL_PRODUCTS,
     STAGE_ORDER,
@@ -28,18 +24,15 @@ from domain.products import (
     stage_label,
 )
 
-
 from domain.product_metadata import (
     available_products as metadata_available_products,
     new_products as metadata_new_products,
     product_metadata,
 )
 
-
 from domain.stage_vocabulary import (
     get_stage_vocabulary,
 )
-
 
 # -----------------------------
 # WORKSHEET SYSTEM IMPORTS
@@ -48,38 +41,25 @@ from models.worksheet_models import (
     ProductSelectionRequest,
 )
 
-
 from services.product_selection_engine import (
     available_selection_modes,
 )
-
 
 from services.worksheet_generation_service import (
     generate_worksheet_bundle,
 )
 
-
 from ui.instruction_planner_builder import (
     build_instruction_planner_view_model,
 )
-
 
 from ui.instruction_planner_page import (
     render_instruction_planner_page,
 )
 
-
-from ui.number_line_doubler_page import (
-    render_number_line_doubler_page,
-)
-
-
 from ui.resource_library_page import (
     render_resource_library_page,
 )
-
-
-
 
 APP_TITLE = "TMK Teacher App"
 SURFACES = (
@@ -87,8 +67,8 @@ SURFACES = (
     "Product Lab",
     "Instruction Planner",
     "Worksheet Studio",
+    "Extensions",
     "Resource Library",
-    "Number Line Doubler",
 )
 TIERS = ("Support", "Core", "Extension")
 WORKSHEET_FORMATS = ("one_product_10", "three_product_12")
@@ -96,9 +76,6 @@ SELECTION_SCOPES = ("new_only", "available_mixed", "hybrid")
 PLANNER_LINK_MODES = ("Selected links", "Show selected atlas", "No links")
 PLANNER_ZOOM_MODES = ("Selected stage only", "Whole world")
 ROUTE_VIEW_MODES = ("Entry routes", "Exit routes")
-
-
-
 
 LIGHT_THEME = {
     "bg": "#E8E1D5",
@@ -118,9 +95,6 @@ LIGHT_THEME = {
     "sidebar_border": "#6FAFAE",
 }
 
-
-
-
 DARK_THEME = {
     "bg": "#2F3A3C",
     "surface": "#344244",
@@ -139,9 +113,6 @@ DARK_THEME = {
     "sidebar_border": "#6C7A7D",
 }
 
-
-
-
 st.set_page_config(
     page_title=APP_TITLE,
     page_icon="✳️",
@@ -149,20 +120,15 @@ st.set_page_config(
 )
 
 
-
-
 def main() -> None:
     _ensure_state()
     _sync_surface_from_query_params()
     _apply_styles()
 
-
     st.markdown('<div class="tmk-shell">', unsafe_allow_html=True)
-
 
     _render_nav()
     _render_sidebar()
-
 
     if st.session_state.surface == "Structural Planner":
         _render_structural_planner(st.session_state.selected_product)
@@ -172,17 +138,14 @@ def main() -> None:
         _render_instruction_planner(st.session_state.selected_product)
     elif st.session_state.surface == "Worksheet Studio":
         _render_worksheet_studio()
+    elif st.session_state.surface == "Extensions":
+        _render_extensions_placeholder()
     elif st.session_state.surface == "Resource Library":
         render_resource_library_page()
-    elif st.session_state.surface == "Number Line Doubler":
-        render_number_line_doubler_page()
     else:
         _render_structural_planner(st.session_state.selected_product)
 
-
     st.markdown("</div>", unsafe_allow_html=True)
-
-
 
 
 # -----------------------------
@@ -192,14 +155,11 @@ def _ensure_state() -> None:
     if "surface" not in st.session_state:
         st.session_state.surface = "Structural Planner"
 
-
     if "selected_product" not in st.session_state:
         st.session_state.selected_product = 36 if 36 in ALL_PRODUCTS else ALL_PRODUCTS[0]
 
-
     if "selected_tier" not in st.session_state:
         st.session_state.selected_tier = "Core"
-
 
     if "compare_product" not in st.session_state:
         fallback = 24 if 24 in ALL_PRODUCTS else ALL_PRODUCTS[0]
@@ -207,59 +167,44 @@ def _ensure_state() -> None:
             fallback = ALL_PRODUCTS[1]
         st.session_state.compare_product = fallback
 
-
     if "planner_link_mode" not in st.session_state:
         st.session_state.planner_link_mode = "Selected links"
-
 
     if "planner_zoom_mode" not in st.session_state:
         st.session_state.planner_zoom_mode = "Selected stage only"
 
-
     if "route_view_mode" not in st.session_state:
         st.session_state.route_view_mode = "Entry routes"
-
 
     if "selected_route_index" not in st.session_state:
         st.session_state.selected_route_index = 0
 
-
     if "selected_stage" not in st.session_state:
         st.session_state.selected_stage = product_record(st.session_state.selected_product).stage
-
 
     if "worksheet_format" not in st.session_state:
         st.session_state.worksheet_format = "one_product_10"
 
-
     if "selection_scope" not in st.session_state:
         st.session_state.selection_scope = "new_only"
-
 
     if "selection_mode" not in st.session_state:
         st.session_state.selection_mode = "Auto"
 
-
     if "include_recap" not in st.session_state:
         st.session_state.include_recap = False
-
 
     if "recap_count" not in st.session_state:
         st.session_state.recap_count = 1
 
-
     if "worksheet_rotation_index" not in st.session_state:
         st.session_state.worksheet_rotation_index = 0
-
 
     if "last_bundle" not in st.session_state:
         st.session_state.last_bundle = None
 
-
     if "last_request_signature" not in st.session_state:
         st.session_state.last_request_signature = None
-
-
 
 
 def _sync_surface_from_query_params() -> None:
@@ -267,11 +212,8 @@ def _sync_surface_from_query_params() -> None:
     if isinstance(requested_surface, list):
         requested_surface = requested_surface[0] if requested_surface else None
 
-
     if requested_surface in SURFACES and requested_surface != st.session_state.surface:
         st.session_state.surface = requested_surface
-
-
 
 
 # -----------------------------
@@ -281,7 +223,6 @@ def _apply_styles() -> None:
     light_vars = _theme_css_vars(LIGHT_THEME)
     dark_vars = _theme_css_vars(DARK_THEME)
 
-
     st.markdown(
         f"""
         <style>
@@ -289,25 +230,21 @@ def _apply_styles() -> None:
                 {light_vars}
             }}
 
-
             @media (prefers-color-scheme: dark) {{
                 :root {{
                     {dark_vars}
                 }}
             }}
 
-
             .stApp {{
                 background: var(--tmk-bg);
             }}
-
 
             .tmk-shell {{
                 max-width: 1480px;
                 margin: 0 auto;
                 padding-bottom: 3rem;
             }}
-
 
             .tmk-header {{
                 background: linear-gradient(180deg, var(--tmk-surface-strong) 0%, var(--tmk-surface) 100%);
@@ -318,7 +255,6 @@ def _apply_styles() -> None:
                 box-shadow: 0 8px 24px rgba(47, 58, 60, 0.05);
             }}
 
-
             .tmk-kicker {{
                 font-size: 0.84rem;
                 font-weight: 800;
@@ -328,7 +264,6 @@ def _apply_styles() -> None:
                 margin-bottom: 0.2rem;
             }}
 
-
             .tmk-header h1 {{
                 margin: 0 0 0.25rem 0;
                 color: var(--tmk-text);
@@ -336,13 +271,11 @@ def _apply_styles() -> None:
                 line-height: 1.15;
             }}
 
-
             .tmk-header p {{
                 margin: 0;
                 color: var(--tmk-text-soft);
                 font-size: 1rem;
             }}
-
 
             .tmk-panel {{
                 background: var(--tmk-surface);
@@ -353,7 +286,6 @@ def _apply_styles() -> None:
                 box-shadow: 0 6px 18px rgba(47, 58, 60, 0.04);
             }}
 
-
             .tmk-card {{
                 background: var(--tmk-surface-strong);
                 border: 1px solid var(--tmk-border);
@@ -361,7 +293,6 @@ def _apply_styles() -> None:
                 padding: 0.95rem 1rem;
                 margin-bottom: 0.9rem;
             }}
-
 
             .tmk-answer-box {{
                 background: var(--tmk-surface);
@@ -372,7 +303,6 @@ def _apply_styles() -> None:
                 box-shadow: 0 6px 18px rgba(47, 58, 60, 0.04);
             }}
 
-
             .tmk-section-title {{
                 font-size: 1.25rem;
                 font-weight: 800;
@@ -380,12 +310,10 @@ def _apply_styles() -> None:
                 margin-bottom: 0.2rem;
             }}
 
-
             .tmk-section-subtitle {{
                 color: var(--tmk-text-soft);
                 margin-bottom: 1rem;
             }}
-
 
             .tmk-small-label {{
                 font-size: 0.78rem;
@@ -396,7 +324,6 @@ def _apply_styles() -> None:
                 margin-bottom: 0.25rem;
             }}
 
-
             .tmk-value {{
                 font-size: 1.1rem;
                 font-weight: 800;
@@ -404,12 +331,10 @@ def _apply_styles() -> None:
                 line-height: 1.3;
             }}
 
-
             .tmk-note {{
                 color: var(--tmk-text-soft);
                 line-height: 1.45;
             }}
-
 
             .tmk-pill {{
                 display: inline-block;
@@ -423,18 +348,15 @@ def _apply_styles() -> None:
                 font-weight: 700;
             }}
 
-
             .tmk-pill-accent {{
                 border-color: var(--tmk-highlight);
                 background: color-mix(in srgb, var(--tmk-highlight) 16%, var(--tmk-surface-strong) 84%);
                 color: var(--tmk-text);
             }}
 
-
             .tmk-soft-list {{
                 line-height: 1.8;
             }}
-
 
             .tmk-worksheet-frame {{
                 background: var(--tmk-surface);
@@ -445,14 +367,12 @@ def _apply_styles() -> None:
                 box-shadow: 0 6px 18px rgba(47, 58, 60, 0.04);
             }}
 
-
             .tmk-hub-banner {{
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
                 gap: 1rem;
             }}
-
 
             .tmk-hub-visual {{
                 background: linear-gradient(180deg, #232A54 0%, #22284E 100%);
@@ -464,7 +384,6 @@ def _apply_styles() -> None:
                 box-shadow: 0 10px 26px rgba(34, 40, 78, 0.18);
             }}
 
-
             .tmk-hub-visual h3 {{
                 margin: 0;
                 color: #FFFFFF;
@@ -472,13 +391,11 @@ def _apply_styles() -> None:
                 line-height: 1.2;
             }}
 
-
             .tmk-hub-visual p {{
                 margin: 0.35rem 0 0 0;
                 color: rgba(255,255,255,0.82);
                 line-height: 1.45;
             }}
-
 
             .tmk-hub-top,
             .tmk-hub-bottom {{
@@ -488,7 +405,6 @@ def _apply_styles() -> None:
                 gap: 0.5rem;
                 margin-top: 0.9rem;
             }}
-
 
             .tmk-hub-chip {{
                 display: inline-flex;
@@ -504,7 +420,6 @@ def _apply_styles() -> None:
                 box-shadow: 0 2px 8px rgba(0,0,0,0.12);
             }}
 
-
             .tmk-hub-arrows {{
                 display: flex;
                 justify-content: center;
@@ -515,13 +430,11 @@ def _apply_styles() -> None:
                 letter-spacing: 0.12em;
             }}
 
-
             .tmk-hub-center-wrap {{
                 display: flex;
                 justify-content: center;
                 margin: 0.25rem 0 0.35rem 0;
             }}
-
 
             .tmk-hub-center {{
                 width: 128px;
@@ -538,22 +451,18 @@ def _apply_styles() -> None:
                 box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
             }}
 
-
             section[data-testid="stSidebar"] {{
                 background: var(--tmk-sidebar-bg);
                 border-right: 1px solid var(--tmk-sidebar-border);
             }}
 
-
             section[data-testid="stSidebar"] * {{
                 color: var(--tmk-sidebar-text);
             }}
 
-
             section[data-testid="stSidebar"] hr {{
                 border-color: var(--tmk-sidebar-border);
             }}
-
 
             section[data-testid="stSidebar"] .stMarkdown,
             section[data-testid="stSidebar"] .stText,
@@ -565,14 +474,12 @@ def _apply_styles() -> None:
                 color: var(--tmk-sidebar-text);
             }}
 
-
             section[data-testid="stSidebar"] .stSelectbox label,
             section[data-testid="stSidebar"] .stRadio label,
             section[data-testid="stSidebar"] .stCheckbox label,
             section[data-testid="stSidebar"] .stNumberInput label {{
                 color: var(--tmk-sidebar-text) !important;
             }}
-
 
             section[data-testid="stSidebar"] h1,
             section[data-testid="stSidebar"] h2,
@@ -583,12 +490,10 @@ def _apply_styles() -> None:
                 color: var(--tmk-sidebar-text) !important;
             }}
 
-
             .stButton > button {{
                 border-radius: 12px;
                 border: 1px solid var(--tmk-border);
             }}
-
 
             .stButton > button[kind="primary"] {{
                 background: var(--tmk-danger);
@@ -596,13 +501,11 @@ def _apply_styles() -> None:
                 color: #FFFFFF;
             }}
 
-
             .stButton > button[kind="secondary"] {{
                 background: var(--tmk-surface-strong);
                 color: var(--tmk-text);
                 border-color: var(--tmk-border);
             }}
-
 
             .stSelectbox div[data-baseweb="select"] > div,
             .stMultiSelect div[data-baseweb="select"] > div,
@@ -617,8 +520,6 @@ def _apply_styles() -> None:
         """,
         unsafe_allow_html=True,
     )
-
-
 
 
 def _theme_css_vars(theme: dict[str, str]) -> str:
@@ -643,19 +544,15 @@ def _theme_css_vars(theme: dict[str, str]) -> str:
     )
 
 
-
-
 # -----------------------------
 # NAV / SIDEBAR
 # -----------------------------
 def _render_nav() -> None:
     nav_cols = st.columns(len(SURFACES))
 
-
     for idx, surface in enumerate(SURFACES):
         button_type = "primary" if surface == st.session_state.surface else "secondary"
         widget_key = f"tmk_top_nav_{idx}_{surface.lower().replace(' ', '_')}"
-
 
         if nav_cols[idx].button(
             surface,
@@ -668,12 +565,9 @@ def _render_nav() -> None:
             st.rerun()
 
 
-
-
 def _render_sidebar() -> None:
     with st.sidebar:
         record = product_record(st.session_state.selected_product)
-
 
         st.markdown("## TMK context")
         st.write(f"**Surface:** {st.session_state.surface}")
@@ -681,10 +575,8 @@ def _render_sidebar() -> None:
         st.write(f"**Stage:** {stage_label(record.stage)}")
         st.write(f"**Intro route:** {_format_route(record.intro_route)}")
 
-
         st.markdown("---")
         st.markdown("### Current surface")
-
 
         if st.session_state.surface == "Structural Planner":
             st.write("**Focus:** stage structure only")
@@ -705,18 +597,16 @@ def _render_sidebar() -> None:
             if st.session_state.selection_mode != "Auto":
                 st.write(f"**Mode:** {st.session_state.selection_mode}")
             st.write(f"**Recap:** {'On' if st.session_state.include_recap else 'Off'}")
+        elif st.session_state.surface == "Extensions":
+            st.write("**Focus:** extension mathematics and advanced activity tools")
+            st.write("**Content area:** separate from core TMK structure")
+            st.write("**Status:** placeholder surface ready for staged build")
         elif st.session_state.surface == "Resource Library":
             st.write("**Focus:** browse and open structural resources")
             st.write("**Content source:** core resource registry")
             st.write("**Mode:** library browser")
-        elif st.session_state.surface == "Number Line Doubler":
-            st.write("**Focus:** animated doubling race")
-            st.write("**Asset type:** embedded HTML game")
-            st.write("**TMK link:** doubling chain visual")
         else:
             st.write("**Status:** ready")
-
-
 
 
 # -----------------------------
@@ -730,14 +620,12 @@ def _render_structural_planner(product: int) -> None:
         value for value in metadata_available_products(record.stage) if value not in current_stage_products
     )
 
-
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Structural Planner</div>', unsafe_allow_html=True)
     st.markdown(
         '<div class="tmk-section-subtitle">Stage focus, products introduced at this stage, compact stage sequence, and cumulative support products.</div>',
         unsafe_allow_html=True,
     )
-
 
     selected = st.selectbox(
         "Selected product",
@@ -751,7 +639,6 @@ def _render_structural_planner(product: int) -> None:
         st.session_state.selected_stage = product_record(selected).stage
         st.rerun()
 
-
     _metric_card_row(
         [
             ("Current stage", stage_label(record.stage)),
@@ -760,7 +647,6 @@ def _render_structural_planner(product: int) -> None:
             ("New here", str(len(new_stage_products))),
         ]
     )
-
 
     st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-small-label">Stage focus</div>', unsafe_allow_html=True)
@@ -779,9 +665,7 @@ def _render_structural_planner(product: int) -> None:
     )
     st.markdown("</div>", unsafe_allow_html=True)
 
-
     col_a, col_b = st.columns((1.35, 0.85))
-
 
     with col_a:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
@@ -789,10 +673,8 @@ def _render_structural_planner(product: int) -> None:
         _render_pill_list(current_stage_products, selected=record.product)
         st.markdown("</div>", unsafe_allow_html=True)
 
-
     with col_b:
         _render_stage_cards(record.stage)
-
 
     with st.expander("Earlier secured products available for support", expanded=False):
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
@@ -803,16 +685,12 @@ def _render_structural_planner(product: int) -> None:
             st.markdown('<div class="tmk-note">No earlier secured products available.</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-
     st.markdown("</div>", unsafe_allow_html=True)
-
-
 
 
 def _render_stage_cards(current_stage: str) -> None:
     st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-small-label">Stage sequence</div>', unsafe_allow_html=True)
-
 
     for stage in [stage for stage in STAGE_ORDER if stage in STAGES]:
         stage_record = STAGES[stage]
@@ -821,11 +699,9 @@ def _render_stage_cards(current_stage: str) -> None:
         product_count = len(stage_record.products)
         marker = "Current stage" if is_current else f"{product_count} products"
 
-
         note_style = "margin-top:0.2rem;"
         if is_current:
             note_style = "margin-top:0.2rem;font-weight:700;color:var(--tmk-accent);"
-
 
         st.markdown(
             f"""
@@ -838,10 +714,7 @@ def _render_stage_cards(current_stage: str) -> None:
             unsafe_allow_html=True,
         )
 
-
     st.markdown("</div>", unsafe_allow_html=True)
-
-
 
 
 # -----------------------------
@@ -855,7 +728,6 @@ def _render_product_lab(product: int) -> None:
     inverse_family = tuple(inverse_labels(record.product))
     shared = tuple(shared_factors(record.product, compare.product))
 
-
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Product Lab</div>', unsafe_allow_html=True)
     st.markdown(
@@ -863,9 +735,7 @@ def _render_product_lab(product: int) -> None:
         unsafe_allow_html=True,
     )
 
-
     control_col1, control_col2, control_col3 = st.columns(3)
-
 
     with control_col1:
         selected = st.selectbox(
@@ -883,14 +753,12 @@ def _render_product_lab(product: int) -> None:
             st.session_state.selected_route_index = 0
             st.rerun()
 
-
     compare_options = [item for item in ALL_PRODUCTS if item != st.session_state.selected_product]
     if st.session_state.compare_product not in compare_options:
         st.session_state.compare_product = compare_options[0]
         compare = product_record(st.session_state.compare_product)
         compare_routes = tuple(distinct_factor_routes(compare.product))
         shared = tuple(shared_factors(record.product, compare.product))
-
 
     with control_col2:
         compare_value = st.selectbox(
@@ -904,7 +772,6 @@ def _render_product_lab(product: int) -> None:
             st.session_state.compare_product = compare_value
             st.rerun()
 
-
     with control_col3:
         mode = st.radio(
             "Route view",
@@ -917,7 +784,6 @@ def _render_product_lab(product: int) -> None:
             st.session_state.route_view_mode = mode
             st.session_state.selected_route_index = 0
             st.rerun()
-
 
     st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-small-label">Selected product</div>', unsafe_allow_html=True)
@@ -940,7 +806,6 @@ def _render_product_lab(product: int) -> None:
     )
     st.markdown("</div>", unsafe_allow_html=True)
 
-
     st.markdown(
         """
         <div class="tmk-card tmk-hub-banner">
@@ -953,19 +818,15 @@ def _render_product_lab(product: int) -> None:
         unsafe_allow_html=True,
     )
 
-
     _render_product_hub_visual(record.product, selected_routes)
 
-
     upper_left, upper_right = st.columns((1.3, 0.7))
-
 
     with upper_left:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
         st.markdown('<div class="tmk-small-label">Radial hub</div>', unsafe_allow_html=True)
         _render_route_inspector(record.product)
         st.markdown("</div>", unsafe_allow_html=True)
-
 
     with upper_right:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
@@ -977,12 +838,9 @@ def _render_product_lab(product: int) -> None:
             st.markdown('<div class="tmk-note">No inverse family available.</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-
     _render_structure_explorer(record.product, compare.product)
 
-
     lower_left, lower_right = st.columns((1.0, 1.0))
-
 
     with lower_left:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
@@ -992,22 +850,18 @@ def _render_product_lab(product: int) -> None:
             unsafe_allow_html=True,
         )
 
-
         connected_products = _connected_products_for(record.product, compare.product)
         if connected_products:
             _render_pill_list(connected_products, selected=record.product)
         else:
             st.markdown('<div class="tmk-note">No connected products available.</div>', unsafe_allow_html=True)
 
-
         st.markdown("</div>", unsafe_allow_html=True)
-
 
     with lower_right:
         with st.expander("Additional lawful forms", expanded=False):
             st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
             st.markdown('<div class="tmk-small-label">Additional lawful forms</div>', unsafe_allow_html=True)
-
 
             commutative = _commutative_form(record.intro_route)
             st.markdown(
@@ -1015,22 +869,18 @@ def _render_product_lab(product: int) -> None:
                 unsafe_allow_html=True,
             )
 
-
             comparison_route = _comparison_route_text(compare_routes)
             st.markdown(
                 f'<div class="tmk-note" style="margin-top:0.35rem;"><strong>Later comparison route:</strong> {escape(comparison_route)}</div>',
                 unsafe_allow_html=True,
             )
 
-
             if inverse_family:
                 st.markdown('<div class="tmk-note" style="margin-top:0.35rem;"><strong>Inverse family:</strong></div>', unsafe_allow_html=True)
                 for label in inverse_family:
                     st.markdown(f'<div class="tmk-answer-box">{escape(_stringify(label))}</div>', unsafe_allow_html=True)
 
-
             st.markdown("</div>", unsafe_allow_html=True)
-
 
     with st.expander("Selected product routes", expanded=False):
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
@@ -1044,7 +894,6 @@ def _render_product_lab(product: int) -> None:
             st.markdown('<div class="tmk-note">No routes available.</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-
     with st.expander("Compare product routes", expanded=False):
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
         st.markdown('<div class="tmk-small-label">Compare product routes</div>', unsafe_allow_html=True)
@@ -1057,7 +906,6 @@ def _render_product_lab(product: int) -> None:
             st.markdown('<div class="tmk-note">No routes available.</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-
     _render_route_overlap_activity_builder(
         product=record.product,
         stage_id=record.stage,
@@ -1068,29 +916,22 @@ def _render_product_lab(product: int) -> None:
         compare_routes=compare_routes,
     )
 
-
     st.markdown("</div>", unsafe_allow_html=True)
-
-
 
 
 def _render_product_hub_visual(product: int, routes: tuple[tuple[int, int], ...]) -> None:
     display_routes = _expand_commutative_routes(routes)
 
-
     top_items = [_format_route(route) for route in display_routes]
     bottom_items = [f"{product} ÷ {route[0]} = {route[1]}" for route in display_routes]
-
 
     if not top_items:
         top_items = ["No lawful forms"]
     if not bottom_items:
         bottom_items = ["No inverse forms"]
 
-
     top_html = "".join(f'<span class="tmk-hub-chip">{escape(item)}</span>' for item in top_items)
     bottom_html = "".join(f'<span class="tmk-hub-chip">{escape(item)}</span>' for item in bottom_items)
-
 
     st.markdown(
         f"""
@@ -1110,12 +951,9 @@ def _render_product_hub_visual(product: int, routes: tuple[tuple[int, int], ...]
     )
 
 
-
-
 def _expand_commutative_routes(routes: tuple[tuple[int, int], ...]) -> tuple[tuple[int, int], ...]:
     expanded: list[tuple[int, int]] = []
     seen: set[tuple[int, int]] = set()
-
 
     for left, right in routes:
         pair = (left, right)
@@ -1123,16 +961,12 @@ def _expand_commutative_routes(routes: tuple[tuple[int, int], ...]) -> tuple[tup
             seen.add(pair)
             expanded.append(pair)
 
-
         reverse_pair = (right, left)
         if reverse_pair not in seen:
             seen.add(reverse_pair)
             expanded.append(reverse_pair)
 
-
     return tuple(expanded)
-
-
 
 
 def _render_route_inspector(product: int) -> None:
@@ -1141,10 +975,8 @@ def _render_route_inspector(product: int) -> None:
         st.markdown('<div class="tmk-note">No routes available.</div>', unsafe_allow_html=True)
         return
 
-
     if st.session_state.selected_route_index >= len(items):
         st.session_state.selected_route_index = 0
-
 
     button_cols = st.columns(min(4, len(items)))
     for index, item in enumerate(items):
@@ -1159,9 +991,7 @@ def _render_route_inspector(product: int) -> None:
             st.session_state.selected_route_index = index
             st.rerun()
 
-
     selected_item = items[st.session_state.selected_route_index]
-
 
     title = st.session_state.route_view_mode[:-1] if st.session_state.route_view_mode.endswith("s") else st.session_state.route_view_mode
     st.markdown(f'<div class="tmk-small-label">{escape(title)}</div>', unsafe_allow_html=True)
@@ -1170,8 +1000,6 @@ def _render_route_inspector(product: int) -> None:
         f'<div class="tmk-note" style="margin-top:0.55rem;">{escape(selected_item["explanation"])}</div>',
         unsafe_allow_html=True,
     )
-
-
 
 
 def _route_items_for_product(product: int, mode: str) -> list[dict[str, str]]:
@@ -1188,7 +1016,6 @@ def _route_items_for_product(product: int, mode: str) -> list[dict[str, str]]:
             )
         return items
 
-
     items = []
     for label in exit_route_labels(product):
         items.append(
@@ -1201,12 +1028,9 @@ def _route_items_for_product(product: int, mode: str) -> list[dict[str, str]]:
     return items
 
 
-
-
 def _render_structure_explorer(selected_product: int, compare_product: int) -> None:
     selected_record = product_record(selected_product)
     compare_record = product_record(compare_product)
-
 
     st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-small-label">Structure explorer</div>', unsafe_allow_html=True)
@@ -1214,7 +1038,6 @@ def _render_structure_explorer(selected_product: int, compare_product: int) -> N
         f'<div class="tmk-note">Selected product {selected_product} sits in {escape(stage_label(selected_record.stage))}. Comparison product {compare_product} sits in {escape(stage_label(compare_record.stage))}.</div>',
         unsafe_allow_html=True,
     )
-
 
     for stage in [stage for stage in STAGE_ORDER if stage in STAGES]:
         marker = ""
@@ -1225,20 +1048,16 @@ def _render_structure_explorer(selected_product: int, compare_product: int) -> N
         elif stage == compare_record.stage:
             marker = "Compare product stage"
 
-
         st.markdown('<div class="tmk-answer-box">', unsafe_allow_html=True)
         st.markdown(f'<div class="tmk-value">{escape(STAGES[stage].label)}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="tmk-note" style="margin-top:0.2rem;">{escape(stage_label(stage))}</div>', unsafe_allow_html=True)
 
-
         if marker:
             st.markdown(f'<div class="tmk-note" style="margin-top:0.2rem;">{escape(marker)}</div>', unsafe_allow_html=True)
-
 
         st.markdown('<div style="margin-top:0.45rem;">', unsafe_allow_html=True)
         _render_pill_list(STAGES[stage].products, selected=selected_product)
         st.markdown("</div>", unsafe_allow_html=True)
-
 
         if compare_product in STAGES[stage].products and compare_product != selected_product:
             st.markdown(
@@ -1246,13 +1065,9 @@ def _render_structure_explorer(selected_product: int, compare_product: int) -> N
                 unsafe_allow_html=True,
             )
 
-
         st.markdown("</div>", unsafe_allow_html=True)
 
-
     st.markdown("</div>", unsafe_allow_html=True)
-
-
 
 
 def _render_instruction_planner(product: int) -> None:
@@ -1266,6 +1081,35 @@ def _render_instruction_planner(product: int) -> None:
     )
 
 
+def _render_extensions_placeholder() -> None:
+    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-section-title">Extensions</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="tmk-section-subtitle">Extension mathematics and advanced activity tools, kept separate from the core TMK structure.</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-small-label">Planned extension areas</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="tmk-note">This placeholder holds the new extension section while the extension tools are added in safe passes.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="tmk-note" style="margin-top:0.5rem;">Planned content: square numbers, area and perimeter, 11×, 12×, and advanced multi-route activity work such as 36.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-small-label">Current status</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="tmk-note">Navigation is now in place. Content tools should be added here one safe step at a time.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def _on_instruction_product_change() -> None:
@@ -1275,13 +1119,10 @@ def _on_instruction_product_change() -> None:
         st.session_state.selected_stage = product_record(selected).stage
 
 
-
-
 def _connected_products_for(selected_product: int, compare_product: int) -> tuple[int, ...]:
     connected: list[int] = []
     selected_factors = set(shared_factors(selected_product, selected_product))
     compare_shared = set(shared_factors(selected_product, compare_product))
-
 
     for product in ALL_PRODUCTS:
         if product == selected_product:
@@ -1290,7 +1131,6 @@ def _connected_products_for(selected_product: int, compare_product: int) -> tupl
         if product_shared & (selected_factors | compare_shared):
             connected.append(product)
 
-
     deduped = []
     seen = set()
     for product in connected:
@@ -1298,24 +1138,17 @@ def _connected_products_for(selected_product: int, compare_product: int) -> tupl
             seen.add(product)
             deduped.append(product)
 
-
     return tuple(deduped[:12])
-
-
 
 
 def _commutative_form(route: tuple[int, int]) -> str:
     return f"{route[1]} × {route[0]}"
 
 
-
-
 def _comparison_route_text(compare_routes: tuple[tuple[int, int], ...]) -> str:
     if not compare_routes:
         return "No comparison route available."
     return _format_route(compare_routes[0])
-
-
 
 
 def _render_route_overlap_activity_builder(
@@ -1330,7 +1163,6 @@ def _render_route_overlap_activity_builder(
 ) -> None:
     if len(routes) < 2:
         return
-
 
     activity = _build_route_overlap_activity(
         product=product,
@@ -1410,8 +1242,6 @@ def _render_route_overlap_activity_builder(
     )
 
     st.markdown("</div>", unsafe_allow_html=True)
-
-
 
 
 def _build_route_overlap_activity(
@@ -1516,8 +1346,6 @@ def _build_route_overlap_activity(
     }
 
 
-
-
 # -----------------------------
 # WORKSHEET STUDIO
 # -----------------------------
@@ -1529,14 +1357,11 @@ def _render_worksheet_studio() -> None:
         unsafe_allow_html=True,
     )
 
-
     st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-small-label">Worksheet configuration</div>', unsafe_allow_html=True)
 
-
     top_left, top_mid, top_right = st.columns(3)
     bottom_left, bottom_mid, bottom_right = st.columns(3)
-
 
     with top_left:
         selected_stage = st.selectbox(
@@ -1552,7 +1377,6 @@ def _render_worksheet_studio() -> None:
             _invalidate_worksheet_bundle()
             st.rerun()
 
-
     with top_mid:
         selected_format = st.selectbox(
             "Worksheet format",
@@ -1566,7 +1390,6 @@ def _render_worksheet_studio() -> None:
             st.session_state.selection_mode = "Auto"
             _invalidate_worksheet_bundle()
             st.rerun()
-
 
     with top_right:
         selected_tier = st.radio(
@@ -1582,7 +1405,6 @@ def _render_worksheet_studio() -> None:
             _invalidate_worksheet_bundle()
             st.rerun()
 
-
     with bottom_left:
         selected_scope = st.selectbox(
             "Selection scope",
@@ -1596,18 +1418,15 @@ def _render_worksheet_studio() -> None:
             _invalidate_worksheet_bundle()
             st.rerun()
 
-
     mode_options = ("Auto",) + available_selection_modes(
         stage=st.session_state.selected_stage,
         format_id=st.session_state.worksheet_format,
         tier=st.session_state.selected_tier,
     )
 
-
     with bottom_mid:
         if st.session_state.selection_mode not in mode_options:
             st.session_state.selection_mode = "Auto"
-
 
         selected_mode = st.selectbox(
             "Selection mode",
@@ -1619,7 +1438,6 @@ def _render_worksheet_studio() -> None:
             st.session_state.selection_mode = selected_mode
             _invalidate_worksheet_bundle()
             st.rerun()
-
 
     with bottom_right:
         include_recap = st.checkbox(
@@ -1636,7 +1454,6 @@ def _render_worksheet_studio() -> None:
             _invalidate_worksheet_bundle()
             st.rerun()
 
-
         if st.session_state.include_recap:
             recap_count = st.number_input(
                 "Recap count",
@@ -1651,23 +1468,18 @@ def _render_worksheet_studio() -> None:
                 _invalidate_worksheet_bundle()
                 st.rerun()
 
-
     request = _build_product_selection_request()
     request_signature = _worksheet_request_signature(request)
-
 
     if st.session_state.last_request_signature != request_signature:
         st.session_state.last_bundle = None
 
-
     generate_label = "Generate worksheet" if st.session_state.worksheet_rotation_index == 0 else "Generate next worksheet"
-
 
     st.markdown(
         f'<div class="tmk-note" style="margin-top:0.35rem;">Current setup: {escape(stage_label(st.session_state.selected_stage))} · {escape("One product (10)" if st.session_state.worksheet_format == "one_product_10" else "Three products (12)")} · {escape(st.session_state.selected_tier)} · {escape(st.session_state.selection_scope)}</div>',
         unsafe_allow_html=True,
     )
-
 
     if st.button(generate_label, type="primary", key="worksheet_generate_button_v20"):
         try:
@@ -1675,27 +1487,22 @@ def _render_worksheet_studio() -> None:
             previous_selection = _bundle_part(previous_bundle, "selection") if previous_bundle else None
             previous_products = tuple(_field(previous_selection, "selected_products", default=())) if previous_selection else ()
 
-
             new_bundle = None
             new_request_signature = None
             found_different = False
             last_candidate_bundle = None
             last_candidate_signature = None
 
-
             for _ in range(12):
                 current_request = _build_product_selection_request()
                 current_signature = _worksheet_request_signature(current_request)
-
 
                 candidate_bundle = generate_worksheet_bundle(current_request)
                 candidate_selection = _bundle_part(candidate_bundle, "selection")
                 candidate_products = tuple(_field(candidate_selection, "selected_products", default=()))
 
-
                 last_candidate_bundle = candidate_bundle
                 last_candidate_signature = current_signature
-
 
                 if not previous_products or candidate_products != previous_products:
                     new_bundle = candidate_bundle
@@ -1703,28 +1510,22 @@ def _render_worksheet_studio() -> None:
                     found_different = True
                     break
 
-
                 st.session_state.worksheet_rotation_index += 1
-
 
             if new_bundle is None:
                 new_bundle = last_candidate_bundle
                 new_request_signature = last_candidate_signature
 
-
             st.session_state.last_bundle = new_bundle
             st.session_state.last_request_signature = new_request_signature
 
-
             st.session_state.worksheet_rotation_index += 1
-
 
             if previous_products and not found_different:
                 st.warning(
                     "No different selected product set was available for this exact configuration. "
                     "Try changing selection mode or scope."
                 )
-
 
         except Exception as exc:
             msg = str(exc)
@@ -1738,9 +1539,7 @@ def _render_worksheet_studio() -> None:
             st.markdown("</div>", unsafe_allow_html=True)
             return
 
-
     st.markdown("</div>", unsafe_allow_html=True)
-
 
     bundle = st.session_state.last_bundle
     if bundle is None:
@@ -1751,11 +1550,9 @@ def _render_worksheet_studio() -> None:
         st.markdown("</div>", unsafe_allow_html=True)
         return
 
-
     selection = _bundle_part(bundle, "selection")
     student = _bundle_part(bundle, "student", "student_worksheet")
     teacher = _bundle_part(bundle, "teacher", "teacher_key")
-
 
     selected_products = tuple(_field(selection, "selected_products", default=()))
     recap_products = tuple(_field(selection, "recap_products", default=()))
@@ -1771,7 +1568,6 @@ def _render_worksheet_studio() -> None:
         )
     )
 
-
     _metric_card_row(
         [
             ("Stage", stage_label(st.session_state.selected_stage)),
@@ -1781,9 +1577,7 @@ def _render_worksheet_studio() -> None:
         ]
     )
 
-
     upper_left, upper_right = st.columns((0.95, 1.05))
-
 
     with upper_left:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
@@ -1793,14 +1587,12 @@ def _render_worksheet_studio() -> None:
         else:
             st.markdown('<div class="tmk-note">No selected products available.</div>', unsafe_allow_html=True)
 
-
         if recap_products:
             st.markdown('<div class="tmk-small-label" style="margin-top:0.7rem;">Recap products</div>', unsafe_allow_html=True)
             _render_pill_list(recap_products)
         else:
             st.markdown('<div class="tmk-note" style="margin-top:0.45rem;">No recap products included.</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
-
 
     with upper_right:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
@@ -1827,9 +1619,7 @@ def _render_worksheet_studio() -> None:
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
-
     lower_left, lower_right = st.columns((1.15, 0.85))
-
 
     with lower_left:
         st.markdown('<div class="tmk-worksheet-frame">', unsafe_allow_html=True)
@@ -1850,7 +1640,6 @@ def _render_worksheet_studio() -> None:
             )
         st.markdown("</div>", unsafe_allow_html=True)
 
-
         st.markdown('<div class="tmk-worksheet-frame">', unsafe_allow_html=True)
         st.markdown("### Selection rationale")
         if selection_reasons:
@@ -1863,7 +1652,6 @@ def _render_worksheet_studio() -> None:
             st.markdown('<div class="tmk-note">No selection reasons available.</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-
     with lower_right:
         st.markdown('<div class="tmk-worksheet-frame">', unsafe_allow_html=True)
         st.markdown("### Teacher key")
@@ -1875,15 +1663,12 @@ def _render_worksheet_studio() -> None:
             teacher_note = _field(answer, "teacher_note", "note", default="")
             vocab = _field(answer, "vocab", "vocabulary_words", default=None)
 
-
             tags_text = ", ".join(str(tag) for tag in _coerce_sequence(focus_tags)) if focus_tags else "—"
-
 
             vocab_text = ""
             if vocab:
                 vocab_items = _coerce_sequence(vocab)
                 vocab_text = f"<div class='tmk-note'><strong>Vocab:</strong> {escape(', '.join(str(v) for v in vocab_items))}</div>"
-
 
             st.markdown(
                 f"""
@@ -1899,7 +1684,6 @@ def _render_worksheet_studio() -> None:
             )
         st.markdown("</div>", unsafe_allow_html=True)
 
-
         st.markdown('<div class="tmk-worksheet-frame">', unsafe_allow_html=True)
         st.markdown("### Supported vocabulary")
         if vocab_supported:
@@ -1907,7 +1691,6 @@ def _render_worksheet_studio() -> None:
         else:
             st.markdown('<div class="tmk-note">No vocabulary summary available.</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
-
 
         st.markdown('<div class="tmk-worksheet-frame">', unsafe_allow_html=True)
         st.markdown("### Structural tags")
@@ -1917,10 +1700,7 @@ def _render_worksheet_studio() -> None:
             st.markdown('<div class="tmk-note">No structural tag summary available.</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-
     st.markdown("</div>", unsafe_allow_html=True)
-
-
 
 
 # -----------------------------
@@ -1942,10 +1722,8 @@ def _build_product_selection_request() -> ProductSelectionRequest:
         "rotation_index": int(st.session_state.worksheet_rotation_index),
     }
 
-
     try:
         import inspect
-
 
         signature = inspect.signature(ProductSelectionRequest)
         supported = {
@@ -1972,8 +1750,6 @@ def _build_product_selection_request() -> ProductSelectionRequest:
         return ProductSelectionRequest(**fallback)
 
 
-
-
 def _metric_card_row(items: list[tuple[str, str]]) -> None:
     cols = st.columns(len(items))
     for col, (label, value) in zip(cols, items):
@@ -1989,16 +1765,12 @@ def _metric_card_row(items: list[tuple[str, str]]) -> None:
             )
 
 
-
-
 def _render_pill_list(values: Iterable[Any], selected: Any | None = None) -> None:
     pills: list[str] = []
     for value in values:
         cls = "tmk-pill tmk-pill-accent" if selected is not None and value == selected else "tmk-pill"
         pills.append(f'<span class="{cls}">{escape(_stringify(value))}</span>')
     st.markdown(f'<div class="tmk-soft-list">{"".join(pills)}</div>', unsafe_allow_html=True)
-
-
 
 
 def _render_word_list(values: Iterable[Any]) -> None:
@@ -2009,19 +1781,13 @@ def _render_word_list(values: Iterable[Any]) -> None:
     _render_pill_list(items)
 
 
-
-
 def _product_option_label(product: int) -> str:
     record = product_record(product)
     return f"{product} · {stage_label(record.stage)}"
 
 
-
-
 def _format_route(route: tuple[int, int]) -> str:
     return f"{route[0]} × {route[1]}"
-
-
 
 
 def _worksheet_request_signature(request: ProductSelectionRequest | dict[str, Any] | Any) -> tuple[tuple[str, str], ...]:
@@ -2055,9 +1821,7 @@ def _worksheet_request_signature(request: ProductSelectionRequest | dict[str, An
             if hasattr(request, name):
                 payload[name] = getattr(request, name)
 
-
     payload.pop("rotation_index", None)
-
 
     normalized: dict[str, str] = {}
     for key, value in payload.items():
@@ -2068,10 +1832,7 @@ def _worksheet_request_signature(request: ProductSelectionRequest | dict[str, An
         else:
             normalized[key] = str(value)
 
-
     return tuple(sorted(normalized.items()))
-
-
 
 
 def _invalidate_worksheet_bundle() -> None:
@@ -2080,14 +1841,10 @@ def _invalidate_worksheet_bundle() -> None:
     st.session_state.worksheet_rotation_index = 0
 
 
-
-
 def _stringify(value: Any) -> str:
     if value is None:
         return ""
     return str(value)
-
-
 
 
 def _coerce_sequence(value: Any) -> tuple[Any, ...]:
@@ -2102,8 +1859,6 @@ def _coerce_sequence(value: Any) -> tuple[Any, ...]:
     return (value,)
 
 
-
-
 def _bundle_part(bundle: Any, *names: str) -> Any:
     for name in names:
         if isinstance(bundle, dict) and name in bundle:
@@ -2113,12 +1868,9 @@ def _bundle_part(bundle: Any, *names: str) -> Any:
     return None
 
 
-
-
 def _field(obj: Any, *names: str, default: Any = None) -> Any:
     if obj is None:
         return default
-
 
     for name in names:
         if isinstance(obj, dict) and name in obj:
@@ -2126,10 +1878,7 @@ def _field(obj: Any, *names: str, default: Any = None) -> Any:
         if hasattr(obj, name):
             return getattr(obj, name)
 
-
     return default
-
-
 
 
 if __name__ == "__main__":
