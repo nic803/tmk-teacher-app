@@ -729,7 +729,6 @@ def _render_structural_planner(product: int) -> None:
     earlier_secured_products = tuple(
         value for value in metadata_available_products(record.stage) if value not in current_stage_products
     )
-    stage_focus = _stage_focus_content(record.stage)
 
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
@@ -767,19 +766,15 @@ def _render_structural_planner(product: int) -> None:
     st.markdown('<div class="tmk-small-label">Stage focus</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="tmk-value">{escape(stage_label(record.stage))}</div>', unsafe_allow_html=True)
     st.markdown(
-        f'<div class="tmk-note" style="margin-top:0.35rem;"><strong>Structural idea:</strong> {escape(stage_focus["idea"])}</div>',
+        f'<div class="tmk-note" style="margin-top:0.35rem;">Selected product: {record.product}. Intro route: {escape(_format_route(record.intro_route))}. Structural role: {escape(record.structural_role)}.</div>',
         unsafe_allow_html=True,
     )
     st.markdown(
-        f'<div class="tmk-note" style="margin-top:0.35rem;"><strong>Selected product:</strong> {record.product}. <strong>Intro route:</strong> {escape(_format_route(record.intro_route))}. <strong>Structural role:</strong> {escape(record.structural_role)}.</div>',
+        f'<div class="tmk-note" style="margin-top:0.5rem;">Products introduced in this stage: {escape(", ".join(str(value) for value in new_stage_products) if new_stage_products else "None")}</div>',
         unsafe_allow_html=True,
     )
     st.markdown(
-        f'<div class="tmk-note" style="margin-top:0.5rem;"><strong>Products introduced in this stage:</strong> {escape(", ".join(str(value) for value in new_stage_products) if new_stage_products else "None")}</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        f'<div class="tmk-note" style="margin-top:0.5rem;"><strong>Teacher warning:</strong> {escape(stage_focus["warning"])}</div>',
+        '<div class="tmk-note" style="margin-top:0.5rem;">Teacher warning: keep first exposure focused on current-stage products before opening cumulative support.</div>',
         unsafe_allow_html=True,
     )
     st.markdown("</div>", unsafe_allow_html=True)
@@ -810,48 +805,6 @@ def _render_structural_planner(product: int) -> None:
 
 
     st.markdown("</div>", unsafe_allow_html=True)
-
-
-
-
-def _stage_focus_content(stage: str) -> dict[str, str]:
-    content = {
-        "A": {
-            "idea": "Identity and base-ten anchors establish secure starting points across the system.",
-            "warning": "Keep first exposure on anchor structure itself before widening into later pattern comparisons.",
-        },
-        "B": {
-            "idea": "Pure scaling through 10× builds products as groups of ten and strengthens place-value structure.",
-            "warning": "Do not overload this stage with later route comparison; secure ten-times scaling first.",
-        },
-        "C": {
-            "idea": "Midpoints and halves use 5× as half of 10× to build balanced products.",
-            "warning": "Keep the half-of-ten relationship clear before widening into broader product-network discussion.",
-        },
-        "D": {
-            "idea": "9× uses complement / near-ten logic: build from 10×, then subtract 1×.",
-            "warning": "Do not compare all lawful routes at first exposure; secure the near-ten entry route first.",
-        },
-        "E": {
-            "idea": "Doubling chains connect 2×, 4×, and 8× so products are built through repeated doubling.",
-            "warning": "Keep the doubling chain visible and stable before introducing looser cross-stage comparisons.",
-        },
-        "F": {
-            "idea": "Interleaving coordinates linked 3× and 6× structures within one product family.",
-            "warning": "Do not flatten 3× and 6× into a mixed fact list; keep the linked structure explicit.",
-        },
-        "G": {
-            "idea": "Closure consolidates the final key product inside the completed cumulative TMK structure.",
-            "warning": "Keep closure focused on the final securing role of the stage before reopening the full network.",
-        },
-    }
-    return content.get(
-        stage,
-        {
-            "idea": "This stage secures a distinct structural idea within the cumulative TMK system.",
-            "warning": "Keep first exposure focused on the current-stage structure before opening wider comparisons.",
-        },
-    )
 
 
 
@@ -1105,6 +1058,17 @@ def _render_product_lab(product: int) -> None:
         st.markdown("</div>", unsafe_allow_html=True)
 
 
+    _render_route_overlap_activity_builder(
+        product=record.product,
+        stage_id=record.stage,
+        stage_label_text=stage_label(record.stage),
+        intro_route=record.intro_route,
+        routes=selected_routes,
+        compare_product=compare.product,
+        compare_routes=compare_routes,
+    )
+
+
     st.markdown("</div>", unsafe_allow_html=True)
 
 
@@ -1350,6 +1314,206 @@ def _comparison_route_text(compare_routes: tuple[tuple[int, int], ...]) -> str:
     if not compare_routes:
         return "No comparison route available."
     return _format_route(compare_routes[0])
+
+
+
+
+def _render_route_overlap_activity_builder(
+    *,
+    product: int,
+    stage_id: str,
+    stage_label_text: str,
+    intro_route: tuple[int, int],
+    routes: tuple[tuple[int, int], ...],
+    compare_product: int,
+    compare_routes: tuple[tuple[int, int], ...],
+) -> None:
+    if len(routes) < 2:
+        return
+
+
+    activity = _build_route_overlap_activity(
+        product=product,
+        stage_id=stage_id,
+        stage_label_text=stage_label_text,
+        intro_route=intro_route,
+        routes=routes,
+        compare_product=compare_product,
+        compare_routes=compare_routes,
+    )
+
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-small-label">Route overlap activity</div>', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-value">Route Overlap Activity Builder</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="tmk-note" style="margin-top:0.35rem;">Available because {product} has more than one lawful route.</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown('<div class="tmk-small-label" style="margin-top:0.8rem;">Core routes into this product</div>', unsafe_allow_html=True)
+    _render_pill_list(tuple(_format_route(route) for route in routes))
+
+    info_left, info_right = st.columns((1.0, 1.0))
+
+    with info_left:
+        st.markdown('<div class="tmk-answer-box">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">Activity title</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="tmk-value">{escape(activity["activity_title"])}</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="tmk-note" style="margin-top:0.35rem;"><strong>Goal:</strong> {escape(activity["activity_goal"])}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f'<div class="tmk-note" style="margin-top:0.35rem;"><strong>Teacher move:</strong> {escape(activity["teacher_move"])}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with info_right:
+        st.markdown('<div class="tmk-answer-box">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">Teacher prompt</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="tmk-note">{escape(activity["teacher_prompt"])}</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="tmk-note" style="margin-top:0.45rem;"><strong>Teaching note:</strong> {escape(activity["teaching_note"])}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    task_col, question_col = st.columns((1.0, 1.0))
+
+    with task_col:
+        st.markdown('<div class="tmk-answer-box">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">Pupil tasks</div>', unsafe_allow_html=True)
+        for task in activity["pupil_tasks"]:
+            st.markdown(f"- {escape(task)}")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with question_col:
+        st.markdown('<div class="tmk-answer-box">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">Example questions</div>', unsafe_allow_html=True)
+        for question in activity["example_questions"]:
+            st.markdown(f"- {escape(question)}")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="tmk-answer-box">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-small-label">Key noticing</div>', unsafe_allow_html=True)
+    for noticing in activity["key_noticing"]:
+        st.markdown(f"- {escape(noticing)}")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="tmk-small-label">Copy for website form</div>', unsafe_allow_html=True)
+    st.text_area(
+        "Copy for website form",
+        value=activity["print_text"],
+        height=320,
+        key=f"route_overlap_print_text_{product}",
+    )
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+
+
+def _build_route_overlap_activity(
+    *,
+    product: int,
+    stage_id: str,
+    stage_label_text: str,
+    intro_route: tuple[int, int],
+    routes: tuple[tuple[int, int], ...],
+    compare_product: int,
+    compare_routes: tuple[tuple[int, int], ...],
+) -> dict[str, Any]:
+    route_labels = [_format_route(route) for route in routes]
+    intro_route_label = _format_route(intro_route)
+
+    non_intro_routes = [route for route in routes if route != intro_route]
+    reveal_route = non_intro_routes[0] if non_intro_routes else routes[1]
+    reveal_route_label = _format_route(reveal_route)
+
+    activity_title = "One product, two routes" if len(routes) == 2 else "One product, multiple routes"
+    activity_goal = "Learners see that one product can have more than one true multiplication route."
+    teacher_move = (
+        f"Start with the intro route {intro_route_label}, then reveal {reveal_route_label} "
+        f"as another true route into the same product."
+    )
+    teacher_prompt = (
+        f"{product} can be made in more than one true way. What stays the same, and what changes?"
+    )
+
+    pupil_tasks = [
+        f"Read the routes into {product}.",
+        "Say what is the same in both facts.",
+        "Say what is different in both facts.",
+        "Match the multiplication routes to the same product.",
+    ]
+
+    example_questions = [
+        f"Which routes make {product}?",
+        f"What product does {intro_route_label} make?",
+        f"What product does {reveal_route_label} make?",
+        f"Which route was used to introduce {product} first?",
+    ]
+
+    key_noticing = [
+        "The product stays the same.",
+        "The factors change.",
+        "A product can have more than one lawful route.",
+    ]
+
+    teaching_note = (
+        "Lead with the intro route first. Reveal the second route only after learners are secure with the product."
+    )
+
+    teacher_explanation = (
+        f"{product} can be built in more than one true way. In TMK, we introduce {product} through "
+        f"{intro_route_label}, but {reveal_route_label} is also a true route into the same product."
+    )
+
+    print_text = "\n".join(
+        [
+            f"Title: {activity_title}",
+            "",
+            f"Focus product: {product}",
+            "",
+            "Teacher explanation:",
+            teacher_explanation,
+            "",
+            "Teacher prompt:",
+            teacher_prompt,
+            "",
+            "Pupil tasks:",
+            *[f"- {task}" for task in pupil_tasks],
+            "",
+            "Example questions:",
+            *[f"- {question}" for question in example_questions],
+            "",
+            "Key noticing:",
+            "The product stays the same, the factors change, and one product can have more than one true route.",
+            "",
+            "Teaching note:",
+            teaching_note,
+        ]
+    )
+
+    return {
+        "product": product,
+        "stage_id": stage_id,
+        "stage_label": stage_label_text,
+        "intro_route": intro_route,
+        "routes": list(routes),
+        "compare_product": compare_product,
+        "compare_routes": list(compare_routes),
+        "activity_title": activity_title,
+        "activity_goal": activity_goal,
+        "teacher_move": teacher_move,
+        "teacher_prompt": teacher_prompt,
+        "pupil_tasks": pupil_tasks,
+        "example_questions": example_questions,
+        "key_noticing": key_noticing,
+        "teaching_note": teaching_note,
+        "print_text": print_text,
+    }
 
 
 
