@@ -52,8 +52,10 @@ def build_instruction_planner_view_model(
         "explanation_steps": _build_explanation_sequence(record.product, intro_left, intro_right),
         "teach_now_vocab": list(getattr(stage_record, "new_vocab", ()) or ()),
         "teacher_prompts": _build_teacher_prompts(record.product, intro_left, intro_right),
+        "teacher_prompt_groups": [],
         "introduce_if_needed": list(getattr(stage_record, "available_vocab", ()) or ()),
         "example_questions": _instruction_example_questions(stage_record, record.product, intro_left, intro_right),
+        "example_question_groups": [],
         "delay_vocab": list(getattr(stage_record, "required_vocab_focus", ()) or ()),
         "teaching_warning": "Do not open route comparison or wider product-network discussion until the entry explanation is secure.",
         "lesson_aim": "",
@@ -131,59 +133,95 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
         "compression hub",
     ]
 
-    teacher_prompts = [
-        "Entry prompts",
-        f"What product are we building when we say 9 × {base}?",
-        f"What is 10 × {base}?",
-        f"What is 1 × {base}?",
-        f"What must we subtract to get 9 × {base}?",
-        f"So what is 9 × {base}?",
-        "Pattern prompts",
-        f"In 9 × {base}, what is the quantifier?",
-        f"What is one less than {base}?",
-        f"So what is the tens digit in {product}?",
-        "What must the ones digit be so the digits add to 9?",
-        f"What do the digits in {product} add to?",
-        f"Which Stage D product comes before {product}?",
-        f"Which Stage D product comes after {product}?",
-        "What happens to the tens digits across the sequence?",
-        "What happens to the ones digits across the sequence?",
-        "Inverse prompts",
-        f"If 9 × {base} = {product}, what is {product} ÷ 9?",
-        f"What is {product} ÷ {base}?",
-        "How does division help us get back out of the product?",
-        "Extension prompts",
-        "Which other new Stage D products belong to the same 9× family?",
-        "Which Stage D product comes after 54?",
-        "Which Stage D product has digits 8 and 1?",
-        "How does the whole Stage D set show the 9× pattern?",
+    teacher_prompt_groups = [
+        {
+            "title": "Entry prompts",
+            "items": [
+                f"What product are we building when we say 9 × {base}?",
+                f"What is 10 × {base}?",
+                f"What is 1 × {base}?",
+                f"What must we subtract to get 9 × {base}?",
+                f"So what is 9 × {base}?",
+            ],
+        },
+        {
+            "title": "Pattern prompts",
+            "items": [
+                f"In 9 × {base}, what is the quantifier?",
+                f"What is one less than {base}?",
+                f"So what is the tens digit in {product}?",
+                "What must the ones digit be so the digits add to 9?",
+                f"What do the digits in {product} add to?",
+                f"Which Stage D product comes before {product}?",
+                f"Which Stage D product comes after {product}?",
+                "What happens to the tens digits across the sequence?",
+                "What happens to the ones digits across the sequence?",
+            ],
+        },
+        {
+            "title": "Inverse prompts",
+            "items": [
+                f"If 9 × {base} = {product}, what is {product} ÷ 9?",
+                f"What is {product} ÷ {base}?",
+                "How does division help us get back out of the product?",
+            ],
+        },
+        {
+            "title": "Extension prompts",
+            "items": [
+                "Which other new Stage D products belong to the same 9× family?",
+                "Which Stage D product comes after 54?",
+                "Which Stage D product has digits 8 and 1?",
+                "How does the whole Stage D set show the 9× pattern?",
+            ],
+        },
     ]
 
-    example_questions = [
-        "Build the product",
-        f"Complete: 10 × {base} = □",
-        f"Complete: 1 × {base} = □",
-        f"Complete: {base * 10} − {base} = □",
-        f"So: 9 × {base} = □",
-        f"Choose the correct statement: 9 × {base} is one group of {base} less than 10 × {base}.",
-        "Quantifier-build and digit-sum",
-        f"In 9 × {base}, one less than {base} is □.",
-        f"Complete: 9 × {base} = {product // 10} tens and □ ones.",
-        f"Complete: {product // 10} + {product % 10} = □.",
-        f"Which product fits the 9× digit-sum pattern: {product}, {product - 1}, {product - 2}?",
-        "Rise/fall and sequence",
-        f"Which product comes just before {product} in the Stage D sequence?",
-        f"Which product comes just after {product} in the Stage D sequence?",
-        "Complete the Stage D sequence: 18, 27, 36, □, □, □, □.",
-        "Tick the true statement: the tens rise and the ones fall.",
-        "Inverse questions",
-        f"Complete: {product} ÷ 9 = □",
-        f"Complete: {product} ÷ {base} = □",
-        f"Match 9 × {base} = {product} to its division facts.",
-        "Explain",
-        f"Explain how to derive 9 × {base} from 10 × {base}.",
-        f"Explain how {product} fits the 9× pattern.",
-        f"Explain one division fact that comes from {product}.",
+    example_question_groups = [
+        {
+            "title": "Build the product",
+            "items": [
+                f"Complete: 10 × {base} = □",
+                f"Complete: 1 × {base} = □",
+                f"Complete: {base * 10} − {base} = □",
+                f"So: 9 × {base} = □",
+                f"Choose the correct statement: 9 × {base} is one group of {base} less than 10 × {base}.",
+            ],
+        },
+        {
+            "title": "Quantifier-build and digit-sum",
+            "items": [
+                f"In 9 × {base}, one less than {base} is □.",
+                f"Complete: 9 × {base} = {product // 10} tens and □ ones.",
+                f"Complete: {product // 10} + {product % 10} = □.",
+                f"Which product fits the 9× digit-sum pattern: {product}, {product - 1}, {product - 2}?",
+            ],
+        },
+        {
+            "title": "Rise/fall and sequence",
+            "items": [
+                f"Which product comes just before {product} in the Stage D sequence?",
+                f"Which product comes just after {product} in the Stage D sequence?",
+                "Complete the Stage D sequence: 18, 27, 36, □, □, □, □.",
+                "Tick the true statement: the tens rise and the ones fall.",
+            ],
+        },
+        {
+            "title": "Inverse questions",
+            "items": [
+                f"Complete: {product} ÷ 9 = □",
+                f"Complete: {product} ÷ {base} = □",
+                f"Match 9 × {base} = {product} to its division facts.",
+            ],
+        },
+        {
+            "title": "Explain",
+            "items": [
+                f"Explain how to derive 9 × {base} from 10 × {base}.",
+                f"Explain how {product} fits the 9× pattern.",
+                f"Explain one division fact that comes from {product}.",
+            ],
+        },
     ]
 
     return {
@@ -200,9 +238,11 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
             "What happens to the ones digits across the sequence?",
         ],
         "teach_now_vocab": teach_now_vocab,
-        "teacher_prompts": teacher_prompts,
+        "teacher_prompt_groups": teacher_prompt_groups,
+        "teacher_prompts": _flatten_groups(teacher_prompt_groups),
         "introduce_if_needed": introduce_if_needed,
-        "example_questions": example_questions,
+        "example_question_groups": example_question_groups,
+        "example_questions": _flatten_groups(example_question_groups),
         "delay_vocab": delay_vocab,
         "teaching_warning": (
             f"Do not widen into broader route comparison or cross-stage product-network discussion "
@@ -269,7 +309,33 @@ def _build_general_fallback_content(
     right: int,
 ) -> dict[str, Any]:
     route_label = _format_route((left, right))
+    teacher_prompt_groups = [
+        {
+            "title": "Entry prompts",
+            "items": [
+                f"What do we already know about {route_label}?",
+                "What product are we building?",
+                f"How can we say {route_label} clearly?",
+            ],
+        },
+    ]
+
+    example_question_groups = [
+        {
+            "title": "Example questions",
+            "items": [
+                f"{left} × {right} = □",
+                f"□ = {product}",
+                f"{product} ÷ {left} = □",
+            ],
+        },
+    ]
+
     return {
+        "teacher_prompt_groups": teacher_prompt_groups,
+        "teacher_prompts": _flatten_groups(teacher_prompt_groups),
+        "example_question_groups": example_question_groups,
+        "example_questions": _flatten_groups(example_question_groups),
         "lesson_aim": (
             f"Learners build the product {product} through the intro route {route_label} "
             f"and explain how it fits within {stage_label_text}."
@@ -372,6 +438,20 @@ def _instruction_example_questions(stage_record: Any, product: int, left: int, r
         f"□ = {product}",
         f"{product} ÷ {left} = □",
     ]
+
+
+def _flatten_groups(groups: list[dict[str, Any]]) -> list[str]:
+    flattened: list[str] = []
+    for group in groups:
+        title = str(group.get("title", "")).strip()
+        items = list(group.get("items", []) or [])
+        if title:
+            flattened.append(title)
+        for item in items:
+            item_text = str(item).strip()
+            if item_text:
+                flattened.append(item_text)
+    return flattened
 
 
 def _is_stage_d_route(left: int, right: int) -> bool:
