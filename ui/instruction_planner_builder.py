@@ -12,10 +12,7 @@ _STAGE_D_PATTERN_BANK = [
     {
         "id": "nine_quantifier_build",
         "title": "Nine quantifier-build rule",
-        "description": (
-            "One less than the quantifier gives the tens digit, and the ones digit "
-            "completes the total digit sum to 9."
-        ),
+        "description": "One less than the quantifier gives the tens digit, and the ones digit completes 9.",
     },
     {
         "id": "nine_digit_sum",
@@ -46,7 +43,7 @@ def build_instruction_planner_view_model(
         "subtitle": "Teacher explanation flow, stage vocabulary, teacher prompts, and example questions for the current product.",
         "selected_product": record.product,
         "selected_stage_label": stage_label(record.stage),
-        "intro_route_label": _format_route(record.intro_route),
+        "intro_route_label": _format_instruction_intro_route(record.intro_route),
         "product_options": ALL_PRODUCTS,
         "selected_product_index": ALL_PRODUCTS.index(selected_product),
         "product_format_func": product_format_func,
@@ -69,6 +66,8 @@ def build_instruction_planner_view_model(
         "core_text": "",
         "extension_text": "",
         "teacher_quick_summary": "",
+        "check_for_understanding": "",
+        "stage_product_sequence": [],
     }
 
     if _is_stage_d_route(intro_left, intro_right):
@@ -94,7 +93,6 @@ def build_instruction_planner_view_model(
 
 def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, Any]:
     base = _stage_d_base_value(left, right)
-    stage_sequence = ", ".join(str(value) for value in _STAGE_D_NEW_PRODUCTS)
     previous_product, next_product = _stage_d_neighbors(product)
 
     teach_now_vocab = [
@@ -153,6 +151,7 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
         f"What is {product} ÷ {base}?",
         "How does division help us get back out of the product?",
         "Which other new Stage D products belong to the same 9× family?",
+        "How does the whole Stage D set show the 9× pattern?",
     ]
 
     example_questions = [
@@ -162,14 +161,16 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
         f"So: 9 × {base} = □",
         f"Choose the correct statement: 9 × {base} is one group of {base} less than 10 × {base}.",
         f"In 9 × {base}, one less than {base} is □.",
-        f"Complete: 9 × {base} = {product // 10} tens and □ ones",
-        f"Complete: {product // 10} + {product % 10} = □",
+        f"Complete: 9 × {base} = {product // 10} tens and □ ones.",
+        f"Complete: {product // 10} + {product % 10} = □.",
         f"Which product comes just before {product} in the Stage D sequence?",
         f"Which product comes just after {product} in the Stage D sequence?",
+        "Complete the Stage D sequence: 18, 27, 36, □, □, □, □.",
         f"Complete: {product} ÷ 9 = □",
         f"Complete: {product} ÷ {base} = □",
         f"Explain how to derive 9 × {base} from 10 × {base}.",
         f"Explain how {product} fits the 9× pattern.",
+        f"Explain one division fact that comes from {product}.",
     ]
 
     return {
@@ -178,6 +179,12 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
             f"What is 1 × {base}?",
             f"What is {base * 10} − {base}?",
             f"So what is 9 × {base}?",
+            f"In 9 × {base}, what is one less than {base}?",
+            f"So what is the tens digit in {product}?",
+            "What must the ones digit be so the digits add to 9?",
+            f"Where does {product} sit in the Stage D sequence?",
+            "What happens to the tens digits across the sequence?",
+            "What happens to the ones digits across the sequence?",
         ],
         "teach_now_vocab": teach_now_vocab,
         "teacher_prompts": teacher_prompts,
@@ -194,11 +201,15 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
         ),
         "suggested_lesson_length": "15–20 minutes",
         "stage_pattern_bank": list(_STAGE_D_PATTERN_BANK),
+        "stage_product_sequence": list(_STAGE_D_NEW_PRODUCTS),
         "teacher_model": [
             f"10 × {base} = {base * 10}",
             f"1 × {base} = {base}",
             f"{base * 10} − {base} = {product}",
             f"9 × {base} = {product}",
+            "",
+            f"In 9 × {base}, one less than {base} is {product // 10}, so the tens digit is {product // 10}.",
+            f"The ones digit must be {product % 10}, so the digits add to 9.",
         ],
         "teacher_explanation_sentence": (
             f"Nine groups of {base} is one group of {base} less than ten groups of {base}."
@@ -208,6 +219,10 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
             f"{product} ÷ 9 = {base}",
             f"{product} ÷ {base} = 9",
         ],
+        "check_for_understanding": (
+            f"Learners should be able to derive 9 × {base} = {product}, explain how {product} fits the 9× pattern, "
+            f"and state the linked division facts."
+        ),
         "support_text": (
             f"Use counters or arrays to show 10 groups of {base}, then remove 1 group of {base}. "
             f"Keep the language simple: ten groups, one less group, nine groups, product."
@@ -217,10 +232,11 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
             f"quantifier-build, digit sum, and rise/fall. Finally connect {product} ÷ 9 = {base} and {product} ÷ {base} = 9."
         ),
         "extension_text": (
-            f"Extend from the focus product {product} to the full Stage D set: {stage_sequence}. "
+            f"Extend from the focus product {product} to the full Stage D set: "
+            f"{', '.join(str(value) for value in _STAGE_D_NEW_PRODUCTS)}. "
             f"Use nearby products first ({previous_product} and {next_product} where available), then widen to the whole set. "
             f"Ask learners to place all Stage D products in order, identify the quantifier for each product, "
-            f"check the digit sum in each product, describe how the tens rise and ones fall, and match multiplication to division facts."
+            f"check the digit sum in each product, describe how the tens rise and the ones fall, and match multiplication facts to division facts."
         ),
         "teacher_quick_summary": (
             f"Today’s product is {product}. We first build it as 9 × {base} by starting from 10 × {base} "
@@ -247,6 +263,7 @@ def _build_general_fallback_content(
         ),
         "suggested_lesson_length": "10–15 minutes",
         "stage_pattern_bank": [],
+        "stage_product_sequence": [],
         "teacher_model": [
             f"{route_label} = {product}",
             f"{product} ÷ {left} = {right}",
@@ -260,6 +277,9 @@ def _build_general_fallback_content(
             f"{product} ÷ {left} = {right}",
             f"{product} ÷ {right} = {left}",
         ],
+        "check_for_understanding": (
+            f"Learners should be able to state {route_label} = {product} and give the linked division facts."
+        ),
         "support_text": (
             f"Keep the focus on the intro route {route_label} and the product {product}. "
             f"Use concrete groups or arrays if the product is not yet secure."
@@ -357,6 +377,14 @@ def _stage_d_neighbors(product: int) -> tuple[str, str]:
     previous_value = str(_STAGE_D_NEW_PRODUCTS[index - 1]) if index > 0 else "None"
     next_value = str(_STAGE_D_NEW_PRODUCTS[index + 1]) if index < len(_STAGE_D_NEW_PRODUCTS) - 1 else "None"
     return previous_value, next_value
+
+
+def _format_instruction_intro_route(route: tuple[int, int]) -> str:
+    left, right = route
+    if left == 9 or right == 9:
+        base = _stage_d_base_value(left, right)
+        return f"9 × {base}"
+    return _format_route(route)
 
 
 def _format_route(route: tuple[int, int]) -> str:
