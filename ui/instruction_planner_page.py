@@ -1,293 +1,117 @@
-from __future__ import annotations
+import streamlit as st
 
-from typing import Any
-
-from domain.products import ALL_PRODUCTS, product_record, stage_label
-from domain.stage_vocabulary import get_stage_vocabulary
+from ui.components import page_header
 
 
-_STAGE_D_NEW_PRODUCTS = (18, 27, 36, 54, 63, 72, 81)
+def render_instruction_planner_page(view_model):
+    """
+    UI-only page.
+    Receives data from services.
+    No TMK logic allowed here.
+    """
 
-_STAGE_D_PATTERN_BANK = [
-    {
-        "id": "nine_quantifier_build",
-        "title": "Nine quantifier-build rule",
-        "description": (
-            "One less than the quantifier gives the tens digit, and the ones digit "
-            "completes the total digit sum to 9."
-        ),
-    },
-    {
-        "id": "nine_digit_sum",
-        "title": "Nine digit-sum pattern",
-        "description": "The digits of the product add to 9.",
-    },
-    {
-        "id": "nine_rise_fall",
-        "title": "Nine rise/fall pattern",
-        "description": "Across the 9× sequence, the tens rise and the ones fall.",
-    },
-]
+    title = view_model.get("title", "Instruction Planner")
+    subtitle = view_model.get(
+        "subtitle",
+        "Teacher explanation flow, stage vocabulary, teacher prompts, and example questions.",
+    )
+    selected_product = view_model.get("selected_product")
+    selected_stage_label = view_model.get("selected_stage_label", "")
+    intro_route_label = view_model.get("intro_route_label", "")
+    explanation_steps = view_model.get("explanation_steps", [])
+    teach_now_vocab = view_model.get("teach_now_vocab", [])
+    teacher_prompts = view_model.get("teacher_prompts", [])
+    introduce_if_needed = view_model.get("introduce_if_needed", [])
+    example_questions = view_model.get("example_questions", [])
+    delay_vocab = view_model.get("delay_vocab", [])
+    teaching_warning = view_model.get(
+        "teaching_warning",
+        "Do not open route comparison or wider product-network discussion until the entry explanation is secure.",
+    )
 
+    page_header(title, subtitle)
 
-def build_instruction_planner_view_model(
-    product: int,
-    *,
-    selected_product: int,
-    product_format_func,
-    on_product_change,
-) -> dict[str, Any]:
-    record = product_record(product)
-    stage_record = get_stage_vocabulary(record.stage)
-    intro_left, intro_right = record.intro_route
+    control_col1, control_col2 = st.columns((1.2, 0.8))
 
-    base_view_model: dict[str, Any] = {
-        "title": "Instruction Planner",
-        "subtitle": "Teacher explanation flow, stage vocabulary, teacher prompts, and example questions for the current product.",
-        "selected_product": record.product,
-        "selected_stage_label": stage_label(record.stage),
-        "intro_route_label": _format_route(record.intro_route),
-        "product_options": ALL_PRODUCTS,
-        "selected_product_index": ALL_PRODUCTS.index(selected_product),
-        "product_format_func": product_format_func,
-        "product_select_key": "instruction_product_select_v20",
-        "on_product_change": on_product_change,
-        "explanation_steps": _build_explanation_sequence(record.product, intro_left, intro_right),
-        "teach_now_vocab": list(getattr(stage_record, "new_vocab", ()) or ()),
-        "teacher_prompts": _build_teacher_prompts(record.product, intro_left, intro_right),
-        "introduce_if_needed": list(getattr(stage_record, "available_vocab", ()) or ()),
-        "example_questions": _instruction_example_questions(stage_record, record.product, intro_left, intro_right),
-        "delay_vocab": list(getattr(stage_record, "required_vocab_focus", ()) or ()),
-        "teaching_warning": "Do not open route comparison or wider product-network discussion until the entry explanation is secure.",
-        "lesson_aim": "",
-        "suggested_lesson_length": "",
-        "stage_pattern_bank": [],
-        "teacher_model": [],
-        "teacher_explanation_sentence": "",
-        "inverse_connection": [],
-        "support_text": "",
-        "core_text": "",
-        "extension_text": "",
-        "teacher_quick_summary": "",
-    }
+    with control_col1:
+        product_options = view_model.get("product_options", [])
+        selected_product_index = int(view_model.get("selected_product_index", 0))
+        product_format_func = view_model.get("product_format_func")
 
-    if _is_stage_d_route(intro_left, intro_right):
-        base_view_model.update(
-            _build_stage_d_content(
-                product=record.product,
-                left=intro_left,
-                right=intro_right,
+        if product_options:
+            st.selectbox(
+                "Selected product",
+                options=product_options,
+                index=selected_product_index,
+                format_func=product_format_func if product_format_func else None,
+                key=view_model.get("product_select_key", "instruction_product_select_v20"),
+                on_change=view_model.get("on_product_change"),
             )
-        )
+        else:
+            st.write("No product options available.")
 
-    return base_view_model
+    with control_col2:
+        st.markdown("### Structural dependency reminder")
+        if intro_route_label and selected_stage_label:
+            st.write(f"Uses intro route {intro_route_label} in {selected_stage_label}.")
+        elif intro_route_label:
+            st.write(f"Uses intro route {intro_route_label}.")
+        elif selected_stage_label:
+            st.write(f"Current stage: {selected_stage_label}.")
+        else:
+            st.write("No structural dependency reminder available.")
 
+    st.markdown("### Explanation sequence")
+    if selected_product is not None:
+        st.write(f"**Product:** {selected_product}")
 
-def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, Any]:
-    base = _stage_d_base_value(left, right)
-    extension_products = ", ".join(str(value) for value in _STAGE_D_NEW_PRODUCTS)
+    if explanation_steps:
+        for index, step in enumerate(explanation_steps, start=1):
+            st.markdown(f"**{index}.** {step}")
+    else:
+        st.write("No explanation sequence available.")
 
-    teach_now_vocab = [
-        "product",
-        "factor",
-        "multiply",
-        "times",
-        "groups",
-        "sequence",
-        "pattern",
-        "missing number",
-        "digit sum",
-        "subtract one",
-        "quantifier",
-        "tens digit",
-        "ones digit",
-        "divide",
-        "inverse",
-    ]
+    top_left, top_right = st.columns(2)
+    bottom_left, bottom_right = st.columns(2)
 
-    introduce_if_needed = [
-        "equal",
-        "same",
-        "fact",
-        "ten times",
-        "groups of ten",
-        "compare",
-        "before",
-        "after",
-    ]
+    with top_left:
+        st.markdown("### Teach now vocabulary")
+        if teach_now_vocab:
+            for item in teach_now_vocab:
+                st.write(f"- {item}")
+        else:
+            st.write("None")
 
-    delay_vocab = [
-        "commutative",
-        "factor family",
-        "route comparison beyond the stage set",
-        "bridge hub",
-        "compression hub",
-    ]
+    with top_right:
+        st.markdown("### Teacher prompt bank")
+        if teacher_prompts:
+            for prompt in teacher_prompts:
+                st.write(f"- {prompt}")
+        else:
+            st.write("None")
 
-    teacher_prompts = [
-        "What product are we building?",
-        f"What is 10 × {base}?",
-        f"What is 1 × {base}?",
-        f"What must we subtract to get 9 × {base}?",
-        f"So what is 9 × {base}?",
-        f"In 9 × {base}, what is the quantifier?",
-        f"What is one less than {base}?",
-        f"So what is the tens digit in {product}?",
-        "What must the ones digit be to make the digits add to 9?",
-        f"What do the digits in {product} add to?",
-        f"What comes before {product} in the 9× pattern?",
-        f"What comes after {product} in the 9× pattern?",
-        "What happens to the tens digits?",
-        "What happens to the ones digits?",
-        f"If 9 × {base} = {product}, what is {product} ÷ 9?",
-        f"What is {product} ÷ {base}?",
-        "How does division help us get back out of the product?",
-        "Which other new Stage D products belong to the 9× family?",
-    ]
+    with bottom_left:
+        st.markdown("### Introduce if needed")
+        if introduce_if_needed:
+            for item in introduce_if_needed:
+                st.write(f"- {item}")
+        else:
+            st.write("None")
 
-    example_questions = [
-        f"Complete: 10 × {base} = □",
-        f"Complete: 1 × {base} = □",
-        f"Complete: {base * 10} − {base} = □",
-        f"So: 9 × {base} = □",
-        f"In 9 × {base}, one less than {base} is:",
-        f"Complete: 9 × {base} = {product // 10} tens and □ ones",
-        "Which of these has digits that add to 9?",
-        f"Complete: {product // 10} + {product % 10} = □",
-        "Complete the Stage D sequence: 18, 27, 36, □, □, □, □",
-        f"Complete: {product} ÷ 9 = □",
-        f"Complete: {product} ÷ {base} = □",
-        f"Explain how to derive 9 × {base} from 10 × {base}.",
-    ]
+    with bottom_right:
+        st.markdown("### Example questions")
+        if example_questions:
+            for question in example_questions:
+                st.write(f"- {question}")
+        else:
+            st.write("None")
 
-    return {
-        "explanation_steps": [
-            f"What is 10 × {base}?",
-            f"What is 1 × {base}?",
-            f"What is {base * 10} − {base}?",
-            f"So what is 9 × {base}?",
-        ],
-        "teach_now_vocab": teach_now_vocab,
-        "teacher_prompts": teacher_prompts,
-        "introduce_if_needed": introduce_if_needed,
-        "example_questions": example_questions,
-        "delay_vocab": delay_vocab,
-        "teaching_warning": (
-            f"Do not widen into broader route comparison or cross-stage product-network discussion "
-            f"until learners are secure with the entry route 9 × {base} = {product} and the three core Stage D patterns."
-        ),
-        "lesson_aim": (
-            f"Learners build the product {product} through the 9× structure, use all core Stage D patterns, "
-            f"and extend their understanding across the other new Stage D products."
-        ),
-        "suggested_lesson_length": "15–20 minutes",
-        "stage_pattern_bank": list(_STAGE_D_PATTERN_BANK),
-        "teacher_model": [
-            f"10 × {base} = {base * 10}",
-            f"1 × {base} = {base}",
-            f"{base * 10} − {base} = {product}",
-            f"9 × {base} = {product}",
-        ],
-        "teacher_explanation_sentence": (
-            f"Nine groups of {base} is one group of {base} less than ten groups of {base}."
-        ),
-        "inverse_connection": [
-            f"9 × {base} = {product}",
-            f"{product} ÷ 9 = {base}",
-            f"{product} ÷ {base} = 9",
-        ],
-        "support_text": (
-            f"Use counters or arrays to show 10 groups of {base}, then remove 1 group of {base}. "
-            f"Keep the language simple: ten groups, one less group, nine groups, product."
-        ),
-        "core_text": (
-            f"Build {product} from 10 × {base} − {base}, then teach all three Stage D patterns through the product: "
-            f"quantifier-build, digit sum, and rise/fall. Finally connect {product} ÷ 9 = {base} and {product} ÷ {base} = 9."
-        ),
-        "extension_text": (
-            f"Extend from the focus product {product} to all new Stage D products: {extension_products}. "
-            f"Ask learners to place all Stage D products in order, identify the quantifier for each product, "
-            f"check the digit sum in each product, describe how the tens rise and ones fall, and match multiplication to division facts."
-        ),
-        "teacher_quick_summary": (
-            f"Today’s product is {product}. We first build it as 9 × {base} by starting from 10 × {base} "
-            f"and subtracting one group of {base}. Then we teach the full Stage D pattern bank through {product}: "
-            f"one less than the quantifier gives the tens digit, the digits add to 9, and across the sequence "
-            f"the tens rise while the ones fall. Finally, we extend this understanding across the other new Stage D products "
-            f"and use division facts to move back out of the product."
-        ),
-    }
+    st.markdown("### Delay vocabulary")
+    if delay_vocab:
+        for item in delay_vocab:
+            st.write(f"- {item}")
+    else:
+        st.write("None")
 
-
-def _build_explanation_sequence(product: int, left: int, right: int) -> list[str]:
-    if right == 9:
-        base = left
-        ten_value = base * 10
-        one_value = base
-        return [
-            f"What is 10 × {base}?",
-            f"What is 1 × {base}?",
-            f"What is {ten_value} − {one_value}?",
-            f"So what is 9 × {base}?",
-        ]
-
-    if left == 9:
-        base = right
-        ten_value = base * 10
-        one_value = base
-        return [
-            f"What is 10 × {base}?",
-            f"What is 1 × {base}?",
-            f"What is {ten_value} − {one_value}?",
-            f"So what is 9 × {base}?",
-        ]
-
-    return [
-        f"State the intro route: {_format_route((left, right))}.",
-        f"Identify the product: {product}.",
-        f"Explain how {_format_route((left, right))} builds {product}.",
-        f"Check the product again: {product}.",
-    ]
-
-
-def _build_teacher_prompts(product: int, left: int, right: int) -> list[str]:
-    prompts = [
-        f"What do we already know about {_format_route((left, right))}?",
-        "What product are we building?",
-        f"How can we say {_format_route((left, right))} clearly?",
-    ]
-
-    if right == 9 or left == 9:
-        base = left if right == 9 else right
-        prompts.extend(
-            [
-                f"What is 10 groups of {base}?",
-                "How do we adjust from 10× to 9×?",
-            ]
-        )
-
-    return prompts
-
-
-def _instruction_example_questions(stage_record: Any, product: int, left: int, right: int) -> list[str]:
-    from_stage = list(getattr(stage_record, "example_child_friendly_questions", []) or [])
-    if from_stage:
-        return [str(item) for item in from_stage]
-
-    return [
-        f"{left} × {right} = □",
-        f"□ = {product}",
-        f"{product} ÷ {left} = □",
-    ]
-
-
-def _is_stage_d_route(left: int, right: int) -> bool:
-    return left == 9 or right == 9
-
-
-def _stage_d_base_value(left: int, right: int) -> int:
-    return left if right == 9 else right
-
-
-def _format_route(route: tuple[int, int]) -> str:
-    return f"{route[0]} × {route[1]}"
+    st.markdown("### Teaching warning")
+    st.write(teaching_warning)
