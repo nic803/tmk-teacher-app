@@ -93,7 +93,6 @@ def build_instruction_planner_view_model(
 
 def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, Any]:
     base = _stage_d_base_value(left, right)
-    previous_product, next_product = _stage_d_neighbors(product)
 
     teach_now_vocab = [
         "product",
@@ -133,11 +132,13 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
     ]
 
     teacher_prompts = [
+        "Entry prompts",
         f"What product are we building when we say 9 × {base}?",
         f"What is 10 × {base}?",
         f"What is 1 × {base}?",
         f"What must we subtract to get 9 × {base}?",
         f"So what is 9 × {base}?",
+        "Pattern prompts",
         f"In 9 × {base}, what is the quantifier?",
         f"What is one less than {base}?",
         f"So what is the tens digit in {product}?",
@@ -147,27 +148,39 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
         f"Which Stage D product comes after {product}?",
         "What happens to the tens digits across the sequence?",
         "What happens to the ones digits across the sequence?",
+        "Inverse prompts",
         f"If 9 × {base} = {product}, what is {product} ÷ 9?",
         f"What is {product} ÷ {base}?",
         "How does division help us get back out of the product?",
+        "Extension prompts",
         "Which other new Stage D products belong to the same 9× family?",
+        "Which Stage D product comes after 54?",
+        "Which Stage D product has digits 8 and 1?",
         "How does the whole Stage D set show the 9× pattern?",
     ]
 
     example_questions = [
+        "Build the product",
         f"Complete: 10 × {base} = □",
         f"Complete: 1 × {base} = □",
         f"Complete: {base * 10} − {base} = □",
         f"So: 9 × {base} = □",
         f"Choose the correct statement: 9 × {base} is one group of {base} less than 10 × {base}.",
+        "Quantifier-build and digit-sum",
         f"In 9 × {base}, one less than {base} is □.",
         f"Complete: 9 × {base} = {product // 10} tens and □ ones.",
         f"Complete: {product // 10} + {product % 10} = □.",
+        f"Which product fits the 9× digit-sum pattern: {product}, {product - 1}, {product - 2}?",
+        "Rise/fall and sequence",
         f"Which product comes just before {product} in the Stage D sequence?",
         f"Which product comes just after {product} in the Stage D sequence?",
         "Complete the Stage D sequence: 18, 27, 36, □, □, □, □.",
+        "Tick the true statement: the tens rise and the ones fall.",
+        "Inverse questions",
         f"Complete: {product} ÷ 9 = □",
         f"Complete: {product} ÷ {base} = □",
+        f"Match 9 × {base} = {product} to its division facts.",
+        "Explain",
         f"Explain how to derive 9 × {base} from 10 × {base}.",
         f"Explain how {product} fits the 9× pattern.",
         f"Explain one division fact that comes from {product}.",
@@ -234,7 +247,7 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
         "extension_text": (
             f"Extend from the focus product {product} to the full Stage D set: "
             f"{', '.join(str(value) for value in _STAGE_D_NEW_PRODUCTS)}. "
-            f"Use nearby products first ({previous_product} and {next_product} where available), then widen to the whole set. "
+            f"Use nearby products first, then widen to the whole Stage D set. "
             f"Ask learners to place all Stage D products in order, identify the quantifier for each product, "
             f"check the digit sum in each product, describe how the tens rise and the ones fall, and match multiplication facts to division facts."
         ),
@@ -367,16 +380,6 @@ def _is_stage_d_route(left: int, right: int) -> bool:
 
 def _stage_d_base_value(left: int, right: int) -> int:
     return left if right == 9 else right
-
-
-def _stage_d_neighbors(product: int) -> tuple[str, str]:
-    if product not in _STAGE_D_NEW_PRODUCTS:
-        return ("None", "None")
-
-    index = _STAGE_D_NEW_PRODUCTS.index(product)
-    previous_value = str(_STAGE_D_NEW_PRODUCTS[index - 1]) if index > 0 else "None"
-    next_value = str(_STAGE_D_NEW_PRODUCTS[index + 1]) if index < len(_STAGE_D_NEW_PRODUCTS) - 1 else "None"
-    return previous_value, next_value
 
 
 def _format_instruction_intro_route(route: tuple[int, int]) -> str:
