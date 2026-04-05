@@ -41,7 +41,7 @@ def build_instruction_planner_view_model(
     stage_record = get_stage_vocabulary(record.stage)
     intro_left, intro_right = record.intro_route
 
-    base_view_model: dict[str, Any] = {
+    view_model: dict[str, Any] = {
         "title": "Instruction Planner",
         "subtitle": "Teacher explanation flow, stage vocabulary, teacher prompts, and example questions for the current product.",
         "selected_product": record.product,
@@ -72,20 +72,30 @@ def build_instruction_planner_view_model(
     }
 
     if _is_stage_d_route(intro_left, intro_right):
-        base_view_model.update(
+        view_model.update(
             _build_stage_d_content(
                 product=record.product,
                 left=intro_left,
                 right=intro_right,
             )
         )
+    else:
+        view_model.update(
+            _build_general_fallback_content(
+                product=record.product,
+                stage_label_text=stage_label(record.stage),
+                left=intro_left,
+                right=intro_right,
+            )
+        )
 
-    return base_view_model
+    return view_model
 
 
 def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, Any]:
     base = _stage_d_base_value(left, right)
-    extension_products = ", ".join(str(value) for value in _STAGE_D_NEW_PRODUCTS)
+    stage_sequence = ", ".join(str(value) for value in _STAGE_D_NEW_PRODUCTS)
+    previous_product, next_product = _stage_d_neighbors(product)
 
     teach_now_vocab = [
         "product",
@@ -125,7 +135,7 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
     ]
 
     teacher_prompts = [
-        "What product are we building?",
+        f"What product are we building when we say 9 × {base}?",
         f"What is 10 × {base}?",
         f"What is 1 × {base}?",
         f"What must we subtract to get 9 × {base}?",
@@ -133,16 +143,16 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
         f"In 9 × {base}, what is the quantifier?",
         f"What is one less than {base}?",
         f"So what is the tens digit in {product}?",
-        "What must the ones digit be to make the digits add to 9?",
+        "What must the ones digit be so the digits add to 9?",
         f"What do the digits in {product} add to?",
-        f"What comes before {product} in the 9× pattern?",
-        f"What comes after {product} in the 9× pattern?",
-        "What happens to the tens digits?",
-        "What happens to the ones digits?",
+        f"Which Stage D product comes before {product}?",
+        f"Which Stage D product comes after {product}?",
+        "What happens to the tens digits across the sequence?",
+        "What happens to the ones digits across the sequence?",
         f"If 9 × {base} = {product}, what is {product} ÷ 9?",
         f"What is {product} ÷ {base}?",
         "How does division help us get back out of the product?",
-        "Which other new Stage D products belong to the 9× family?",
+        "Which other new Stage D products belong to the same 9× family?",
     ]
 
     example_questions = [
@@ -150,14 +160,16 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
         f"Complete: 1 × {base} = □",
         f"Complete: {base * 10} − {base} = □",
         f"So: 9 × {base} = □",
-        f"In 9 × {base}, one less than {base} is:",
+        f"Choose the correct statement: 9 × {base} is one group of {base} less than 10 × {base}.",
+        f"In 9 × {base}, one less than {base} is □.",
         f"Complete: 9 × {base} = {product // 10} tens and □ ones",
-        "Which of these has digits that add to 9?",
         f"Complete: {product // 10} + {product % 10} = □",
-        "Complete the Stage D sequence: 18, 27, 36, □, □, □, □",
+        f"Which product comes just before {product} in the Stage D sequence?",
+        f"Which product comes just after {product} in the Stage D sequence?",
         f"Complete: {product} ÷ 9 = □",
         f"Complete: {product} ÷ {base} = □",
         f"Explain how to derive 9 × {base} from 10 × {base}.",
+        f"Explain how {product} fits the 9× pattern.",
     ]
 
     return {
@@ -205,7 +217,8 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
             f"quantifier-build, digit sum, and rise/fall. Finally connect {product} ÷ 9 = {base} and {product} ÷ {base} = 9."
         ),
         "extension_text": (
-            f"Extend from the focus product {product} to all new Stage D products: {extension_products}. "
+            f"Extend from the focus product {product} to the full Stage D set: {stage_sequence}. "
+            f"Use nearby products first ({previous_product} and {next_product} where available), then widen to the whole set. "
             f"Ask learners to place all Stage D products in order, identify the quantifier for each product, "
             f"check the digit sum in each product, describe how the tens rise and ones fall, and match multiplication to division facts."
         ),
@@ -215,6 +228,53 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
             f"one less than the quantifier gives the tens digit, the digits add to 9, and across the sequence "
             f"the tens rise while the ones fall. Finally, we extend this understanding across the other new Stage D products "
             f"and use division facts to move back out of the product."
+        ),
+    }
+
+
+def _build_general_fallback_content(
+    *,
+    product: int,
+    stage_label_text: str,
+    left: int,
+    right: int,
+) -> dict[str, Any]:
+    route_label = _format_route((left, right))
+    return {
+        "lesson_aim": (
+            f"Learners build the product {product} through the intro route {route_label} "
+            f"and explain how it fits within {stage_label_text}."
+        ),
+        "suggested_lesson_length": "10–15 minutes",
+        "stage_pattern_bank": [],
+        "teacher_model": [
+            f"{route_label} = {product}",
+            f"{product} ÷ {left} = {right}",
+            f"{product} ÷ {right} = {left}",
+        ],
+        "teacher_explanation_sentence": (
+            f"The intro route {route_label} builds the product {product}."
+        ),
+        "inverse_connection": [
+            f"{route_label} = {product}",
+            f"{product} ÷ {left} = {right}",
+            f"{product} ÷ {right} = {left}",
+        ],
+        "support_text": (
+            f"Keep the focus on the intro route {route_label} and the product {product}. "
+            f"Use concrete groups or arrays if the product is not yet secure."
+        ),
+        "core_text": (
+            f"State the intro route {route_label}, identify the product {product}, "
+            f"and connect the multiplication fact to its linked division facts."
+        ),
+        "extension_text": (
+            f"Once {route_label} is secure, compare it with other products from {stage_label_text} "
+            f"without opening full route comparison too early."
+        ),
+        "teacher_quick_summary": (
+            f"Today’s product is {product}. We focused on the intro route {route_label}, "
+            f"identified the product clearly, and linked multiplication to the inverse division facts."
         ),
     }
 
@@ -287,6 +347,16 @@ def _is_stage_d_route(left: int, right: int) -> bool:
 
 def _stage_d_base_value(left: int, right: int) -> int:
     return left if right == 9 else right
+
+
+def _stage_d_neighbors(product: int) -> tuple[str, str]:
+    if product not in _STAGE_D_NEW_PRODUCTS:
+        return ("None", "None")
+
+    index = _STAGE_D_NEW_PRODUCTS.index(product)
+    previous_value = str(_STAGE_D_NEW_PRODUCTS[index - 1]) if index > 0 else "None"
+    next_value = str(_STAGE_D_NEW_PRODUCTS[index + 1]) if index < len(_STAGE_D_NEW_PRODUCTS) - 1 else "None"
+    return previous_value, next_value
 
 
 def _format_route(route: tuple[int, int]) -> str:
