@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+
 from typing import Any
+
 
 from domain.products import ALL_PRODUCTS, product_record, stage_label
 from domain.stage_vocabulary import get_stage_vocabulary
 
 
 _STAGE_D_NEW_PRODUCTS = (18, 27, 36, 54, 63, 72, 81)
+_STAGE_E_NEW_PRODUCTS = (12, 14, 16, 24, 28, 32, 48, 56, 64)
+
 
 _STAGE_D_PATTERN_BANK = [
     {
@@ -23,6 +27,25 @@ _STAGE_D_PATTERN_BANK = [
         "id": "nine_rise_fall",
         "title": "Nine rise/fall pattern",
         "description": "Across the 9× sequence, the tens rise and the ones fall.",
+    },
+]
+
+
+_STAGE_E_PATTERN_BANK = [
+    {
+        "id": "doubling_chain",
+        "title": "Doubling chain",
+        "description": "A product in this stage can help build the next product by doubling.",
+    },
+    {
+        "id": "use_one_product_to_find_another",
+        "title": "Use one product to find another",
+        "description": "If one product is known, the next related product in the chain can be derived from it.",
+    },
+    {
+        "id": "inverse_connection",
+        "title": "Inverse connection",
+        "description": "A product can be used to recover its factors through division.",
     },
 ]
 
@@ -75,6 +98,14 @@ def build_instruction_planner_view_model(
     if _is_stage_d_route(intro_left, intro_right):
         view_model.update(
             _build_stage_d_content(
+                product=record.product,
+                left=intro_left,
+                right=intro_right,
+            )
+        )
+    elif _is_stage_e_route(intro_left, intro_right):
+        view_model.update(
+            _build_stage_e_content(
                 product=record.product,
                 left=intro_left,
                 right=intro_right,
@@ -301,6 +332,167 @@ def _build_stage_d_content(*, product: int, left: int, right: int) -> dict[str, 
     }
 
 
+def _build_stage_e_content(*, product: int, left: int, right: int) -> dict[str, Any]:
+    chain_routes = _stage_e_chain_routes(product, left, right)
+    chain_products = [route[0] * route[1] for route in chain_routes]
+    focus_index = chain_products.index(product)
+    route_labels = [_format_route(route) for route in chain_routes]
+    current_route_label = route_labels[focus_index]
+
+    teacher_model = [f"{label} = {value}" for label, value in zip(route_labels, chain_products)]
+
+    inverse_connection = [
+        f"{current_route_label} = {product}",
+        f"{product} ÷ {left} = {right}",
+        f"{product} ÷ {right} = {left}",
+    ]
+
+    teach_now_vocab = [
+        "product",
+        "factor",
+        "multiply",
+        "times",
+        "double",
+        "doubling",
+        "chain",
+        "pattern",
+        "sequence",
+        "groups",
+        "divide",
+        "inverse",
+    ]
+
+    introduce_if_needed = [
+        "equal",
+        "same",
+        "fact",
+        "compare",
+        "before",
+        "after",
+        "half",
+    ]
+
+    delay_vocab = [
+        "commutative",
+        "factor family",
+        "route comparison beyond the chain",
+        "bridge hub",
+        "compression hub",
+    ]
+
+    teacher_prompt_groups = [
+        {
+            "title": "Entry prompts",
+            "items": [
+                f"What product are we building when we say {current_route_label}?",
+                f"What is {current_route_label}?",
+                "So what is the product?",
+            ],
+        },
+        {
+            "title": "Pattern prompts",
+            "items": _stage_e_pattern_prompts(chain_products, route_labels, focus_index, product),
+        },
+        {
+            "title": "Inverse prompts",
+            "items": [
+                f"If {current_route_label} = {product}, what is {product} ÷ {left}?",
+                f"What is {product} ÷ {right}?",
+                f"How does division help us get back out of the product {product}?",
+            ],
+        },
+        {
+            "title": "Extension prompts",
+            "items": _stage_e_extension_prompts(chain_products, product),
+        },
+    ]
+
+    example_question_groups = [
+        {
+            "title": "Build the product",
+            "items": [
+                f"Complete: {current_route_label} = □",
+                f"Circle the product in {current_route_label} = {product}",
+                f"Choose the correct statement: {current_route_label} makes {product}",
+            ],
+        },
+        {
+            "title": "Doubling-chain questions",
+            "items": _stage_e_chain_questions(chain_products, route_labels, focus_index),
+        },
+        {
+            "title": "Inverse questions",
+            "items": [
+                f"Complete: {product} ÷ {left} = □",
+                f"Complete: {product} ÷ {right} = □",
+                f"Match {current_route_label} = {product} to its division facts",
+            ],
+        },
+        {
+            "title": "Explain",
+            "items": _stage_e_explain_questions(chain_products, focus_index),
+        },
+    ]
+
+    lesson_aim = (
+        f"Learners build the product {product} through the doubling-chain structure, use repeated doubling "
+        f"to connect it to related Stage E products, and link the product to its inverse division facts."
+    )
+
+    check_for_understanding = _stage_e_check_for_understanding(
+        product=product,
+        left=left,
+        right=right,
+        chain_products=chain_products,
+        focus_index=focus_index,
+    )
+
+    support_text = (
+        f"Use counters or arrays to show {left} groups of {right}. Then show that doubling the product gives "
+        f"the next step in the chain. Keep the language simple: groups, double, product."
+    )
+
+    core_text = _stage_e_core_text(product, left, right, chain_products, route_labels, focus_index)
+
+    extension_text = _stage_e_extension_text(product, chain_products)
+
+    teacher_quick_summary = _stage_e_teacher_quick_summary(
+        product=product,
+        chain_products=chain_products,
+        route_labels=route_labels,
+        focus_index=focus_index,
+    )
+
+    return {
+        "explanation_steps": _stage_e_explanation_steps(product, chain_products, route_labels, focus_index),
+        "teach_now_vocab": teach_now_vocab,
+        "teacher_prompt_groups": teacher_prompt_groups,
+        "teacher_prompts": _flatten_groups(teacher_prompt_groups),
+        "introduce_if_needed": introduce_if_needed,
+        "example_question_groups": example_question_groups,
+        "example_questions": _flatten_groups(example_question_groups),
+        "delay_vocab": delay_vocab,
+        "teaching_warning": (
+            f"Do not widen into unrelated route comparison or broader cross-stage product discussion until learners "
+            f"are secure with the entry route {current_route_label} = {product}, the doubling-chain structure, and the linked inverse facts."
+        ),
+        "lesson_aim": lesson_aim,
+        "suggested_lesson_length": "15–20 minutes",
+        "stage_pattern_bank": list(_STAGE_E_PATTERN_BANK),
+        "stage_product_sequence": list(_STAGE_E_NEW_PRODUCTS),
+        "teacher_model": teacher_model,
+        "teacher_explanation_sentence": (
+            f"We start with {current_route_label} = {product}, then double the product to build the next facts in the chain."
+        ),
+        "inverse_connection": inverse_connection,
+        "check_for_understanding": check_for_understanding,
+        "support_text": support_text,
+        "core_text": core_text,
+        "extension_text": extension_text,
+        "teacher_quick_summary": teacher_quick_summary,
+    }
+
+
 def _build_general_fallback_content(
     *,
     product: int,
@@ -460,6 +652,253 @@ def _is_stage_d_route(left: int, right: int) -> bool:
 
 def _stage_d_base_value(left: int, right: int) -> int:
     return left if right == 9 else right
+
+
+def _is_stage_e_route(left: int, right: int) -> bool:
+    return left in (2, 4, 8) or right in (2, 4, 8)
+
+
+def _stage_e_chain_factor(left: int, right: int) -> int:
+    if left in (2, 4, 8):
+        return right
+    return left
+
+
+def _stage_e_chain_routes(product: int, left: int, right: int) -> list[tuple[int, int]]:
+    factor = _stage_e_chain_factor(left, right)
+    candidate_routes = [(2, factor), (4, factor), (8, factor)]
+    candidate_products = [a * b for a, b in candidate_routes]
+    return [
+        route
+        for route, value in zip(candidate_routes, candidate_products)
+        if value in _STAGE_E_NEW_PRODUCTS
+    ]
+
+
+def _stage_e_explanation_steps(
+    product: int,
+    chain_products: list[int],
+    route_labels: list[str],
+    focus_index: int,
+) -> list[str]:
+    steps = [
+        f"What is {route_labels[focus_index]}?",
+        "So what is the product?",
+    ]
+
+    if focus_index < len(chain_products) - 1:
+        next_product = chain_products[focus_index + 1]
+        next_route = route_labels[focus_index + 1]
+        steps.extend(
+            [
+                f"If we double {product}, what do we get?",
+                f"So what is {next_route}?",
+            ]
+        )
+
+        if focus_index + 1 < len(chain_products) - 1:
+            later_product = chain_products[focus_index + 2]
+            later_route = route_labels[focus_index + 2]
+            steps.extend(
+                [
+                    f"If we double {next_product}, what do we get?",
+                    f"So what is {later_route}?",
+                ]
+            )
+
+    steps.extend(
+        [
+            "What happens as we move along the doubling chain?",
+            f"How can division help us get back out of the product {product}?",
+        ]
+    )
+    return steps
+
+
+def _stage_e_pattern_prompts(
+    chain_products: list[int],
+    route_labels: list[str],
+    focus_index: int,
+    product: int,
+) -> list[str]:
+    prompts: list[str] = []
+
+    if focus_index < len(chain_products) - 1:
+        next_product = chain_products[focus_index + 1]
+        next_route = route_labels[focus_index + 1]
+        prompts.extend(
+            [
+                f"What happens if we double {product}?",
+                f"Which fact does that give us?",
+            ]
+        )
+        if focus_index + 1 < len(chain_products) - 1:
+            prompts.extend(
+                [
+                    f"What happens if we double {next_product}?",
+                    "How does the doubling chain grow?",
+                ]
+            )
+    else:
+        prompts.extend(
+            [
+                f"Which earlier product in the chain doubles to make {product}?",
+                "How does the doubling chain grow?",
+            ]
+        )
+
+    prompts.append(f"Which products are in the same doubling track as {product}?")
+    return prompts
+
+
+def _stage_e_extension_prompts(chain_products: list[int], product: int) -> list[str]:
+    prompts: list[str] = []
+    if product in chain_products:
+        focus_index = chain_products.index(product)
+        if focus_index < len(chain_products) - 1:
+            prompts.append(f"Which Stage E product is double {product}?")
+        if focus_index + 1 < len(chain_products) - 1:
+            prompts.append(f"Which Stage E product is double {chain_products[focus_index + 1]}?")
+    prompts.extend(
+        [
+            "Which other Stage E products are built through doubling?",
+            "How does the whole Stage E set show repeated doubling?",
+        ]
+    )
+    return prompts
+
+
+def _stage_e_chain_questions(
+    chain_products: list[int],
+    route_labels: list[str],
+    focus_index: int,
+) -> list[str]:
+    questions: list[str] = []
+
+    current_product = chain_products[focus_index]
+    if focus_index < len(chain_products) - 1:
+        next_product = chain_products[focus_index + 1]
+        next_route = route_labels[focus_index + 1]
+        questions.extend(
+            [
+                f"Double {current_product}: □",
+                f"Complete: {next_route} = □",
+            ]
+        )
+        if focus_index + 1 < len(chain_products) - 1:
+            later_product = chain_products[focus_index + 1]
+            later_route = route_labels[focus_index + 2]
+            questions.extend(
+                [
+                    f"Double {later_product}: □",
+                    f"Complete: {later_route} = □",
+                ]
+            )
+
+    if len(chain_products) > 1:
+        display_items = [str(value) for value in chain_products[:2]]
+        display_items.append("□")
+        questions.append(f"Complete the chain: {', '.join(display_items)}")
+
+    return questions
+
+
+def _stage_e_explain_questions(chain_products: list[int], focus_index: int) -> list[str]:
+    questions: list[str] = []
+    if focus_index < len(chain_products) - 1:
+        questions.append(
+            f"Explain how {chain_products[focus_index + 1]} can be built from {chain_products[focus_index]}."
+        )
+        if focus_index + 1 < len(chain_products) - 1:
+            questions.append(
+                f"Explain how {chain_products[focus_index + 2]} can be built from {chain_products[focus_index + 1]}."
+            )
+    else:
+        questions.append(
+            f"Explain how {chain_products[focus_index]} can be linked back to the earlier doubling chain."
+        )
+    questions.append(
+        f"Explain one division fact that comes from {chain_products[focus_index]}."
+    )
+    return questions
+
+
+def _stage_e_check_for_understanding(
+    *,
+    product: int,
+    left: int,
+    right: int,
+    chain_products: list[int],
+    focus_index: int,
+) -> str:
+    statements = [f"state {_format_route((left, right))} = {product}"]
+
+    later_products = chain_products[focus_index + 1 :]
+    if later_products:
+        if len(later_products) == 1:
+            statements.append(f"use doubling to derive {later_products[0]}")
+        else:
+            statements.append(
+                "use doubling to derive " + " and ".join(str(value) for value in later_products)
+            )
+
+    statements.append(f"state the linked division facts for {product}")
+    return "Learners should be able to " + ", ".join(statements) + "."
+
+
+def _stage_e_core_text(
+    product: int,
+    left: int,
+    right: int,
+    chain_products: list[int],
+    route_labels: list[str],
+    focus_index: int,
+) -> str:
+    sentences = [f"Build {product} as {_format_route((left, right))}."]
+    if focus_index < len(chain_products) - 1:
+        derived = [
+            f"{label} = {value}"
+            for label, value in zip(route_labels[focus_index + 1 :], chain_products[focus_index + 1 :])
+        ]
+        if derived:
+            sentences.append("Then use repeated doubling to derive " + " and ".join(derived) + ".")
+    sentences.append(
+        f"Finally connect {product} ÷ {left} = {right} and {product} ÷ {right} = {left}."
+    )
+    return " ".join(sentences)
+
+
+def _stage_e_extension_text(product: int, chain_products: list[int]) -> str:
+    same_track = ", ".join(str(value) for value in chain_products)
+    stage_set = ", ".join(str(value) for value in _STAGE_E_NEW_PRODUCTS)
+    return (
+        f"Extend from the focus product {product} to the same-track chain: {same_track}. "
+        f"Then widen to the full Stage E set: {stage_set}. "
+        f"Ask learners to identify which products belong to the same doubling track, "
+        f"describe how each product is built from the previous one, and match multiplication facts to division facts."
+    )
+
+
+def _stage_e_teacher_quick_summary(
+    *,
+    product: int,
+    chain_products: list[int],
+    route_labels: list[str],
+    focus_index: int,
+) -> str:
+    current_route = route_labels[focus_index]
+    summary = [f"Today’s product is {product}. We first build it as {current_route}."]
+    later_links = [
+        str(value) for value in chain_products[focus_index + 1 :]
+    ]
+    if later_links:
+        summary.append(
+            "Then we use doubling to connect it to "
+            + " and ".join(later_links)
+            + ", showing how Stage E products grow through the doubling chain."
+        )
+    summary.append("Finally, we use division facts to move back out of the product.")
+    return " ".join(summary)
 
 
 def _format_instruction_intro_route(route: tuple[int, int]) -> str:
