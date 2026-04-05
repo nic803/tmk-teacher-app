@@ -729,6 +729,7 @@ def _render_structural_planner(product: int) -> None:
     earlier_secured_products = tuple(
         value for value in metadata_available_products(record.stage) if value not in current_stage_products
     )
+    stage_focus = _stage_focus_content(record.stage)
 
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
@@ -766,15 +767,19 @@ def _render_structural_planner(product: int) -> None:
     st.markdown('<div class="tmk-small-label">Stage focus</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="tmk-value">{escape(stage_label(record.stage))}</div>', unsafe_allow_html=True)
     st.markdown(
-        f'<div class="tmk-note" style="margin-top:0.35rem;">Selected product: {record.product}. Intro route: {escape(_format_route(record.intro_route))}. Structural role: {escape(record.structural_role)}.</div>',
+        f'<div class="tmk-note" style="margin-top:0.35rem;"><strong>Structural idea:</strong> {escape(stage_focus["idea"])}</div>',
         unsafe_allow_html=True,
     )
     st.markdown(
-        f'<div class="tmk-note" style="margin-top:0.5rem;">Products introduced in this stage: {escape(", ".join(str(value) for value in new_stage_products) if new_stage_products else "None")}</div>',
+        f'<div class="tmk-note" style="margin-top:0.35rem;"><strong>Selected product:</strong> {record.product}. <strong>Intro route:</strong> {escape(_format_route(record.intro_route))}. <strong>Structural role:</strong> {escape(record.structural_role)}.</div>',
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="tmk-note" style="margin-top:0.5rem;">Teacher warning: keep first exposure focused on current-stage products before opening cumulative support.</div>',
+        f'<div class="tmk-note" style="margin-top:0.5rem;"><strong>Products introduced in this stage:</strong> {escape(", ".join(str(value) for value in new_stage_products) if new_stage_products else "None")}</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div class="tmk-note" style="margin-top:0.5rem;"><strong>Teacher warning:</strong> {escape(stage_focus["warning"])}</div>',
         unsafe_allow_html=True,
     )
     st.markdown("</div>", unsafe_allow_html=True)
@@ -805,6 +810,48 @@ def _render_structural_planner(product: int) -> None:
 
 
     st.markdown("</div>", unsafe_allow_html=True)
+
+
+
+
+def _stage_focus_content(stage: str) -> dict[str, str]:
+    content = {
+        "A": {
+            "idea": "Identity and base-ten anchors establish secure starting points across the system.",
+            "warning": "Keep first exposure on anchor structure itself before widening into later pattern comparisons.",
+        },
+        "B": {
+            "idea": "Pure scaling through 10× builds products as groups of ten and strengthens place-value structure.",
+            "warning": "Do not overload this stage with later route comparison; secure ten-times scaling first.",
+        },
+        "C": {
+            "idea": "Midpoints and halves use 5× as half of 10× to build balanced products.",
+            "warning": "Keep the half-of-ten relationship clear before widening into broader product-network discussion.",
+        },
+        "D": {
+            "idea": "9× uses complement / near-ten logic: build from 10×, then subtract 1×.",
+            "warning": "Do not compare all lawful routes at first exposure; secure the near-ten entry route first.",
+        },
+        "E": {
+            "idea": "Doubling chains connect 2×, 4×, and 8× so products are built through repeated doubling.",
+            "warning": "Keep the doubling chain visible and stable before introducing looser cross-stage comparisons.",
+        },
+        "F": {
+            "idea": "Interleaving coordinates linked 3× and 6× structures within one product family.",
+            "warning": "Do not flatten 3× and 6× into a mixed fact list; keep the linked structure explicit.",
+        },
+        "G": {
+            "idea": "Closure consolidates the final key product inside the completed cumulative TMK structure.",
+            "warning": "Keep closure focused on the final securing role of the stage before reopening the full network.",
+        },
+    }
+    return content.get(
+        stage,
+        {
+            "idea": "This stage secures a distinct structural idea within the cumulative TMK system.",
+            "warning": "Keep first exposure focused on the current-stage structure before opening wider comparisons.",
+        },
+    )
 
 
 
