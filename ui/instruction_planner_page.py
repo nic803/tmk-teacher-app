@@ -29,6 +29,17 @@ def render_instruction_planner_page(view_model):
         "Do not open route comparison or wider product-network discussion until the entry explanation is secure.",
     )
 
+    lesson_aim = view_model.get("lesson_aim", "")
+    suggested_lesson_length = view_model.get("suggested_lesson_length", "")
+    stage_pattern_bank = view_model.get("stage_pattern_bank", [])
+    teacher_model = view_model.get("teacher_model", [])
+    teacher_explanation_sentence = view_model.get("teacher_explanation_sentence", "")
+    inverse_connection = view_model.get("inverse_connection", [])
+    support_text = view_model.get("support_text", "")
+    core_text = view_model.get("core_text", "")
+    extension_text = view_model.get("extension_text", "")
+    teacher_quick_summary = view_model.get("teacher_quick_summary", "")
+
     page_header(title, subtitle)
 
     control_col1, control_col2 = st.columns((1.2, 0.8))
@@ -61,6 +72,28 @@ def render_instruction_planner_page(view_model):
         else:
             st.write("No structural dependency reminder available.")
 
+    if lesson_aim or suggested_lesson_length:
+        info_left, info_right = st.columns((1.2, 0.8))
+        with info_left:
+            st.markdown("### Lesson aim")
+            st.write(lesson_aim if lesson_aim else "No lesson aim available.")
+        with info_right:
+            st.markdown("### Suggested lesson length")
+            st.write(suggested_lesson_length if suggested_lesson_length else "Not specified.")
+
+    if stage_pattern_bank:
+        st.markdown("### TMK stage patterns to use in this lesson")
+        for pattern in stage_pattern_bank:
+            if isinstance(pattern, dict):
+                pattern_title = pattern.get("title", "")
+                pattern_description = pattern.get("description", "")
+                if pattern_title:
+                    st.write(f"**{pattern_title}**")
+                if pattern_description:
+                    st.write(pattern_description)
+            else:
+                st.write(f"- {pattern}")
+
     st.markdown("### Explanation sequence")
     if selected_product is not None:
         st.write(f"**Product:** {selected_product}")
@@ -70,6 +103,29 @@ def render_instruction_planner_page(view_model):
             st.markdown(f"**{index}.** {step}")
     else:
         st.write("No explanation sequence available.")
+
+    if teacher_model or teacher_explanation_sentence:
+        model_left, model_right = st.columns((1.1, 0.9))
+        with model_left:
+            st.markdown("### Teacher model")
+            if teacher_model:
+                for line in teacher_model:
+                    st.write(f"- {line}")
+            else:
+                st.write("No teacher model available.")
+
+        with model_right:
+            st.markdown("### Teacher explanation sentence")
+            st.write(
+                teacher_explanation_sentence
+                if teacher_explanation_sentence
+                else "No teacher explanation sentence available."
+            )
+
+    if inverse_connection:
+        st.markdown("### Inverse connection")
+        for line in inverse_connection:
+            st.write(f"- {line}")
 
     top_left, top_right = st.columns(2)
     bottom_left, bottom_right = st.columns(2)
@@ -113,5 +169,25 @@ def render_instruction_planner_page(view_model):
     else:
         st.write("None")
 
+    if support_text or core_text or extension_text:
+        st.markdown("### Support / Core / Extension")
+        support_col, core_col, extension_col = st.columns(3)
+
+        with support_col:
+            st.markdown("**Support**")
+            st.write(support_text if support_text else "None")
+
+        with core_col:
+            st.markdown("**Core**")
+            st.write(core_text if core_text else "None")
+
+        with extension_col:
+            st.markdown("**Extension**")
+            st.write(extension_text if extension_text else "None")
+
     st.markdown("### Teaching warning")
     st.write(teaching_warning)
+
+    if teacher_quick_summary:
+        st.markdown("### Teacher quick summary")
+        st.write(teacher_quick_summary)
