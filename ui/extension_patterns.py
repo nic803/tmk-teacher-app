@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 
 @dataclass(frozen=True)
@@ -23,13 +23,23 @@ class ExtensionPattern:
     cue_explanation: Optional[str] = None
 
 
-EXTENSION_PATTERNS = [
+@dataclass(frozen=True)
+class ExtensionSection:
+    section_id: str
+    title: str
+    subtitle: str
+    pattern_ids: List[str] = field(default_factory=list)
+
+
+EXTENSION_PATTERNS: List[ExtensionPattern] = [
     ExtensionPattern(
         pattern_id="eleven_ten_plus_one",
         family="11x",
         title="Ten-plus-one rule",
         rule="11 × n = 10 × n + 1 × n",
-        teacher_explanation="11 times a number is ten times the number, plus one more group of the same number.",
+        teacher_explanation=(
+            "11 times a number is ten times the number, plus one more group of the same number."
+        ),
         teaching_use="Main teaching rule for 11×.",
         examples=[
             PatternExample("11 × 4 = 44", "10 × 4 + 1 × 4 = 40 + 4 = 44"),
@@ -41,7 +51,9 @@ EXTENSION_PATTERNS = [
         family="11x",
         title="Repeated-digit pattern",
         rule="11 × 2 = 22, 11 × 3 = 33, ..., 11 × 9 = 99",
-        teacher_explanation="Many 11× products repeat the digit, but the secure method is still 10× plus 1×.",
+        teacher_explanation=(
+            "Many 11× products repeat the digit, but the secure method is still 10× plus 1×."
+        ),
         teaching_use="Useful noticing pattern, not the first explanation.",
         examples=[
             PatternExample("11 × 2 = 22"),
@@ -54,7 +66,9 @@ EXTENSION_PATTERNS = [
         family="11x",
         title="Beyond the repeated-digit pattern",
         rule="11 × 10 = 110, 11 × 11 = 121, 11 × 12 = 132",
-        teacher_explanation="The repeated-digit pattern is helpful for some facts, but the deeper structure is still 10×n + 1×n.",
+        teacher_explanation=(
+            "The repeated-digit pattern is helpful for some facts, but the deeper structure is still 10×n + 1×n."
+        ),
         teaching_use="Prevents 11× from being taught as a trick only.",
         examples=[
             PatternExample("11 × 10 = 110", "10 × 10 + 1 × 10 = 100 + 10 = 110"),
@@ -67,7 +81,9 @@ EXTENSION_PATTERNS = [
         family="11x",
         title="New-route opening through 11×",
         rule="11× creates new products and new lawful routes in the extension layer.",
-        teacher_explanation="Opening 11× adds new lawful routes and new products to the multiplication world.",
+        teacher_explanation=(
+            "Opening 11× adds new lawful routes and new products to the multiplication world."
+        ),
         teaching_use="Use when moving from pattern teaching to extension routes.",
         examples=[
             PatternExample("22 = 2 × 11"),
@@ -81,7 +97,9 @@ EXTENSION_PATTERNS = [
         family="12x",
         title="Ten-plus-two rule",
         rule="12 × n = 10 × n + 2 × n",
-        teacher_explanation="12 times a number is ten times the number, plus two more groups of the same number.",
+        teacher_explanation=(
+            "12 times a number is ten times the number, plus two more groups of the same number."
+        ),
         teaching_use="Main teaching rule for 12×.",
         examples=[
             PatternExample("12 × 4 = 48", "10 × 4 + 2 × 4 = 40 + 8 = 48"),
@@ -93,7 +111,9 @@ EXTENSION_PATTERNS = [
         family="12x",
         title="Double-the-6× rule",
         rule="12 × n = 2(6 × n)",
-        teacher_explanation="If the 6× fact is known, the 12× fact can be found by doubling it.",
+        teacher_explanation=(
+            "If the 6× fact is known, the 12× fact can be found by doubling it."
+        ),
         teaching_use="Secondary derivation route after the ten-plus-two rule.",
         examples=[
             PatternExample("12 × 7 = 84", "2(6 × 7) = 2(42) = 84"),
@@ -127,10 +147,15 @@ EXTENSION_PATTERNS = [
         family="12x",
         title="Clock cue",
         rule="12 × 5 = 60",
-        teacher_explanation="A clock has 12 equal sections, and each section is 5 minutes. So 12 lots of 5 minutes make 60 minutes.",
+        teacher_explanation=(
+            "A clock has 12 equal sections, and each section is 5 minutes. So 12 lots of 5 minutes make 60 minutes."
+        ),
         teaching_use="Memorable real-world anchor for 12×, especially for 12 × 5.",
         cue="5 minutes × 12 clock sections = 60 minutes",
-        cue_explanation="Use this to anchor 12 × 5 = 60, but keep the structure visible: 10 × 5 + 2 × 5 = 50 + 10 = 60.",
+        cue_explanation=(
+            "Use this to anchor 12 × 5 = 60, but keep the structure visible: "
+            "10 × 5 + 2 × 5 = 50 + 10 = 60."
+        ),
         examples=[
             PatternExample("12 × 5 = 60", "10 × 5 + 2 × 5 = 50 + 10 = 60"),
         ],
@@ -140,7 +165,9 @@ EXTENSION_PATTERNS = [
         family="12x",
         title="New-route opening through 12×",
         rule="12× creates additional lawful routes into known products and introduces new products in the extension layer.",
-        teacher_explanation="Opening 12× can reveal new true routes into products that were already known, and can also introduce new products in the extension layer.",
+        teacher_explanation=(
+            "Opening 12× can reveal new true routes into products that were already known, and can also introduce new products in the extension layer."
+        ),
         teaching_use="Use when moving from pattern teaching to route overlap and extension products.",
         examples=[
             PatternExample("24 = 2 × 12 = 3 × 8 = 4 × 6"),
@@ -153,7 +180,7 @@ EXTENSION_PATTERNS = [
 ]
 
 
-EXTENSION_PATTERN_GROUPS = {
+EXTENSION_PATTERN_GROUPS: Dict[str, List[str]] = {
     "11x_foundations": [
         "eleven_ten_plus_one",
         "eleven_repeated_digit",
@@ -171,15 +198,7 @@ EXTENSION_PATTERN_GROUPS = {
 }
 
 
-@dataclass(frozen=True)
-class ExtensionSection:
-    section_id: str
-    title: str
-    subtitle: str
-    pattern_ids: List[str] = field(default_factory=list)
-
-
-EXTENSION_PAGE_SECTIONS = [
+EXTENSION_PAGE_SECTIONS: List[ExtensionSection] = [
     ExtensionSection(
         section_id="foundations_11x",
         title="11× Foundations",
@@ -193,3 +212,23 @@ EXTENSION_PAGE_SECTIONS = [
         pattern_ids=EXTENSION_PATTERN_GROUPS["12x_foundations"],
     ),
 ]
+
+
+PATTERN_BY_ID: Dict[str, ExtensionPattern] = {
+    pattern.pattern_id: pattern for pattern in EXTENSION_PATTERNS
+}
+
+
+def get_patterns_for_section(section_id: str) -> List[ExtensionPattern]:
+    section = next((s for s in EXTENSION_PAGE_SECTIONS if s.section_id == section_id), None)
+    if section is None:
+        return []
+    return [PATTERN_BY_ID[pattern_id] for pattern_id in section.pattern_ids if pattern_id in PATTERN_BY_ID]
+
+
+def get_patterns_for_family(family: str) -> List[ExtensionPattern]:
+    return [pattern for pattern in EXTENSION_PATTERNS if pattern.family == family]
+
+
+def get_pattern(pattern_id: str) -> Optional[ExtensionPattern]:
+    return PATTERN_BY_ID.get(pattern_id)
