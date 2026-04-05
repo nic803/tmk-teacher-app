@@ -151,3 +151,45 @@ EXTENSION_PATTERNS = [
         ],
     ),
 ]
+
+
+EXTENSION_PATTERN_GROUPS = {
+    "11x_foundations": [
+        "eleven_ten_plus_one",
+        "eleven_repeated_digit",
+        "eleven_beyond_repeated_digit",
+        "eleven_new_route_opening",
+    ],
+    "12x_foundations": [
+        "twelve_ten_plus_two",
+        "twelve_double_six",
+        "twelve_even_products",
+        "twelve_growth_by_twelve",
+        "twelve_clock_cue",
+        "twelve_new_route_opening",
+    ],
+}
+
+
+@dataclass(frozen=True)
+class ExtensionSection:
+    section_id: str
+    title: str
+    subtitle: str
+    pattern_ids: List[str] = field(default_factory=list)
+
+
+EXTENSION_PAGE_SECTIONS = [
+    ExtensionSection(
+        section_id="foundations_11x",
+        title="11× Foundations",
+        subtitle="Teach 11× through derivation, visible patterns, and new routes.",
+        pattern_ids=EXTENSION_PATTERN_GROUPS["11x_foundations"],
+    ),
+    ExtensionSection(
+        section_id="foundations_12x",
+        title="12× Foundations",
+        subtitle="Teach 12× through derivation, clock structure, and new routes.",
+        pattern_ids=EXTENSION_PATTERN_GROUPS["12x_foundations"],
+    ),
+]
