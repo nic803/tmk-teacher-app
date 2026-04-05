@@ -375,6 +375,90 @@ def _apply_styles() -> None:
                 box-shadow: 0 6px 18px rgba(47, 58, 60, 0.04);
             }}
 
+            .tmk-hub-banner {{
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1rem;
+            }}
+
+            .tmk-hub-visual {{
+                background: linear-gradient(180deg, #232A54 0%, #22284E 100%);
+                border: 1px solid rgba(255,255,255,0.08);
+                border-radius: 24px;
+                padding: 1rem 1rem 0.85rem 1rem;
+                margin-bottom: 1rem;
+                color: #FFFFFF;
+                box-shadow: 0 10px 26px rgba(34, 40, 78, 0.18);
+            }}
+
+            .tmk-hub-visual h3 {{
+                margin: 0;
+                color: #FFFFFF;
+                font-size: 1.45rem;
+                line-height: 1.2;
+            }}
+
+            .tmk-hub-visual p {{
+                margin: 0.35rem 0 0 0;
+                color: rgba(255,255,255,0.82);
+                line-height: 1.45;
+            }}
+
+            .tmk-hub-top,
+            .tmk-hub-bottom {{
+                display: flex;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                margin-top: 0.9rem;
+            }}
+
+            .tmk-hub-chip {{
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 64px;
+                padding: 0.48rem 0.75rem;
+                border-radius: 12px;
+                background: rgba(255,255,255,0.96);
+                color: #232A54;
+                font-weight: 800;
+                font-size: 0.92rem;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+            }}
+
+            .tmk-hub-arrows {{
+                display: flex;
+                justify-content: center;
+                gap: 0.7rem;
+                margin: 0.45rem 0 0.2rem 0;
+                color: rgba(255,255,255,0.9);
+                font-size: 1.1rem;
+                letter-spacing: 0.12em;
+            }}
+
+            .tmk-hub-center-wrap {{
+                display: flex;
+                justify-content: center;
+                margin: 0.25rem 0 0.35rem 0;
+            }}
+
+            .tmk-hub-center {{
+                width: 128px;
+                height: 128px;
+                border-radius: 999px;
+                border: 6px solid rgba(255,255,255,0.92);
+                background: linear-gradient(180deg, #7390B0 0%, #6B87A6 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #FFFFFF;
+                font-size: 2.1rem;
+                font-weight: 800;
+                box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
+            }}
+
             section[data-testid="stSidebar"] {{
                 background: var(--tmk-sidebar-bg);
                 border-right: 1px solid var(--tmk-sidebar-border);
@@ -546,7 +630,7 @@ def _render_structural_planner(product: int) -> None:
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Structural Planner</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="tmk-section-subtitle">Stage focus, current-stage products, stage sequence, and cumulative support.</div>',
+        '<div class="tmk-section-subtitle">Stage focus, products introduced at this stage, compact stage sequence, and cumulative support products.</div>',
         unsafe_allow_html=True,
     )
 
@@ -587,6 +671,15 @@ def _render_structural_planner(product: int) -> None:
             st.session_state.planner_zoom_mode = zoom
             st.rerun()
 
+    _metric_card_row(
+        [
+            ("Current stage", stage_label(record.stage)),
+            ("Selected product", str(record.product)),
+            ("Intro route", _format_route(record.intro_route)),
+            ("New here", str(len(new_stage_products))),
+        ]
+    )
+
     st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-small-label">Stage focus</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="tmk-value">{escape(stage_label(record.stage))}</div>', unsafe_allow_html=True)
@@ -595,7 +688,7 @@ def _render_structural_planner(product: int) -> None:
         unsafe_allow_html=True,
     )
     st.markdown(
-        f'<div class="tmk-note" style="margin-top:0.5rem;">New products introduced in this stage: {escape(", ".join(str(value) for value in new_stage_products) if new_stage_products else "None")}</div>',
+        f'<div class="tmk-note" style="margin-top:0.5rem;">Products introduced in this stage: {escape(", ".join(str(value) for value in new_stage_products) if new_stage_products else "None")}</div>',
         unsafe_allow_html=True,
     )
     st.markdown(
@@ -634,16 +727,19 @@ def _render_stage_cards(current_stage: str) -> None:
     for stage in [stage for stage in STAGE_ORDER if stage in STAGES]:
         stage_record = STAGES[stage]
         is_current = stage == current_stage
-        marker = "Current stage" if is_current else ""
+        stage_name = stage_label(stage)
+        product_count = len(stage_record.products)
+        marker = "Current stage" if is_current else f"{product_count} products"
 
-        note_style = "margin-top:0.25rem;"
+        note_style = "margin-top:0.2rem;"
         if is_current:
-            note_style = "margin-top:0.25rem;font-weight:700;color:var(--tmk-accent);"
+            note_style = "margin-top:0.2rem;font-weight:700;color:var(--tmk-accent);"
 
         st.markdown(
             f"""
             <div class="tmk-answer-box">
                 <div class="tmk-value">{escape(stage_record.label)}</div>
+                <div class="tmk-note" style="margin-top:0.2rem;">{escape(stage_name)}</div>
                 <div class="tmk-note" style="{note_style}">{escape(marker)}</div>
             </div>
             """,
@@ -663,11 +759,13 @@ def _render_product_lab(product: int) -> None:
     compare_routes = tuple(distinct_factor_routes(compare.product))
     inverse_family = tuple(inverse_labels(record.product))
     shared = tuple(shared_factors(record.product, compare.product))
+    entry_route_list = tuple(entry_routes(record.product))
+    exit_route_list = tuple(exit_route_labels(record.product))
 
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Product Lab</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="tmk-section-subtitle">Selected product first, with local routes, inverse family, whole-product context, and controlled comparison.</div>',
+        '<div class="tmk-section-subtitle">A single hub view with routes in and out.</div>',
         unsafe_allow_html=True,
     )
 
@@ -721,18 +819,9 @@ def _render_product_lab(product: int) -> None:
             st.session_state.selected_route_index = 0
             st.rerun()
 
-    _metric_card_row(
-        [
-            ("Selected product", str(record.product)),
-            ("Stage", stage_label(record.stage)),
-            ("Intro route", _format_route(record.intro_route)),
-            ("Compare with", str(compare.product)),
-        ]
-    )
-
     st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-small-label">Selected product</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="tmk-value">{record.product}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="tmk-value" style="font-size:1.8rem;">{record.product}</div>', unsafe_allow_html=True)
     st.markdown(
         f'<div class="tmk-note" style="margin-top:0.35rem;">Intro route: {escape(_format_route(record.intro_route))}</div>',
         unsafe_allow_html=True,
@@ -746,20 +835,34 @@ def _render_product_lab(product: int) -> None:
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="tmk-note" style="margin-top:0.5rem;">Teaching order note: lead with the intro route before opening wider route comparison.</div>',
+        '<div class="tmk-note" style="margin-top:0.5rem;">Do not lead with route counts. Lead with the product and its intro route.</div>',
         unsafe_allow_html=True,
     )
     st.markdown("</div>", unsafe_allow_html=True)
 
-    col_a, col_b = st.columns((1.3, 0.7))
+    st.markdown(
+        """
+        <div class="tmk-card tmk-hub-banner">
+            <div>
+                <div class="tmk-value">Product hub</div>
+            </div>
+            <div class="tmk-note">Routes in and out</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    with col_a:
+    _render_product_hub_visual(record.product, entry_route_list, exit_route_list)
+
+    upper_left, upper_right = st.columns((1.3, 0.7))
+
+    with upper_left:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
         st.markdown('<div class="tmk-small-label">Radial hub</div>', unsafe_allow_html=True)
         _render_route_inspector(record.product)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    with col_b:
+    with upper_right:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
         st.markdown('<div class="tmk-small-label">Inverse family</div>', unsafe_allow_html=True)
         if inverse_family:
@@ -838,6 +941,36 @@ def _render_product_lab(product: int) -> None:
         st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
+
+
+def _render_product_hub_visual(product: int, entry_route_list: tuple[tuple[int, int], ...], exit_route_list: tuple[Any, ...]) -> None:
+    top_items = [_format_route(route) for route in entry_route_list[:3]]
+    bottom_items = [_stringify(label) for label in exit_route_list[:3]]
+
+    if not top_items:
+        top_items = ["No entry routes"]
+    if not bottom_items:
+        bottom_items = ["No exit routes"]
+
+    top_html = "".join(f'<span class="tmk-hub-chip">{escape(item)}</span>' for item in top_items)
+    bottom_html = "".join(f'<span class="tmk-hub-chip">{escape(item)}</span>' for item in bottom_items)
+
+    st.markdown(
+        f"""
+        <div class="tmk-hub-visual">
+            <h3>Hub view</h3>
+            <p>Entry routes move inward to the product. Exit routes move outward from it.</p>
+            <div class="tmk-hub-top">{top_html}</div>
+            <div class="tmk-hub-arrows"><span>↓</span><span>↓</span><span>↓</span></div>
+            <div class="tmk-hub-center-wrap">
+                <div class="tmk-hub-center">{escape(str(product))}</div>
+            </div>
+            <div class="tmk-hub-arrows"><span>↓</span><span>↓</span><span>↓</span></div>
+            <div class="tmk-hub-bottom">{bottom_html}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def _render_route_inspector(product: int) -> None:
