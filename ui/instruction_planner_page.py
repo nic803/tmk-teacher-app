@@ -99,7 +99,10 @@ def render_instruction_planner_page(view_model):
                 st.write(f"- {pattern}")
 
     if stage_product_sequence:
-        st.markdown("### Stage D sequence")
+        sequence_heading = "### Stage product sequence"
+        if selected_stage_label:
+            sequence_heading = f"### {selected_stage_label} product sequence"
+        st.markdown(sequence_heading)
         st.write(", ".join(str(item) for item in stage_product_sequence))
 
     st.markdown("### Explanation sequence")
