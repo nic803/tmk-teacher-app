@@ -49,6 +49,10 @@ from services.worksheet_generation_service import (
     generate_worksheet_bundle,
 )
 
+from ui.extension_hub_page import (
+    render_extension_hub_page,
+)
+
 from ui.instruction_planner_builder import (
     build_instruction_planner_view_model,
 )
@@ -139,7 +143,7 @@ def main() -> None:
     elif st.session_state.surface == "Worksheet Studio":
         _render_worksheet_studio()
     elif st.session_state.surface == "Extensions":
-        _render_extensions_placeholder()
+        render_extension_hub_page()
     elif st.session_state.surface == "Resource Library":
         render_resource_library_page()
     else:
@@ -538,7 +542,7 @@ def _theme_css_vars(theme: dict[str, str]) -> str:
             f"--tmk-hover: {theme['hover']};",
             f"--tmk-sidebar-bg: {theme['sidebar_bg']};",
             f"--tmk-sidebar-text: {theme['sidebar_text']};",
-            f"--tmk-sidebar-text_soft: {theme['sidebar_text_soft']};",
+            f"--tmk-sidebar_text_soft: {theme['sidebar_text_soft']};",
             f"--tmk-sidebar-border: {theme['sidebar_border']};",
         ]
     )
@@ -1254,7 +1258,6 @@ def _build_route_overlap_activity(
     compare_product: int,
     compare_routes: tuple[tuple[int, int], ...],
 ) -> dict[str, Any]:
-    route_labels = [_format_route(route) for route in routes]
     intro_route_label = _format_route(intro_route)
 
     non_intro_routes = [route for route in routes if route != intro_route]
