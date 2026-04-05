@@ -21,8 +21,10 @@ def render_instruction_planner_page(view_model):
     explanation_steps = view_model.get("explanation_steps", [])
     teach_now_vocab = view_model.get("teach_now_vocab", [])
     teacher_prompts = view_model.get("teacher_prompts", [])
+    teacher_prompt_groups = view_model.get("teacher_prompt_groups", [])
     introduce_if_needed = view_model.get("introduce_if_needed", [])
     example_questions = view_model.get("example_questions", [])
+    example_question_groups = view_model.get("example_question_groups", [])
     delay_vocab = view_model.get("delay_vocab", [])
     teaching_warning = view_model.get(
         "teaching_warning",
@@ -153,7 +155,10 @@ def render_instruction_planner_page(view_model):
 
     with top_right:
         st.markdown("### Teacher prompt bank")
-        _render_grouped_list(teacher_prompts)
+        if teacher_prompt_groups:
+            _render_group_blocks(teacher_prompt_groups)
+        else:
+            _render_grouped_list(teacher_prompts)
 
     with bottom_left:
         st.markdown("### Introduce if needed")
@@ -165,7 +170,10 @@ def render_instruction_planner_page(view_model):
 
     with bottom_right:
         st.markdown("### Example questions")
-        _render_grouped_list(example_questions)
+        if example_question_groups:
+            _render_group_blocks(example_question_groups)
+        else:
+            _render_grouped_list(example_questions)
 
     st.markdown("### Delay vocabulary")
     if delay_vocab:
@@ -196,6 +204,24 @@ def render_instruction_planner_page(view_model):
     if teacher_quick_summary:
         st.markdown("### Teacher quick summary")
         st.write(teacher_quick_summary)
+
+
+def _render_group_blocks(groups):
+    if not groups:
+        st.write("None")
+        return
+
+    for group in groups:
+        title = str(group.get("title", "")).strip()
+        items = list(group.get("items", []) or [])
+
+        if title:
+            st.markdown(f"**{title}**")
+
+        for item in items:
+            item_text = str(item).strip()
+            if item_text:
+                st.write(f"- {item_text}")
 
 
 def _render_grouped_list(items):
