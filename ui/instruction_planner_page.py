@@ -32,9 +32,11 @@ def render_instruction_planner_page(view_model):
     lesson_aim = view_model.get("lesson_aim", "")
     suggested_lesson_length = view_model.get("suggested_lesson_length", "")
     stage_pattern_bank = view_model.get("stage_pattern_bank", [])
+    stage_product_sequence = view_model.get("stage_product_sequence", [])
     teacher_model = view_model.get("teacher_model", [])
     teacher_explanation_sentence = view_model.get("teacher_explanation_sentence", "")
     inverse_connection = view_model.get("inverse_connection", [])
+    check_for_understanding = view_model.get("check_for_understanding", "")
     support_text = view_model.get("support_text", "")
     core_text = view_model.get("core_text", "")
     extension_text = view_model.get("extension_text", "")
@@ -94,6 +96,10 @@ def render_instruction_planner_page(view_model):
             else:
                 st.write(f"- {pattern}")
 
+    if stage_product_sequence:
+        st.markdown("### Stage D sequence")
+        st.write(", ".join(str(item) for item in stage_product_sequence))
+
     st.markdown("### Explanation sequence")
     if selected_product is not None:
         st.write(f"**Product:** {selected_product}")
@@ -110,7 +116,10 @@ def render_instruction_planner_page(view_model):
             st.markdown("### Teacher model")
             if teacher_model:
                 for line in teacher_model:
-                    st.write(f"- {line}")
+                    if str(line).strip():
+                        st.write(f"- {line}")
+                    else:
+                        st.write("")
             else:
                 st.write("No teacher model available.")
 
@@ -127,6 +136,10 @@ def render_instruction_planner_page(view_model):
         for line in inverse_connection:
             st.write(f"- {line}")
 
+    if check_for_understanding:
+        st.markdown("### Check for understanding")
+        st.write(check_for_understanding)
+
     top_left, top_right = st.columns(2)
     bottom_left, bottom_right = st.columns(2)
 
@@ -140,11 +153,7 @@ def render_instruction_planner_page(view_model):
 
     with top_right:
         st.markdown("### Teacher prompt bank")
-        if teacher_prompts:
-            for prompt in teacher_prompts:
-                st.write(f"- {prompt}")
-        else:
-            st.write("None")
+        _render_grouped_list(teacher_prompts)
 
     with bottom_left:
         st.markdown("### Introduce if needed")
@@ -156,11 +165,7 @@ def render_instruction_planner_page(view_model):
 
     with bottom_right:
         st.markdown("### Example questions")
-        if example_questions:
-            for question in example_questions:
-                st.write(f"- {question}")
-        else:
-            st.write("None")
+        _render_grouped_list(example_questions)
 
     st.markdown("### Delay vocabulary")
     if delay_vocab:
@@ -191,3 +196,31 @@ def render_instruction_planner_page(view_model):
     if teacher_quick_summary:
         st.markdown("### Teacher quick summary")
         st.write(teacher_quick_summary)
+
+
+def _render_grouped_list(items):
+    if not items:
+        st.write("None")
+        return
+
+    for item in items:
+        text = str(item).strip()
+        if not text:
+            continue
+        if _is_group_heading(text):
+            st.markdown(f"**{text}**")
+        else:
+            st.write(f"- {text}")
+
+
+def _is_group_heading(text: str) -> bool:
+    heading_suffixes = (
+        "prompts",
+        "questions",
+        "product",
+        "digit-sum",
+        "sequence",
+        "explain",
+    )
+    lower_text = text.lower()
+    return any(lower_text.endswith(suffix) for suffix in heading_suffixes)
