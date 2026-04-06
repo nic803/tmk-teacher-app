@@ -158,52 +158,42 @@ def render_eleven_route_opening() -> None:
 
     records = {
         22: {
-            "core_routes": ["2 × 11"],
             "extension_routes": ["2 × 11"],
             "teacher_note": "22 enters as an 11× extension product.",
         },
         33: {
-            "core_routes": ["3 × 11"],
             "extension_routes": ["3 × 11"],
             "teacher_note": "33 enters as an 11× extension product.",
         },
         44: {
-            "core_routes": ["4 × 11"],
             "extension_routes": ["4 × 11"],
             "teacher_note": "44 enters as an 11× extension product.",
         },
         55: {
-            "core_routes": ["5 × 11"],
             "extension_routes": ["5 × 11"],
             "teacher_note": "55 enters as an 11× extension product.",
         },
         66: {
-            "core_routes": ["6 × 11"],
             "extension_routes": ["6 × 11"],
             "teacher_note": "66 enters as an 11× extension product.",
         },
         77: {
-            "core_routes": ["7 × 11"],
             "extension_routes": ["7 × 11"],
             "teacher_note": "77 enters as an 11× extension product.",
         },
         88: {
-            "core_routes": ["8 × 11"],
             "extension_routes": ["8 × 11"],
             "teacher_note": "88 enters as an 11× extension product.",
         },
         99: {
-            "core_routes": ["9 × 11"],
             "extension_routes": ["9 × 11"],
             "teacher_note": "99 enters as an 11× extension product.",
         },
         121: {
-            "core_routes": ["11 × 11"],
             "extension_routes": ["11 × 11"],
             "teacher_note": "121 is both an 11× product and an extension square.",
         },
         132: {
-            "core_routes": ["11 × 12"],
             "extension_routes": ["11 × 12"],
             "teacher_note": "132 is opened through 11 × 12.",
         },
@@ -242,6 +232,56 @@ def render_eleven_route_opening() -> None:
         copy_text,
         height=240,
         key="eleven_route_opening_copy_box",
+    )
+
+
+def render_eleven_core_extension_comparison() -> None:
+    st.subheader("11× Core or Extension Route?")
+    st.caption("Classify 11× products within the extension strand")
+
+    comparison_rows = [
+        {"product": 22, "classification": "extension", "note": "Opened by 2 × 11"},
+        {"product": 33, "classification": "extension", "note": "Opened by 3 × 11"},
+        {"product": 44, "classification": "extension", "note": "Opened by 4 × 11"},
+        {"product": 55, "classification": "extension", "note": "Opened by 5 × 11"},
+        {"product": 66, "classification": "extension", "note": "Opened by 6 × 11"},
+        {"product": 77, "classification": "extension", "note": "Opened by 7 × 11"},
+        {"product": 88, "classification": "extension", "note": "Opened by 8 × 11"},
+        {"product": 99, "classification": "extension", "note": "Opened by 9 × 11"},
+        {"product": 121, "classification": "extension square", "note": "11 × 11 = 121"},
+        {"product": 132, "classification": "extension", "note": "Opened by 11 × 12"},
+    ]
+
+    for row in comparison_rows:
+        with st.expander(f"Product {row['product']}"):
+            st.write(f"Classification: {row['classification']}")
+            st.write(f"Note: {row['note']}")
+
+    st.markdown("### Key rule")
+    st.write("11× products belong to the extension strand.")
+    st.write("121 is a special case because it is also an extension square.")
+
+    activity_text = (
+        "11× Core or Extension Route?\n\n"
+        "Focus: Classify 11× products in the extension strand.\n\n"
+        "Teacher explanation: Products opened by 11× belong to the extension strand. "
+        "Some may also have a special role, such as 121 = 11².\n"
+        "Teacher prompt: Which kind of extension product is this?\n\n"
+        "Pupil tasks:\n"
+        "- Read each 11× product.\n"
+        "- Identify the extension route.\n"
+        "- Notice special cases such as 121.\n\n"
+        "Example questions:\n"
+        "- Why is 55 an 11× extension product?\n"
+        "- Why is 121 special?\n"
+        "- Which route builds 132?\n\n"
+        "Teaching note: Keep 11× products clearly inside the extension strand."
+    )
+    st.text_area(
+        "Copy-paste print text — 11× Core or Extension Route?",
+        activity_text,
+        height=240,
+        key="eleven_core_extension_comparison_copy_box",
     )
 
 
@@ -532,12 +572,59 @@ def render_twelve_derivation_practice() -> None:
     )
 
 
-def render_square_strand_intro() -> None:
-    st.markdown("---")
-    st.markdown("## Square Numbers and Square Roots")
-    st.caption(
-        "A separate extension strand focused on same-factor routes, square roots, and square patterns."
+def render_eleven_twelve_comparison() -> None:
+    st.subheader("11× versus 12× Comparison")
+    st.caption("Compare the two extension derivation rules")
+
+    st.markdown("### Main rules")
+    st.latex(r"11 \times n = 10 \times n + 1 \times n")
+    st.latex(r"12 \times n = 10 \times n + 2 \times n")
+
+    comparison_examples = [
+        {"n": 3, "eleven": "11 × 3 = 30 + 3 = 33", "twelve": "12 × 3 = 30 + 6 = 36"},
+        {"n": 5, "eleven": "11 × 5 = 50 + 5 = 55", "twelve": "12 × 5 = 50 + 10 = 60"},
+        {"n": 6, "eleven": "11 × 6 = 60 + 6 = 66", "twelve": "12 × 6 = 60 + 12 = 72"},
+        {"n": 11, "eleven": "11 × 11 = 110 + 11 = 121", "twelve": "12 × 11 = 110 + 22 = 132"},
+    ]
+
+    for row in comparison_examples:
+        with st.expander(f"Compare at n = {row['n']}"):
+            st.write(row["eleven"])
+            st.write(row["twelve"])
+
+    st.markdown("### Notice")
+    st.write("11× adds one more group of n.")
+    st.write("12× adds two more groups of n.")
+    st.write("12× can also use the support rule 2(6×n).")
+    st.write("11× often shows repeated digits for 2 to 9, while 12× does not.")
+
+    activity_text = (
+        "11× versus 12× Comparison\n\n"
+        "Focus: Compare the derivation structure of 11× and 12×.\n\n"
+        "Teacher explanation: 11× adds one more group of n to 10×n. "
+        "12× adds two more groups of n to 10×n.\n"
+        "Teacher prompt: What changes when we move from 11× to 12×?\n\n"
+        "Pupil tasks:\n"
+        "- Compare 11×n and 12×n for the same value of n.\n"
+        "- Identify the ten-plus-one and ten-plus-two structures.\n"
+        "- Notice where repeated-digit patterns appear and where they do not.\n\n"
+        "Example questions:\n"
+        "- Compare 11 × 6 and 12 × 6.\n"
+        "- Why does 11 × 8 give 88 but 12 × 8 gives 96?\n"
+        "- What changes between 11 × 11 and 12 × 11?\n\n"
+        "Teaching note: Keep the comparison structural, not just numerical."
     )
+    st.text_area(
+        "Copy-paste print text — 11× versus 12× Comparison",
+        activity_text,
+        height=260,
+        key="eleven_twelve_comparison_copy_box",
+    )
+
+
+def render_square_strand_intro() -> None:
+    st.markdown("### Overview")
+    st.write("This strand focuses on square products, square roots, parity patterns, and square vocabulary.")
 
 
 def render_square_numbers_recap() -> None:
@@ -1031,22 +1118,25 @@ def render_extension_hub_page() -> None:
         unsafe_allow_html=True,
     )
 
-    st.markdown("## 11× and 12× Foundations")
-    st.caption("A separate extension strand for derivation rules, clock support, and route opening.")
-    render_eleven_foundations()
-    render_eleven_derivation_practice()
-    render_eleven_route_opening()
-    render_twelve_foundations()
-    render_twelve_route_opening()
-    render_core_extension_route_comparison()
-    render_twelve_derivation_practice()
+    with st.expander("11× and 12× Extension Strand", expanded=False):
+        st.caption("Derivation rules, route opening, and comparison work for 11× and 12×.")
+        render_eleven_foundations()
+        render_eleven_derivation_practice()
+        render_eleven_route_opening()
+        render_eleven_core_extension_comparison()
+        render_twelve_foundations()
+        render_twelve_route_opening()
+        render_core_extension_route_comparison()
+        render_twelve_derivation_practice()
+        render_eleven_twelve_comparison()
 
-    render_square_strand_intro()
-    render_square_numbers_recap()
-    render_square_roots()
-    render_odd_even_square_patterns()
-    render_exponent_power_notes()
-    render_square_product_selector()
-    render_square_or_not_square()
+    with st.expander("Square Numbers and Square Roots Strand", expanded=False):
+        render_square_strand_intro()
+        render_square_numbers_recap()
+        render_square_roots()
+        render_odd_even_square_patterns()
+        render_exponent_power_notes()
+        render_square_product_selector()
+        render_square_or_not_square()
 
     st.markdown("</div>", unsafe_allow_html=True)
