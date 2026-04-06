@@ -110,27 +110,32 @@ def render_twelve_route_opening() -> None:
 
     records = {
         24: {
-            "core_routes": ["4 × 6", "3 × 8"],
+            "core_routes": ["4 × 6", "3 × 8", "2 × 12"],
+            "display_core_routes": ["4 × 6", "3 × 8"],
             "extension_routes": ["2 × 12"],
             "teacher_note": "24 gains an extension route through 12×, but its core routes remain separate.",
         },
         36: {
             "core_routes": ["4 × 9", "6 × 6"],
+            "display_core_routes": ["4 × 9", "6 × 6"],
             "extension_routes": ["3 × 12"],
             "teacher_note": "36 is a core multi-route square and also gains the extension route 3 × 12.",
         },
         48: {
             "core_routes": ["6 × 8"],
+            "display_core_routes": ["6 × 8"],
             "extension_routes": ["4 × 12"],
             "teacher_note": "48 is already core through 6 × 8, and 4 × 12 becomes a new extension route.",
         },
         60: {
             "core_routes": ["6 × 10"],
+            "display_core_routes": ["6 × 10"],
             "extension_routes": ["5 × 12"],
             "teacher_note": "60 stays a core product through 6 × 10 and gains 5 × 12 in extension.",
         },
         72: {
             "core_routes": ["8 × 9"],
+            "display_core_routes": ["8 × 9"],
             "extension_routes": ["6 × 12"],
             "teacher_note": "72 is core through 8 × 9 and gains the extension route 6 × 12.",
         },
@@ -146,7 +151,7 @@ def render_twelve_route_opening() -> None:
     record = records[selected_product]
 
     st.markdown("### Core routes")
-    for route in record["core_routes"]:
+    for route in record["display_core_routes"]:
         st.write(route)
 
     st.markdown("### Extension routes")
@@ -165,7 +170,7 @@ def render_twelve_route_opening() -> None:
         f"12× can open a new extension route into the same product, but it does not replace the core routes.\n"
         f"Teacher prompt: Which routes into {selected_product} belong to the core world, and which belong to extension?\n\n"
         f"Core routes:\n"
-        + "\n".join(f"- {route}" for route in record["core_routes"])
+        + "\n".join(f"- {route}" for route in record["display_core_routes"])
         + "\n\nExtension routes:\n"
         + "\n".join(f"- {route}" for route in record["extension_routes"])
         + "\n\nTeaching note:\n"
@@ -176,163 +181,6 @@ def render_twelve_route_opening() -> None:
         copy_text,
         height=260,
         key="twelve_route_opening_copy_box",
-    )
-
-
-def render_core_extension_route_comparison() -> None:
-    st.subheader("Core or Extension Route?")
-    st.caption("Keep core routes and extension routes separate")
-
-    comparison_rows = [
-        {"product": 24, "core": "4 × 6, 3 × 8", "extension": "2 × 12"},
-        {"product": 36, "core": "4 × 9, 6 × 6", "extension": "3 × 12"},
-        {"product": 48, "core": "6 × 8", "extension": "4 × 12"},
-        {"product": 60, "core": "6 × 10", "extension": "5 × 12"},
-        {"product": 72, "core": "8 × 9", "extension": "6 × 12"},
-    ]
-
-    for row in comparison_rows:
-        with st.expander(f"Product {row['product']}"):
-            st.write(f"Core routes: {row['core']}")
-            st.write(f"Extension routes: {row['extension']}")
-
-    st.markdown("### Key rule")
-    st.latex(r"\text{core routes} \neq \text{extension routes}")
-
-    activity_text = (
-        "Core or Extension Route?\n\n"
-        "Focus: Sort routes into the correct side of the boundary.\n\n"
-        "Teacher explanation: Some routes belong to the core 1–10 world. "
-        "Other routes are true, but they belong to the extension world because they use 11 or 12.\n"
-        "Teacher prompt: Which routes stay in the core world, and which routes cross into extension?\n\n"
-        "Pupil tasks:\n"
-        "- Read each route.\n"
-        "- Sort it into core or extension.\n"
-        "- Explain why the route belongs on that side.\n\n"
-        "Example questions:\n"
-        "- Why is 3 × 12 an extension route into 36?\n"
-        "- Why is 6 × 6 a core route into 36?\n"
-        "- Why is 5 × 12 an extension route into 60?\n"
-        "- Which core route still belongs to 72?\n\n"
-        "Teaching note: Do not mix true extension routes with core routes. Keep the boundary visible."
-    )
-    st.text_area(
-        "Copy-paste print text — Core or Extension Route?",
-        activity_text,
-        height=260,
-        key="core_extension_route_comparison_copy_box",
-    )
-
-
-def render_twelve_derivation_practice() -> None:
-    st.subheader("12× Derivation Practice")
-    st.caption("Select one 12× fact and derive it from known structure")
-
-    records = {
-        3: {
-            "product": 36,
-            "ten_plus_two": "12 × 3 = 10 × 3 + 2 × 3 = 30 + 6 = 36",
-            "double_six": "12 × 3 = 2(6 × 3) = 2(18) = 36",
-            "clock_cue": "No clock cue focus here.",
-        },
-        4: {
-            "product": 48,
-            "ten_plus_two": "12 × 4 = 10 × 4 + 2 × 4 = 40 + 8 = 48",
-            "double_six": "12 × 4 = 2(6 × 4) = 2(24) = 48",
-            "clock_cue": "No clock cue focus here.",
-        },
-        5: {
-            "product": 60,
-            "ten_plus_two": "12 × 5 = 10 × 5 + 2 × 5 = 50 + 10 = 60",
-            "double_six": "12 × 5 = 2(6 × 5) = 2(30) = 60",
-            "clock_cue": "Clock cue: 12 sections of 5 minutes make 60 minutes.",
-        },
-        6: {
-            "product": 72,
-            "ten_plus_two": "12 × 6 = 10 × 6 + 2 × 6 = 60 + 12 = 72",
-            "double_six": "12 × 6 = 2(6 × 6) = 2(36) = 72",
-            "clock_cue": "No clock cue focus here.",
-        },
-        7: {
-            "product": 84,
-            "ten_plus_two": "12 × 7 = 10 × 7 + 2 × 7 = 70 + 14 = 84",
-            "double_six": "12 × 7 = 2(6 × 7) = 2(42) = 84",
-            "clock_cue": "No clock cue focus here.",
-        },
-        8: {
-            "product": 96,
-            "ten_plus_two": "12 × 8 = 10 × 8 + 2 × 8 = 80 + 16 = 96",
-            "double_six": "12 × 8 = 2(6 × 8) = 2(48) = 96",
-            "clock_cue": "No clock cue focus here.",
-        },
-        9: {
-            "product": 108,
-            "ten_plus_two": "12 × 9 = 10 × 9 + 2 × 9 = 90 + 18 = 108",
-            "double_six": "12 × 9 = 2(6 × 9) = 2(54) = 108",
-            "clock_cue": "No clock cue focus here.",
-        },
-        10: {
-            "product": 120,
-            "ten_plus_two": "12 × 10 = 10 × 10 + 2 × 10 = 100 + 20 = 120",
-            "double_six": "12 × 10 = 2(6 × 10) = 2(60) = 120",
-            "clock_cue": "No clock cue focus here.",
-        },
-        11: {
-            "product": 132,
-            "ten_plus_two": "12 × 11 = 10 × 11 + 2 × 11 = 110 + 22 = 132",
-            "double_six": "12 × 11 = 2(6 × 11) = 2(66) = 132",
-            "clock_cue": "No clock cue focus here.",
-        },
-        12: {
-            "product": 144,
-            "ten_plus_two": "12 × 12 = 10 × 12 + 2 × 12 = 120 + 24 = 144",
-            "double_six": "12 × 12 = 2(6 × 12) = 2(72) = 144",
-            "clock_cue": "No clock cue focus here.",
-        },
-    }
-
-    selected_n = st.selectbox(
-        "Choose n in 12 × n",
-        options=list(records.keys()),
-        index=0,
-        key="twelve_derivation_practice_selector",
-    )
-
-    record = records[selected_n]
-
-    st.markdown("### Selected fact")
-    st.write(f"12 × {selected_n} = {record['product']}")
-
-    st.markdown("### Main derivation")
-    st.write(record["ten_plus_two"])
-
-    st.markdown("### Support derivation")
-    st.write(record["double_six"])
-
-    st.markdown("### Clock cue")
-    st.write(record["clock_cue"])
-
-    st.markdown("### Notice")
-    st.write("The ten-plus-two derivation stays primary.")
-    st.write("The double-6× route is support.")
-    st.write("The product is always even.")
-
-    copy_text = (
-        f"12× Derivation Practice\n\n"
-        f"Selected fact: 12 × {selected_n} = {record['product']}\n\n"
-        f"Focus: Derive one 12× fact from known multiplication structure.\n\n"
-        f"Teacher explanation: The main derivation is 10× + 2×. A support derivation is double 6×.\n"
-        f"Teacher prompt: How can you build 12 × {selected_n} from known facts?\n\n"
-        f"Main derivation:\n- {record['ten_plus_two']}\n\n"
-        f"Support derivation:\n- {record['double_six']}\n\n"
-        f"Clock cue:\n- {record['clock_cue']}\n\n"
-        f"Teaching note:\nKeep 10× + 2× as the first route of explanation."
-    )
-    st.text_area(
-        "Copy-paste print text — 12× Derivation Practice",
-        copy_text,
-        height=260,
-        key="twelve_derivation_practice_copy_box",
     )
 
 
@@ -840,8 +688,6 @@ def render_extension_hub_page() -> None:
     render_eleven_foundations()
     render_twelve_foundations()
     render_twelve_route_opening()
-    render_core_extension_route_comparison()
-    render_twelve_derivation_practice()
 
     render_square_strand_intro()
     render_square_numbers_recap()
@@ -851,4 +697,5 @@ def render_extension_hub_page() -> None:
     render_square_product_selector()
     render_square_or_not_square()
 
+    st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
