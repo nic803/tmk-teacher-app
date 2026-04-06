@@ -125,6 +125,73 @@ def render_square_roots() -> None:
     )
 
 
+def render_odd_even_square_patterns() -> None:
+    st.subheader("Odd and Even Square Patterns")
+    st.caption("Look at parity in square products")
+
+    st.markdown("Square parity follows the parity of the repeated factor.")
+    st.latex(r"\text{if } n \text{ is even, then } n^2 \text{ is even}")
+    st.latex(r"\text{if } n \text{ is odd, then } n^2 \text{ is odd}")
+
+    st.markdown("### Even squares")
+    even_examples = [
+        "2 × 2 = 4",
+        "4 × 4 = 16",
+        "6 × 6 = 36",
+        "8 × 8 = 64",
+        "10 × 10 = 100",
+        "12 × 12 = 144",
+    ]
+    for example in even_examples:
+        st.write(example)
+
+    st.markdown("### Odd squares")
+    odd_examples = [
+        "1 × 1 = 1",
+        "3 × 3 = 9",
+        "5 × 5 = 25",
+        "7 × 7 = 49",
+        "9 × 9 = 81",
+        "11 × 11 = 121",
+    ]
+    for example in odd_examples:
+        st.write(example)
+
+    st.markdown("### Notice")
+    st.write("Even inputs give even square products.")
+    st.write("Odd inputs give odd square products.")
+    st.write("There is no odd number with an even square.")
+    st.write("There is no even number with an odd square.")
+
+    with st.expander("Pattern bank"):
+        st.write("Even × even gives an even square.")
+        st.write("Odd × odd gives an odd square.")
+        st.write("This pattern continues for 11² and 12².")
+
+    activity_text = (
+        "Odd and Even Square Patterns\n\n"
+        "Focus: Notice parity patterns in square products.\n\n"
+        "Teacher explanation: Square products keep the odd/even structure of the repeated factor.\n"
+        "Teacher prompt: Look at the factor first. Is it odd or even? Then predict the square product.\n\n"
+        "Pupil tasks:\n"
+        "- Sort square products into odd squares and even squares.\n"
+        "- Match each square product to an odd factor or an even factor.\n"
+        "- Explain why 121 is odd and 144 is even.\n\n"
+        "Example questions:\n"
+        "- Is 25 an odd square or an even square?\n"
+        "- Why is 36 an even square?\n"
+        "- What do you notice about 49 and 81?\n"
+        "- Why is 144 even?\n\n"
+        "Teaching note: Keep the language product-first. Start from the route n × n, then classify the square by parity."
+    )
+    st.text_area(
+        "Copy-paste print text — Odd and Even Square Patterns",
+        activity_text,
+        height=260,
+        key="odd_even_squares_copy_box",
+    )
+
+
 def render_extension_hub_page() -> None:
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Extension Hub</div>', unsafe_allow_html=True)
@@ -135,5 +202,6 @@ def render_extension_hub_page() -> None:
 
     render_square_numbers_recap()
     render_square_roots()
+    render_odd_even_square_patterns()
 
     st.markdown("</div>", unsafe_allow_html=True)
