@@ -50,7 +50,7 @@ def _render_extension_overview() -> None:
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="tmk-note" style="margin-top:0.45rem;">Current live strands: 11×, 12×, square numbers recap, core versus extension boundary, and 12× route opening.</div>',
+        '<div class="tmk-note" style="margin-top:0.45rem;">Current live strands: 11×, 12×, square numbers recap, square roots, core versus extension boundary, and 12× route opening.</div>',
         unsafe_allow_html=True,
     )
     st.markdown("</div>", unsafe_allow_html=True)
@@ -284,6 +284,11 @@ def _render_activity_card(activity: object) -> None:
 
 
 def _render_squares_tab() -> None:
+    _render_square_numbers_recap()
+    _render_square_roots()
+
+
+def _render_square_numbers_recap() -> None:
     st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-small-label">Square Numbers Recap</div>', unsafe_allow_html=True)
     st.markdown(
@@ -379,6 +384,80 @@ def _render_squares_tab() -> None:
         value=build_square_activity_print_text("find_the_square_route"),
         height=260,
         key="square_numbers_recap_print_text",
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def _render_square_roots() -> None:
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-small-label">Square Roots</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="tmk-note">Recover the equal factor from a square product.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="tmk-note" style="margin-top:0.45rem;">A square root tells us which equal factor builds a square product.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="tmk-note"><strong>√n = a if and only if a × a = n</strong></div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    left_col, right_col = st.columns((1.0, 1.0))
+
+    with left_col:
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">Examples</div>', unsafe_allow_html=True)
+        for line in (
+            "√4 = 2 because 2 × 2 = 4",
+            "√9 = 3 because 3 × 3 = 9",
+            "√16 = 4 because 4 × 4 = 16",
+            "√25 = 5 because 5 × 5 = 25",
+            "√36 = 6 because 6 × 6 = 36",
+            "√49 = 7 because 7 × 7 = 49",
+            "√64 = 8 because 8 × 8 = 64",
+            "√81 = 9 because 9 × 9 = 81",
+            "√100 = 10 because 10 × 10 = 100",
+        ):
+            st.markdown(f'<div class="tmk-note">- {escape(line)}</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with right_col:
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">Extension square roots</div>', unsafe_allow_html=True)
+        for line in (
+            "√121 = 11 because 11 × 11 = 121",
+            "√144 = 12 because 12 × 12 = 144",
+        ):
+            st.markdown(f'<div class="tmk-note">- {escape(line)}</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    activity_text = (
+        "Square Roots\n\n"
+        "Focus: Recover the equal factor from a square product.\n\n"
+        "Teacher explanation: A square root tells us which equal factor builds the square product.\n"
+        "Teacher prompt: Which number times itself makes this product?\n\n"
+        "Pupil tasks:\n"
+        "- Match each square product to its square root.\n"
+        "- Explain each answer using a same-factor route.\n"
+        "- Separate core square roots from extension square roots.\n\n"
+        "Example questions:\n"
+        "- What is the square root of 36?\n"
+        "- Why is the square root of 49 equal to 7?\n"
+        "- Which extension square root matches 121?\n"
+        "- Which extension square root matches 144?\n\n"
+        "Teaching note: Keep square root as same-factor recovery, not as a detached symbol rule."
+    )
+
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-small-label">Teacher activity</div>', unsafe_allow_html=True)
+    st.text_area(
+        "Copy-paste print text",
+        value=activity_text,
+        height=260,
+        key="square_roots_print_text",
     )
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -539,7 +618,7 @@ def _render_coming_soon_tab() -> None:
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="tmk-note" style="margin-top:0.45rem;">Planned strands: square roots, area and perimeter, and later extension resource families.</div>',
+        '<div class="tmk-note" style="margin-top:0.45rem;">Planned strands: area and perimeter, and later extension resource families.</div>',
         unsafe_allow_html=True,
     )
     st.markdown("</div>", unsafe_allow_html=True)
