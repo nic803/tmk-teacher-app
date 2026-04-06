@@ -402,10 +402,14 @@ def render_activity_learning_panel(activity_title: str, key_suffix: str) -> None
     if not objectives:
         return
 
-    with st.expander(
+    view_mode = st.selectbox(
         "Learning objectives and outcomes",
-        expanded=False,
-    ):
+        options=["Hide", "Show"],
+        index=0,
+        key=f"{key_suffix}_learning_dropdown",
+    )
+
+    if view_mode == "Show":
         for index, block in enumerate(objectives, start=1):
             st.markdown(f"**Learning Objective {index}:** {block['objective']}")
             for outcome in block["outcomes"]:
@@ -558,7 +562,7 @@ def render_eleven_derivation_practice() -> None:
     )
     st.text_area(
         "Copy-paste print text — 11× Derivation Practice",
-        activity_text if False else copy_text,
+        copy_text,
         height=260,
         key="eleven_derivation_practice_copy_box",
     )
