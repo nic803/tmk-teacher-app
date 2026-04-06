@@ -1054,11 +1054,12 @@ def render_square_product_selector() -> None:
         f"- Is this square product odd or even?\n"
         f"- Is it core or extension?\n"
     )
+
+    st.session_state["square_product_selector_copy_box"] = copy_text
     st.text_area(
         "Copy-paste print text — Square Product Selector",
-        copy_text,
-        height=280,
         key="square_product_selector_copy_box",
+        height=280,
     )
 
 
