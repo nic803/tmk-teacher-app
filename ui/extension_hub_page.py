@@ -50,7 +50,7 @@ def _render_extension_overview() -> None:
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="tmk-note" style="margin-top:0.45rem;">Current live strands: 11×, 12×, square numbers recap, square roots, odd/even square patterns, core versus extension boundary, and 12× route opening.</div>',
+        '<div class="tmk-note" style="margin-top:0.45rem;">Current live strands: 11×, 12×, square numbers recap, square roots, odd/even square patterns, exponent and power notes, core versus extension boundary, and 12× route opening.</div>',
         unsafe_allow_html=True,
     )
     st.markdown("</div>", unsafe_allow_html=True)
@@ -287,6 +287,7 @@ def _render_squares_tab() -> None:
     _render_square_numbers_recap()
     render_square_roots()
     render_odd_even_square_patterns()
+    render_exponent_power_notes()
 
 
 def _render_square_numbers_recap() -> None:
@@ -517,6 +518,75 @@ def render_odd_even_square_patterns() -> None:
         activity_text,
         height=260,
         key="odd_even_squares_copy_box",
+    )
+
+
+def render_exponent_power_notes() -> None:
+    st.subheader("Exponent, Power, and Power of 2")
+    st.caption("New vocabulary for square notation and repeated factors")
+
+    st.markdown(r"In \(n^2\), the small raised \(2\) is the **exponent**.")
+    st.markdown(r"\(n^2\) is read as '**n squared**' or '**n to the power of 2**'.")
+
+    st.markdown("### Square examples")
+    square_examples = [
+        "3² = 9 because 3 × 3 = 9",
+        "5² = 25 because 5 × 5 = 25",
+        "11² = 121 because 11 × 11 = 121",
+        "12² = 144 because 12 × 12 = 144",
+    ]
+    for example in square_examples:
+        st.write(example)
+
+    st.markdown("### Power of 2 examples")
+    power_two_examples = [
+        "2¹ = 2",
+        "2² = 4",
+        "2³ = 8",
+        "2⁴ = 16",
+        "2⁵ = 32",
+        "2⁶ = 64",
+    ]
+    for example in power_two_examples:
+        st.write(example)
+
+    st.markdown("### Important distinction")
+    st.write("A square number has the form n × n.")
+    st.write("A power of 2 has base 2 repeated several times.")
+    st.write("These ideas sometimes overlap, but they are not the same idea.")
+    st.write("For example, 4 = 2² is both a square number and a power of 2.")
+    st.write("But 25 = 5² is a square number and not a power of 2.")
+    st.write("And 32 = 2⁵ is a power of 2 and not a square number.")
+
+    with st.expander("Teacher note"):
+        st.write(
+            "Keep the distinction very explicit. Pupils often confuse "
+            "'squared' with 'power of 2'."
+        )
+
+    activity_text = (
+        "Exponent, Power, and Power of 2\n\n"
+        "Focus: Distinguish square notation from powers of 2.\n\n"
+        "Teacher explanation: In n², the exponent 2 means the same factor is used twice. "
+        "In 2^n, the base stays 2 and the exponent changes how many 2s are multiplied.\n"
+        "Teacher prompt: Is this number a square, a power of 2, both, or neither?\n\n"
+        "Pupil tasks:\n"
+        "- Match square notation to multiplication form.\n"
+        "- Sort numbers into square, power of 2, both, or neither.\n"
+        "- Explain why 25 is square but not a power of 2.\n"
+        "- Explain why 32 is a power of 2 but not a square.\n\n"
+        "Example questions:\n"
+        "- What does the exponent mean in 6²?\n"
+        "- Why is 4 both a square number and a power of 2?\n"
+        "- Why is 121 a square number?\n"
+        "- Is 64 a square number, a power of 2, or both?\n\n"
+        "Teaching note: Keep 'square' linked to the route n × n, and 'power of 2' linked to repeated multiplication by 2."
+    )
+    st.text_area(
+        "Copy-paste print text — Exponent, Power, and Power of 2",
+        activity_text,
+        height=280,
+        key="exponent_power_copy_box",
     )
 
 
