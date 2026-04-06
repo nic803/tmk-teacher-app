@@ -542,7 +542,7 @@ def _theme_css_vars(theme: dict[str, str]) -> str:
             f"--tmk-hover: {theme['hover']};",
             f"--tmk-sidebar-bg: {theme['sidebar_bg']};",
             f"--tmk-sidebar-text: {theme['sidebar_text']};",
-            f"--tmk-sidebar_text_soft: {theme['sidebar_text_soft']};",
+            f"--tmk-sidebar-text_soft: {theme['sidebar_text_soft']};",
             f"--tmk-sidebar-border: {theme['sidebar_border']};",
         ]
     )
@@ -604,7 +604,7 @@ def _render_sidebar() -> None:
         elif st.session_state.surface == "Extensions":
             st.write("**Focus:** extension mathematics and advanced activity tools")
             st.write("**Content area:** separate from core TMK structure")
-            st.write("**Status:** placeholder surface ready for staged build")
+            st.write("**Status:** live extension hub")
         elif st.session_state.surface == "Resource Library":
             st.write("**Focus:** browse and open structural resources")
             st.write("**Content source:** core resource registry")
@@ -1258,6 +1258,7 @@ def _build_route_overlap_activity(
     compare_product: int,
     compare_routes: tuple[tuple[int, int], ...],
 ) -> dict[str, Any]:
+    route_labels = [_format_route(route) for route in routes]
     intro_route_label = _format_route(intro_route)
 
     non_intro_routes = [route for route in routes if route != intro_route]
