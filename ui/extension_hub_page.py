@@ -152,6 +152,99 @@ def render_eleven_derivation_practice() -> None:
     )
 
 
+def render_eleven_route_opening() -> None:
+    st.subheader("11× Route Opening")
+    st.caption("New extension routes opened through 11×")
+
+    records = {
+        22: {
+            "core_routes": ["2 × 11"],
+            "extension_routes": ["2 × 11"],
+            "teacher_note": "22 enters as an 11× extension product.",
+        },
+        33: {
+            "core_routes": ["3 × 11"],
+            "extension_routes": ["3 × 11"],
+            "teacher_note": "33 enters as an 11× extension product.",
+        },
+        44: {
+            "core_routes": ["4 × 11"],
+            "extension_routes": ["4 × 11"],
+            "teacher_note": "44 enters as an 11× extension product.",
+        },
+        55: {
+            "core_routes": ["5 × 11"],
+            "extension_routes": ["5 × 11"],
+            "teacher_note": "55 enters as an 11× extension product.",
+        },
+        66: {
+            "core_routes": ["6 × 11"],
+            "extension_routes": ["6 × 11"],
+            "teacher_note": "66 enters as an 11× extension product.",
+        },
+        77: {
+            "core_routes": ["7 × 11"],
+            "extension_routes": ["7 × 11"],
+            "teacher_note": "77 enters as an 11× extension product.",
+        },
+        88: {
+            "core_routes": ["8 × 11"],
+            "extension_routes": ["8 × 11"],
+            "teacher_note": "88 enters as an 11× extension product.",
+        },
+        99: {
+            "core_routes": ["9 × 11"],
+            "extension_routes": ["9 × 11"],
+            "teacher_note": "99 enters as an 11× extension product.",
+        },
+        121: {
+            "core_routes": ["11 × 11"],
+            "extension_routes": ["11 × 11"],
+            "teacher_note": "121 is both an 11× product and an extension square.",
+        },
+        132: {
+            "core_routes": ["11 × 12"],
+            "extension_routes": ["11 × 12"],
+            "teacher_note": "132 is opened through 11 × 12.",
+        },
+    }
+
+    selected_product = st.selectbox(
+        "Choose an 11× product",
+        options=list(records.keys()),
+        index=0,
+        key="eleven_route_opening_selector",
+    )
+
+    record = records[selected_product]
+
+    st.markdown("### Extension route")
+    for route in record["extension_routes"]:
+        st.write(route)
+
+    st.markdown("### Teacher note")
+    st.write(record["teacher_note"])
+    st.write("These products belong to the extension strand opened by 11×.")
+
+    copy_text = (
+        f"11× Route Opening\n\n"
+        f"Selected product: {selected_product}\n\n"
+        f"Focus: Show how 11× opens new extension products.\n\n"
+        f"Teacher explanation: 11× creates new extension products through the rule 10× + 1×.\n"
+        f"Teacher prompt: Which 11× route builds {selected_product}?\n\n"
+        f"Extension routes:\n"
+        + "\n".join(f"- {route}" for route in record["extension_routes"])
+        + "\n\nTeaching note:\n"
+        + record["teacher_note"]
+    )
+    st.text_area(
+        "Copy-paste print text — 11× Route Opening",
+        copy_text,
+        height=240,
+        key="eleven_route_opening_copy_box",
+    )
+
+
 def render_twelve_foundations() -> None:
     st.subheader("12× Foundations")
     st.caption("Derive 12× from known structure")
@@ -942,6 +1035,7 @@ def render_extension_hub_page() -> None:
     st.caption("A separate extension strand for derivation rules, clock support, and route opening.")
     render_eleven_foundations()
     render_eleven_derivation_practice()
+    render_eleven_route_opening()
     render_twelve_foundations()
     render_twelve_route_opening()
     render_core_extension_route_comparison()
