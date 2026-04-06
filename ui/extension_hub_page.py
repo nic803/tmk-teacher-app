@@ -3,6 +3,195 @@ from __future__ import annotations
 import streamlit as st
 
 
+def render_eleven_foundations() -> None:
+    st.subheader("11× Foundations")
+    st.caption("Derive 11× from known structure")
+
+    st.markdown("Main teaching rule:")
+    st.latex(r"11 \times n = 10 \times n + 1 \times n")
+
+    st.markdown("### Pattern bank")
+    st.write("Ten-plus-one rule: build 11× from 10× and 1×.")
+    st.write("Repeated-digit pattern for 11 × 1 to 11 × 9.")
+    st.write("Beyond repeated digits: keep using 10× + 1×.")
+    st.write("11× opens new extension routes without replacing core routes.")
+
+    st.markdown("### Examples")
+    examples = [
+        "11 × 2 = 10 × 2 + 1 × 2 = 20 + 2 = 22",
+        "11 × 4 = 10 × 4 + 1 × 4 = 40 + 4 = 44",
+        "11 × 7 = 10 × 7 + 1 × 7 = 70 + 7 = 77",
+        "11 × 11 = 121",
+    ]
+    for example in examples:
+        st.write(example)
+
+    activity_text = (
+        "11× Foundations\n\n"
+        "Focus: Derive 11× from known 10× and 1× structure.\n\n"
+        "Teacher explanation: 11× is not a separate fact list. It is built from 10× and 1×.\n"
+        "Teacher prompt: What is 10×n? What is 1×n? Now combine them.\n\n"
+        "Pupil tasks:\n"
+        "- Build 11× facts from 10× and 1×.\n"
+        "- Notice repeated-digit products where they appear.\n"
+        "- Explain why 11× opens new extension routes.\n\n"
+        "Example questions:\n"
+        "- How can you derive 11 × 6?\n"
+        "- Why does 11 × 8 give 88?\n"
+        "- What is 11 × 11?\n\n"
+        "Teaching note: Keep derivation first. Do not present 11× as a separate memorised table."
+    )
+    st.text_area(
+        "Copy-paste print text — 11× Foundations",
+        activity_text,
+        height=240,
+        key="eleven_foundations_copy_box",
+    )
+
+
+def render_twelve_foundations() -> None:
+    st.subheader("12× Foundations")
+    st.caption("Derive 12× from known structure")
+
+    st.markdown("Main teaching rule:")
+    st.latex(r"12 \times n = 10 \times n + 2 \times n")
+
+    st.markdown("Support rule:")
+    st.latex(r"12 \times n = 2(6 \times n)")
+
+    st.markdown("### Pattern bank")
+    st.write("Ten-plus-two rule: build 12× from 10× and 2×.")
+    st.write("Double-the-6× rule: 12×n = 2(6×n).")
+    st.write("Even-product pattern: all 12× products are even.")
+    st.write("Growth-by-12 pattern: each new product increases by 12.")
+
+    st.markdown("### Clock cue")
+    st.write("A clock has 12 equal sections of 5 minutes.")
+    st.latex(r"12 \times 5 = 60")
+    st.write("Use the clock cue as support, not as the main derivation rule.")
+
+    st.markdown("### Examples")
+    examples = [
+        "12 × 3 = 10 × 3 + 2 × 3 = 30 + 6 = 36",
+        "12 × 5 = 60",
+        "12 × 6 = 10 × 6 + 2 × 6 = 60 + 12 = 72",
+        "12 × 12 = 144",
+    ]
+    for example in examples:
+        st.write(example)
+
+    activity_text = (
+        "12× Foundations\n\n"
+        "Focus: Derive 12× from 10× + 2× and connect it to known structure.\n\n"
+        "Teacher explanation: 12× is built from known multiplication facts. The main rule is 10× + 2×. "
+        "A second support rule is double 6×. The clock cue supports 12 × 5 = 60.\n"
+        "Teacher prompt: What is 10×n? What is 2×n? Now combine them.\n\n"
+        "Pupil tasks:\n"
+        "- Derive 12× facts from 10× and 2×.\n"
+        "- Use the clock cue for 12 × 5.\n"
+        "- Notice that all 12× products are even.\n\n"
+        "Example questions:\n"
+        "- How can you derive 12 × 4?\n"
+        "- Why is 12 × 5 equal to 60?\n"
+        "- How can 6× help with 12×?\n\n"
+        "Teaching note: Keep 10× + 2× as the main rule. The clock cue is support only."
+    )
+    st.text_area(
+        "Copy-paste print text — 12× Foundations",
+        activity_text,
+        height=260,
+        key="twelve_foundations_copy_box",
+    )
+
+
+def render_twelve_route_opening() -> None:
+    st.subheader("12× Route Opening")
+    st.caption("New extension routes opened through 12×")
+
+    records = {
+        24: {
+            "core_routes": ["4 × 6", "3 × 8", "2 × 12"],
+            "display_core_routes": ["4 × 6", "3 × 8"],
+            "extension_routes": ["2 × 12"],
+            "teacher_note": "24 gains an extension route through 12×, but its core routes remain separate.",
+        },
+        36: {
+            "core_routes": ["4 × 9", "6 × 6"],
+            "display_core_routes": ["4 × 9", "6 × 6"],
+            "extension_routes": ["3 × 12"],
+            "teacher_note": "36 is a core multi-route square and also gains the extension route 3 × 12.",
+        },
+        48: {
+            "core_routes": ["6 × 8"],
+            "display_core_routes": ["6 × 8"],
+            "extension_routes": ["4 × 12"],
+            "teacher_note": "48 is already core through 6 × 8, and 4 × 12 becomes a new extension route.",
+        },
+        60: {
+            "core_routes": ["6 × 10"],
+            "display_core_routes": ["6 × 10"],
+            "extension_routes": ["5 × 12"],
+            "teacher_note": "60 stays a core product through 6 × 10 and gains 5 × 12 in extension.",
+        },
+        72: {
+            "core_routes": ["8 × 9"],
+            "display_core_routes": ["8 × 9"],
+            "extension_routes": ["6 × 12"],
+            "teacher_note": "72 is core through 8 × 9 and gains the extension route 6 × 12.",
+        },
+    }
+
+    selected_product = st.selectbox(
+        "Choose a product",
+        options=list(records.keys()),
+        index=1,
+        key="twelve_route_opening_selector",
+    )
+
+    record = records[selected_product]
+
+    st.markdown("### Core routes")
+    for route in record["display_core_routes"]:
+        st.write(route)
+
+    st.markdown("### Extension routes")
+    for route in record["extension_routes"]:
+        st.write(route)
+
+    st.markdown("### Teacher note")
+    st.write(record["teacher_note"])
+    st.write("Core routes and extension routes should stay separate on the page.")
+
+    copy_text = (
+        f"12× Route Opening\n\n"
+        f"Selected product: {selected_product}\n\n"
+        f"Focus: Compare core routes with new extension routes opened through 12×.\n\n"
+        f"Teacher explanation: Some products are already known in the core world. "
+        f"12× can open a new extension route into the same product, but it does not replace the core routes.\n"
+        f"Teacher prompt: Which routes into {selected_product} belong to the core world, and which belong to extension?\n\n"
+        f"Core routes:\n"
+        + "\n".join(f"- {route}" for route in record["display_core_routes"])
+        + "\n\nExtension routes:\n"
+        + "\n".join(f"- {route}" for route in record["extension_routes"])
+        + "\n\nTeaching note:\n"
+        + record["teacher_note"]
+    )
+    st.text_area(
+        "Copy-paste print text — 12× Route Opening",
+        copy_text,
+        height=260,
+        key="twelve_route_opening_copy_box",
+    )
+
+
+def render_square_strand_intro() -> None:
+    st.markdown("---")
+    st.markdown("## Square Numbers and Square Roots")
+    st.caption(
+        "A separate extension strand focused on same-factor routes, square roots, and square patterns."
+    )
+
+
 def render_square_numbers_recap() -> None:
     st.subheader("Square Numbers Recap")
     st.caption("Known products with a same-factor route")
@@ -494,6 +683,13 @@ def render_extension_hub_page() -> None:
         unsafe_allow_html=True,
     )
 
+    st.markdown("## 11× and 12× Foundations")
+    st.caption("A separate extension strand for derivation rules, clock support, and route opening.")
+    render_eleven_foundations()
+    render_twelve_foundations()
+    render_twelve_route_opening()
+
+    render_square_strand_intro()
     render_square_numbers_recap()
     render_square_roots()
     render_odd_even_square_patterns()
