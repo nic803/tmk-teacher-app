@@ -3,6 +3,417 @@ from __future__ import annotations
 import streamlit as st
 
 
+ACTIVITY_LEARNING_DATA = {
+    "11× Foundations": [
+        {
+            "objective": "Build 11× products using known multiplication routes.",
+            "outcomes": [
+                "Derive an 11× product using the related 10× product and 1× product.",
+                "Explain how 11 × n can be built from 10 × n + 1 × n.",
+                "Use known 10× products to construct new 11× products.",
+            ],
+        },
+        {
+            "objective": "Recognise patterns in 11× products.",
+            "outcomes": [
+                "Identify repeated-digit products that appear in some 11× products.",
+                "Explain why products such as 88 appear when multiplying by 11.",
+                "Describe patterns noticed across several 11× products.",
+            ],
+        },
+        {
+            "objective": "Understand how 11× creates extension multiplication routes.",
+            "outcomes": [
+                "Identify products that appear through 11× routes.",
+                "Explain how 11× introduces new routes beyond the core multiplication structure.",
+                "Use 11× routes to connect known products to extension products.",
+            ],
+        },
+    ],
+    "11× Derivation Practice": [
+        {
+            "objective": "Derive an 11× product from known multiplication routes.",
+            "outcomes": [
+                "Build an 11× product using the related 10× product and 1× product.",
+                "Explain how 11 × n can be derived as 10 × n + 1 × n.",
+                "Use known multiplication facts to construct an 11× product.",
+            ],
+        },
+        {
+            "objective": "Explain how an 11× product is built.",
+            "outcomes": [
+                "Identify the 10× route that contributes to the product.",
+                "Identify the 1× route that completes the product.",
+                "Describe how combining these routes produces the 11× product.",
+            ],
+        },
+        {
+            "objective": "Recognise patterns that appear in 11× products.",
+            "outcomes": [
+                "Identify repeated-digit products that appear in some 11× products.",
+                "Explain why 11 × 2 = 22 produces a repeated-digit product.",
+                "Compare several 11× products and describe any patterns noticed.",
+            ],
+        },
+    ],
+    "11× Route Opening": [
+        {
+            "objective": "Identify the 11× route that builds an extension product.",
+            "outcomes": [
+                "Identify the 11× route that produces the selected product.",
+                "Write the multiplication route n × 11 for the product.",
+                "Explain how the 11× route creates the product.",
+            ],
+        },
+        {
+            "objective": "Understand how 11× creates extension products.",
+            "outcomes": [
+                "Recognise that some products appear through 11× routes.",
+                "Explain how 11× introduces products beyond the core multiplication structure.",
+                "Identify products that enter the multiplication structure through 11×.",
+            ],
+        },
+        {
+            "objective": "Connect 11× routes to known multiplication structure.",
+            "outcomes": [
+                "Identify the related 10× product connected to the 11× product.",
+                "Explain how the 10× + 1× rule produces the 11× product.",
+                "Describe how the extension product connects to known multiplication routes.",
+            ],
+        },
+    ],
+    "11× Core or Extension Route?": [
+        {
+            "objective": "Identify products created by an 11× route.",
+            "outcomes": [
+                "Recognise products that are built using a multiplication route with 11.",
+                "Write the 11× route that produces a given product.",
+                "Explain how the product is formed using n × 11.",
+            ],
+        },
+        {
+            "objective": "Classify products that belong to the 11× extension strand.",
+            "outcomes": [
+                "Identify products that enter the multiplication structure through 11×.",
+                "Explain why these products belong to the extension strand rather than the core set.",
+                "Sort products into core products or 11× extension products.",
+            ],
+        },
+        {
+            "objective": "Recognise special products within the 11× extension strand.",
+            "outcomes": [
+                "Identify products that have a special structure, such as 121 = 11 × 11.",
+                "Explain why 121 is both an 11× product and a square product.",
+                "Describe how special cases connect the extension strand to other multiplication patterns.",
+            ],
+        },
+    ],
+    "12× Foundations": [
+        {
+            "objective": "Build 12× products using known multiplication structure.",
+            "outcomes": [
+                "Derive a 12× product using the related 10× product and 2× product.",
+                "Explain how 12 × n can be built as 10 × n + 2 × n.",
+                "Use known multiplication facts to construct new 12× products.",
+            ],
+        },
+        {
+            "objective": "Use known multiplication routes to support 12× reasoning.",
+            "outcomes": [
+                "Identify the related 6× product that can help derive a 12× product.",
+                "Explain how doubling a 6× product can produce a 12× product.",
+                "Use known multiplication routes to check or explain a 12× product.",
+            ],
+        },
+        {
+            "objective": "Recognise patterns in 12× products.",
+            "outcomes": [
+                "Identify that 12× products are always even.",
+                "Use the clock cue to recognise the product 12 × 5 = 60.",
+                "Describe patterns noticed across several 12× products.",
+            ],
+        },
+    ],
+    "12× Route Opening": [
+        {
+            "objective": "Identify the multiplication routes that build a product.",
+            "outcomes": [
+                "Identify the core route that produces the selected product.",
+                "Write the multiplication route that builds the product within the core structure.",
+                "Explain how the core route produces the product.",
+            ],
+        },
+        {
+            "objective": "Recognise new routes created by extension multiplication.",
+            "outcomes": [
+                "Identify the 12× route that produces the product.",
+                "Write the extension multiplication route using 12.",
+                "Explain how the extension route builds the same product.",
+            ],
+        },
+        {
+            "objective": "Compare core routes and extension routes into the same product.",
+            "outcomes": [
+                "Distinguish between routes that belong to the core structure and those that belong to the extension strand.",
+                "Explain why the core route remains the main structural route.",
+                "Describe how the extension route adds another way to reach the same product.",
+            ],
+        },
+    ],
+    "Core or Extension Route?": [
+        {
+            "objective": "Distinguish between core routes and extension routes.",
+            "outcomes": [
+                "Identify multiplication routes that stay within the core 1–10 structure.",
+                "Identify routes that belong to the extension strand because they use 11 or 12.",
+                "Sort multiplication routes into core or extension groups.",
+            ],
+        },
+        {
+            "objective": "Explain why a route belongs to the core or extension structure.",
+            "outcomes": [
+                "Explain why routes such as 6 × 6 belong to the core structure.",
+                "Explain why routes such as 3 × 12 belong to the extension strand.",
+                "Describe how the factors in the route determine whether it is core or extension.",
+            ],
+        },
+        {
+            "objective": "Recognise that one product can have both core and extension routes.",
+            "outcomes": [
+                "Identify products that can be reached by both core routes and extension routes.",
+                "Explain why the core route remains the main structural route.",
+                "Describe how extension routes provide additional ways to reach the same product.",
+            ],
+        },
+    ],
+    "12× Derivation Practice": [
+        {
+            "objective": "Derive a 12× product using known multiplication routes.",
+            "outcomes": [
+                "Build a 12× product using the related 10× product and 2× product.",
+                "Explain how 12 × n can be derived as 10 × n + 2 × n.",
+                "Use known multiplication facts to construct a 12× product.",
+            ],
+        },
+        {
+            "objective": "Use alternative multiplication routes to explain a 12× product.",
+            "outcomes": [
+                "Identify the related 6× product connected to the 12× product.",
+                "Explain how doubling a 6× product produces a 12× product.",
+                "Compare two derivation routes that produce the same product.",
+            ],
+        },
+        {
+            "objective": "Recognise supporting cues that help explain 12× products.",
+            "outcomes": [
+                "Explain how the clock cue supports the product 12 × 5 = 60.",
+                "Describe how real-world patterns can support multiplication reasoning.",
+                "Use supporting cues to check or explain a 12× product.",
+            ],
+        },
+    ],
+    "11× versus 12× Comparison": [
+        {
+            "objective": "Compare how 11× and 12× products are built.",
+            "outcomes": [
+                "Identify that 11 × n is built as 10 × n + 1 × n.",
+                "Identify that 12 × n is built as 10 × n + 2 × n.",
+                "Explain the difference between the ten-plus-one and ten-plus-two structures.",
+            ],
+        },
+        {
+            "objective": "Compare the products created by 11× and 12×.",
+            "outcomes": [
+                "Compare 11 × n and 12 × n for the same factor.",
+                "Describe how the product changes when one more group of n is added.",
+                "Explain why 12 × n is always one extra n more than 11 × n.",
+            ],
+        },
+        {
+            "objective": "Recognise patterns that appear in 11× and 12× products.",
+            "outcomes": [
+                "Identify repeated-digit products that appear in some 11× products.",
+                "Explain why these repeated-digit patterns do not usually appear in 12× products.",
+                "Describe patterns noticed when comparing several 11× and 12× products.",
+            ],
+        },
+    ],
+    "Square Numbers Recap": [
+        {
+            "objective": "Recognise square products.",
+            "outcomes": [
+                "Find square products in a group of multiplication products.",
+                "Write the multiplication route that shows the square product (for example 5 × 5 = 25).",
+                "Explain why a product is a square product.",
+            ],
+        },
+        {
+            "objective": "Spot products built from the same factor twice.",
+            "outcomes": [
+                "Find products that come from multiplying the same factor by itself.",
+                "Write the multiplication route that builds the square product.",
+                "Describe what makes these products special.",
+            ],
+        },
+        {
+            "objective": "Notice that some products have more than one route.",
+            "outcomes": [
+                "Find square products that also have another multiplication route.",
+                "Find square products that only have one route.",
+                "Explain why some products can be built in more than one way.",
+            ],
+        },
+    ],
+    "Square Roots": [
+        {
+            "objective": "Find the factor that builds a square product.",
+            "outcomes": [
+                "Identify the factor that is multiplied by itself to make the product.",
+                "State the square root of a square product.",
+                "Show the multiplication route that explains the square root.",
+            ],
+        },
+        {
+            "objective": "Understand how square roots relate to square products.",
+            "outcomes": [
+                "Match square products with their square roots.",
+                "Explain how the square root tells us the factor used twice.",
+                "Describe how square products and square roots are connected.",
+            ],
+        },
+        {
+            "objective": "Distinguish between core square roots and extension square roots.",
+            "outcomes": [
+                "Identify square roots from the core multiplication structure.",
+                "Identify square roots from extension products.",
+                "Explain how you know whether the square root belongs to the core or extension set.",
+            ],
+        },
+    ],
+    "Odd and Even Square Patterns": [
+        {
+            "objective": "Sort square products into odd and even groups.",
+            "outcomes": [
+                "Place square products into odd or even groups.",
+                "Identify whether a square product is odd or even.",
+                "Explain why the square product is odd or even.",
+            ],
+        },
+        {
+            "objective": "Understand how factor parity affects square products.",
+            "outcomes": [
+                "Identify whether the factor in the square route is odd or even.",
+                "Match square products with their factors.",
+                "Explain why odd factors produce odd squares and even factors produce even squares.",
+            ],
+        },
+        {
+            "objective": "Use factor parity to predict square products.",
+            "outcomes": [
+                "Predict whether a square product will be odd or even.",
+                "Explain why 121 is odd and 144 is even.",
+                "Compare several square products and describe what you notice.",
+            ],
+        },
+    ],
+    "Exponent, Power, and Power of 2": [
+        {
+            "objective": "Understand exponent notation in square products.",
+            "outcomes": [
+                "Match square notation such as 6² with the multiplication route 6 × 6.",
+                "Explain that the exponent 2 means the factor is used twice.",
+                "Recognise square products written using exponent notation.",
+            ],
+        },
+        {
+            "objective": "Recognise powers of 2.",
+            "outcomes": [
+                "Identify products that come from multiplying 2 repeatedly.",
+                "Write powers of 2 as repeated multiplication.",
+                "Explain how the exponent shows how many factors of 2 are multiplied.",
+            ],
+        },
+        {
+            "objective": "Distinguish between square products and powers of 2.",
+            "outcomes": [
+                "Sort products into square, power of 2, both, or neither.",
+                "Explain why 25 is square but not a power of 2.",
+                "Explain why 64 belongs to both groups.",
+            ],
+        },
+    ],
+    "Square Product Selector": [
+        {
+            "objective": "Identify the square route that builds a square product.",
+            "outcomes": [
+                "Identify the same-factor route that produces the selected product.",
+                "Write the multiplication route that builds the square product.",
+                "Explain why the product is square.",
+            ],
+        },
+        {
+            "objective": "Analyse the structure of a square product.",
+            "outcomes": [
+                "Determine whether the square product has one route or more than one route.",
+                "State the square root of the selected product.",
+                "Explain how the square root relates to the square route.",
+            ],
+        },
+        {
+            "objective": "Classify a square product using structural properties.",
+            "outcomes": [
+                "Identify whether the square product is odd or even.",
+                "Determine whether the product belongs to the core or extension structure.",
+                "Describe what you notice about the route structure of the product.",
+            ],
+        },
+    ],
+    "Square or Not Square?": [
+        {
+            "objective": "Decide whether a product is a square product.",
+            "outcomes": [
+                "Identify products that can be written as n × n.",
+                "Sort products into square or not square.",
+                "Explain why a product is square using its factor route.",
+            ],
+        },
+        {
+            "objective": "Recognise when a product does not have a same-factor route.",
+            "outcomes": [
+                "Identify products that cannot be written as n × n.",
+                "Explain why these products are not square.",
+                "Compare square and non-square products using their factor routes.",
+            ],
+        },
+        {
+            "objective": "Use multiplication routes to justify square decisions.",
+            "outcomes": [
+                "Write the multiplication route that proves a product is square.",
+                "Explain why products such as 18 or 72 are not square.",
+                "Identify extension products that are square.",
+            ],
+        },
+    ],
+}
+
+
+def render_activity_learning_panel(activity_title: str, key_suffix: str) -> None:
+    objectives = ACTIVITY_LEARNING_DATA.get(activity_title, [])
+    if not objectives:
+        return
+
+    with st.expander(
+        "Learning objectives and outcomes",
+        expanded=False,
+    ):
+        for index, block in enumerate(objectives, start=1):
+            st.markdown(f"**Learning Objective {index}:** {block['objective']}")
+            for outcome in block["outcomes"]:
+                st.write(f"- {outcome}")
+            if index < len(objectives):
+                st.markdown("---")
+
+
 def render_eleven_foundations() -> None:
     st.subheader("11× Foundations")
     st.caption("Derive 11× from known structure")
@@ -47,6 +458,7 @@ def render_eleven_foundations() -> None:
         height=240,
         key="eleven_foundations_copy_box",
     )
+    render_activity_learning_panel("11× Foundations", "eleven_foundations")
 
 
 def render_eleven_derivation_practice() -> None:
@@ -146,10 +558,11 @@ def render_eleven_derivation_practice() -> None:
     )
     st.text_area(
         "Copy-paste print text — 11× Derivation Practice",
-        copy_text,
+        activity_text if False else copy_text,
         height=260,
         key="eleven_derivation_practice_copy_box",
     )
+    render_activity_learning_panel("11× Derivation Practice", "eleven_derivation_practice")
 
 
 def render_eleven_route_opening() -> None:
@@ -233,6 +646,7 @@ def render_eleven_route_opening() -> None:
         height=240,
         key="eleven_route_opening_copy_box",
     )
+    render_activity_learning_panel("11× Route Opening", "eleven_route_opening")
 
 
 def render_eleven_core_extension_comparison() -> None:
@@ -283,6 +697,7 @@ def render_eleven_core_extension_comparison() -> None:
         height=240,
         key="eleven_core_extension_comparison_copy_box",
     )
+    render_activity_learning_panel("11× Core or Extension Route?", "eleven_core_extension_comparison")
 
 
 def render_twelve_foundations() -> None:
@@ -338,6 +753,7 @@ def render_twelve_foundations() -> None:
         height=260,
         key="twelve_foundations_copy_box",
     )
+    render_activity_learning_panel("12× Foundations", "twelve_foundations")
 
 
 def render_twelve_route_opening() -> None:
@@ -414,6 +830,7 @@ def render_twelve_route_opening() -> None:
         key="twelve_route_opening_copy_box",
         height=260,
     )
+    render_activity_learning_panel("12× Route Opening", "twelve_route_opening")
 
 
 def render_core_extension_route_comparison() -> None:
@@ -459,6 +876,7 @@ def render_core_extension_route_comparison() -> None:
         height=260,
         key="core_extension_route_comparison_copy_box",
     )
+    render_activity_learning_panel("Core or Extension Route?", "core_extension_route_comparison")
 
 
 def render_twelve_derivation_practice() -> None:
@@ -572,6 +990,7 @@ def render_twelve_derivation_practice() -> None:
         key="twelve_derivation_practice_copy_box",
         height=260,
     )
+    render_activity_learning_panel("12× Derivation Practice", "twelve_derivation_practice")
 
 
 def render_eleven_twelve_comparison() -> None:
@@ -622,11 +1041,13 @@ def render_eleven_twelve_comparison() -> None:
         height=260,
         key="eleven_twelve_comparison_copy_box",
     )
+    render_activity_learning_panel("11× versus 12× Comparison", "eleven_twelve_comparison")
 
 
 def render_square_strand_intro() -> None:
     st.markdown("### Overview")
     st.write("This strand focuses on square products, square roots, parity patterns, and square vocabulary.")
+    st.markdown("**Six Activity cards with learning objectives and outcomes.**")
 
 
 def render_square_numbers_recap() -> None:
@@ -688,6 +1109,7 @@ def render_square_numbers_recap() -> None:
         height=260,
         key="square_numbers_recap_copy_box",
     )
+    render_activity_learning_panel("Square Numbers Recap", "square_numbers_recap")
 
 
 def render_square_roots() -> None:
@@ -749,6 +1171,7 @@ def render_square_roots() -> None:
         height=260,
         key="square_roots_copy_box",
     )
+    render_activity_learning_panel("Square Roots", "square_roots")
 
 
 def render_odd_even_square_patterns() -> None:
@@ -816,6 +1239,7 @@ def render_odd_even_square_patterns() -> None:
         height=260,
         key="odd_even_squares_copy_box",
     )
+    render_activity_learning_panel("Odd and Even Square Patterns", "odd_even_square_patterns")
 
 
 def render_exponent_power_notes() -> None:
@@ -889,6 +1313,7 @@ def render_exponent_power_notes() -> None:
         height=280,
         key="exponent_power_copy_box",
     )
+    render_activity_learning_panel("Exponent, Power, and Power of 2", "exponent_power_notes")
 
 
 def render_square_product_selector() -> None:
@@ -1063,6 +1488,7 @@ def render_square_product_selector() -> None:
         key="square_product_selector_copy_box",
         height=280,
     )
+    render_activity_learning_panel("Square Product Selector", "square_product_selector")
 
 
 def render_square_or_not_square() -> None:
@@ -1111,18 +1537,21 @@ def render_square_or_not_square() -> None:
         height=260,
         key="square_or_not_square_copy_box",
     )
+    render_activity_learning_panel("Square or Not Square?", "square_or_not_square")
 
 
 def render_extension_hub_page() -> None:
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Extension Hub</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="tmk-section-subtitle">Resources for teaching 11× and 12×, opening new routes, and extending beyond the core TMK world.</div>',
+        '<div class="tmk-section-subtitle">Resources for teaching 11× and 12×, square number focus and square root, opening new routes, and extending beyond the core TMK world.</div>',
         unsafe_allow_html=True,
     )
 
     with st.expander("11× and 12× Extension Strand", expanded=False):
-        st.caption("Derivation rules, route opening, and comparison work for 11× and 12×.")
+        st.caption(
+            "Derivation rules, route opening, and comparison work for 11× and 12×. **Nine Activity cards with learning objectives and outcomes.**"
+        )
         render_eleven_foundations()
         render_eleven_derivation_practice()
         render_eleven_route_opening()
