@@ -407,11 +407,12 @@ def render_twelve_route_opening() -> None:
         + "\n\nTeaching note:\n"
         + record["teacher_note"]
     )
+
+    st.session_state["twelve_route_opening_copy_box"] = copy_text
     st.text_area(
         "Copy-paste print text — 12× Route Opening",
-        copy_text,
-        height=260,
         key="twelve_route_opening_copy_box",
+        height=260,
     )
 
 
@@ -564,11 +565,12 @@ def render_twelve_derivation_practice() -> None:
         f"Clock cue:\n- {record['clock_cue']}\n\n"
         f"Teaching note:\nKeep 10× + 2× as the first route of explanation."
     )
+
+    st.session_state["twelve_derivation_practice_copy_box"] = copy_text
     st.text_area(
         "Copy-paste print text — 12× Derivation Practice",
-        copy_text,
-        height=260,
         key="twelve_derivation_practice_copy_box",
+        height=260,
     )
 
 
