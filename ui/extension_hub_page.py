@@ -50,7 +50,7 @@ def _render_extension_overview() -> None:
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="tmk-note" style="margin-top:0.45rem;">Current live strands: 11×, 12×, square numbers recap, square roots, core versus extension boundary, and 12× route opening.</div>',
+        '<div class="tmk-note" style="margin-top:0.45rem;">Current live strands: 11×, 12×, square numbers recap, square roots, odd/even square patterns, core versus extension boundary, and 12× route opening.</div>',
         unsafe_allow_html=True,
     )
     st.markdown("</div>", unsafe_allow_html=True)
@@ -285,7 +285,8 @@ def _render_activity_card(activity: object) -> None:
 
 def _render_squares_tab() -> None:
     _render_square_numbers_recap()
-    _render_square_roots()
+    render_square_roots()
+    render_odd_even_square_patterns()
 
 
 def _render_square_numbers_recap() -> None:
@@ -388,51 +389,44 @@ def _render_square_numbers_recap() -> None:
     st.markdown("</div>", unsafe_allow_html=True)
 
 
-def _render_square_roots() -> None:
-    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-small-label">Square Roots</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="tmk-note">Recover the equal factor from a square product.</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        '<div class="tmk-note" style="margin-top:0.45rem;">A square root tells us which equal factor builds a square product.</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        '<div class="tmk-note"><strong>√n = a if and only if a × a = n</strong></div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
+def render_square_roots() -> None:
+    st.subheader("Square Roots")
+    st.caption("Recover the equal factor from a square product")
 
-    left_col, right_col = st.columns((1.0, 1.0))
+    st.markdown(
+        "A square root tells us which equal factor builds a square product."
+    )
+    st.markdown(r"\(\sqrt{n} = a \iff a \times a = n\)")
 
-    with left_col:
-        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Examples</div>', unsafe_allow_html=True)
-        for line in (
-            "√4 = 2 because 2 × 2 = 4",
-            "√9 = 3 because 3 × 3 = 9",
-            "√16 = 4 because 4 × 4 = 16",
-            "√25 = 5 because 5 × 5 = 25",
-            "√36 = 6 because 6 × 6 = 36",
-            "√49 = 7 because 7 × 7 = 49",
-            "√64 = 8 because 8 × 8 = 64",
-            "√81 = 9 because 9 × 9 = 81",
-            "√100 = 10 because 10 × 10 = 100",
-        ):
-            st.markdown(f'<div class="tmk-note">- {escape(line)}</div>', unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("### Core square roots")
+    core_examples = [
+        ("√1", "1", "1 × 1 = 1"),
+        ("√4", "2", "2 × 2 = 4"),
+        ("√9", "3", "3 × 3 = 9"),
+        ("√16", "4", "4 × 4 = 16"),
+        ("√25", "5", "5 × 5 = 25"),
+        ("√36", "6", "6 × 6 = 36"),
+        ("√49", "7", "7 × 7 = 49"),
+        ("√64", "8", "8 × 8 = 64"),
+        ("√81", "9", "9 × 9 = 81"),
+        ("√100", "10", "10 × 10 = 100"),
+    ]
+    for root_text, value, reason in core_examples:
+        st.write(f"{root_text} = {value} because {reason}")
 
-    with right_col:
-        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Extension square roots</div>', unsafe_allow_html=True)
-        for line in (
-            "√121 = 11 because 11 × 11 = 121",
-            "√144 = 12 because 12 × 12 = 144",
-        ):
-            st.markdown(f'<div class="tmk-note">- {escape(line)}</div>', unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("### Extension square roots")
+    extension_examples = [
+        ("√121", "11", "11 × 11 = 121"),
+        ("√144", "12", "12 × 12 = 144"),
+    ]
+    for root_text, value, reason in extension_examples:
+        st.write(f"{root_text} = {value} because {reason}")
+
+    with st.expander("Teacher note"):
+        st.write(
+            "Keep square root as same-factor recovery. Start from the product, "
+            "find the equal-factor route, then name the square root."
+        )
 
     activity_text = (
         "Square Roots\n\n"
@@ -450,16 +444,80 @@ def _render_square_roots() -> None:
         "- Which extension square root matches 144?\n\n"
         "Teaching note: Keep square root as same-factor recovery, not as a detached symbol rule."
     )
-
-    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-small-label">Teacher activity</div>', unsafe_allow_html=True)
     st.text_area(
-        "Copy-paste print text",
-        value=activity_text,
+        "Copy-paste print text — Square Roots",
+        activity_text,
         height=260,
-        key="square_roots_print_text",
+        key="square_roots_copy_box",
     )
-    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_odd_even_square_patterns() -> None:
+    st.subheader("Odd and Even Square Patterns")
+    st.caption("Look at parity in square products")
+
+    st.markdown(
+        r"If \(n\) is even, then \(n^2\) is even. If \(n\) is odd, then \(n^2\) is odd."
+    )
+
+    st.markdown("### Even squares")
+    even_examples = [
+        "2 × 2 = 4",
+        "4 × 4 = 16",
+        "6 × 6 = 36",
+        "8 × 8 = 64",
+        "10 × 10 = 100",
+        "12 × 12 = 144",
+    ]
+    for example in even_examples:
+        st.write(example)
+
+    st.markdown("### Odd squares")
+    odd_examples = [
+        "1 × 1 = 1",
+        "3 × 3 = 9",
+        "5 × 5 = 25",
+        "7 × 7 = 49",
+        "9 × 9 = 81",
+        "11 × 11 = 121",
+    ]
+    for example in odd_examples:
+        st.write(example)
+
+    st.markdown("### Notice")
+    st.write("Even inputs give even square products.")
+    st.write("Odd inputs give odd square products.")
+    st.write("There is no odd number with an even square.")
+    st.write("There is no even number with an odd square.")
+
+    with st.expander("Pattern bank"):
+        st.write("Square parity follows the parity of the repeated factor.")
+        st.write("Even × even gives an even square.")
+        st.write("Odd × odd gives an odd square.")
+        st.write("This pattern continues for 11² and 12².")
+
+    activity_text = (
+        "Odd and Even Square Patterns\n\n"
+        "Focus: Notice parity patterns in square products.\n\n"
+        "Teacher explanation: Square products keep the odd/even structure of the repeated factor.\n"
+        "Teacher prompt: Look at the factor first. Is it odd or even? Then predict the square product.\n\n"
+        "Pupil tasks:\n"
+        "- Sort square products into odd squares and even squares.\n"
+        "- Match each square product to an odd factor or an even factor.\n"
+        "- Explain why 121 is odd and 144 is even.\n\n"
+        "Example questions:\n"
+        "- Is 25 an odd square or an even square?\n"
+        "- Why is 36 an even square?\n"
+        "- What do you notice about 49 and 81?\n"
+        "- Why is 144 even?\n\n"
+        "Teaching note: Keep the language product-first. Start from the route n × n, then classify the square by parity."
+    )
+    st.text_area(
+        "Copy-paste print text — Odd and Even Square Patterns",
+        activity_text,
+        height=260,
+        key="odd_even_squares_copy_box",
+    )
 
 
 def _render_boundary_tab() -> None:
