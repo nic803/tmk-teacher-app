@@ -438,6 +438,54 @@ def render_square_product_selector() -> None:
     )
 
 
+def render_square_or_not_square() -> None:
+    st.subheader("Square or Not Square?")
+    st.caption("Compare square products and non-square products")
+
+    products = [12, 16, 18, 25, 36, 42, 49, 64, 72, 81, 100, 121, 144]
+    square_products = {16, 25, 36, 49, 64, 81, 100, 121, 144}
+
+    st.markdown("### Mixed product set")
+    st.write(", ".join(str(p) for p in products))
+
+    st.markdown("### Square products in this set")
+    st.write(", ".join(str(p) for p in products if p in square_products))
+
+    st.markdown("### Non-square products in this set")
+    st.write(", ".join(str(p) for p in products if p not in square_products))
+
+    with st.expander("Teacher note"):
+        st.write(
+            "Ask first for a same-factor route. If no route of the form n × n exists, "
+            "then the product is not square."
+        )
+
+    activity_text = (
+        "Square or Not Square?\n\n"
+        "Focus: Decide whether a product has a same-factor route.\n\n"
+        "Teacher explanation: A product is square if it can be written in the form n × n. "
+        "If it has no same-factor route, it is not a square number.\n"
+        "Teacher prompt: Which of these products have a same-factor route?\n\n"
+        "Pupil tasks:\n"
+        "- Sort the mixed products into square and non-square.\n"
+        "- Write a square route for each square product.\n"
+        "- Explain why each non-square product is not square.\n\n"
+        "Example questions:\n"
+        "- Why is 16 square?\n"
+        "- Why is 18 not square?\n"
+        "- Which route shows that 49 is square?\n"
+        "- Why is 72 not square?\n"
+        "- Which extension products in this set are square?\n\n"
+        "Teaching note: Keep the decision rule structural. Look for a same-factor route."
+    )
+    st.text_area(
+        "Copy-paste print text — Square or Not Square?",
+        activity_text,
+        height=260,
+        key="square_or_not_square_copy_box",
+    )
+
+
 def render_extension_hub_page() -> None:
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Extension Hub</div>', unsafe_allow_html=True)
@@ -451,5 +499,6 @@ def render_extension_hub_page() -> None:
     render_odd_even_square_patterns()
     render_exponent_power_notes()
     render_square_product_selector()
+    render_square_or_not_square()
 
     st.markdown("</div>", unsafe_allow_html=True)
