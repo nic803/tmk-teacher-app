@@ -19,6 +19,13 @@ from ui.extension_route_opening import (
     format_route,
     get_twelve_route_opening_product,
 )
+from ui.extension_squares import (
+    build_square_activity_print_text,
+    format_square_example,
+    get_core_square_examples,
+    get_extension_square_examples,
+    get_square_patterns_for_section,
+)
 
 
 def render_extension_hub_page() -> None:
@@ -43,17 +50,18 @@ def _render_extension_overview() -> None:
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="tmk-note" style="margin-top:0.45rem;">Current live strands: 11×, 12×, core versus extension boundary, and 12× route opening.</div>',
+        '<div class="tmk-note" style="margin-top:0.45rem;">Current live strands: 11×, 12×, square numbers recap, core versus extension boundary, and 12× route opening.</div>',
         unsafe_allow_html=True,
     )
     st.markdown("</div>", unsafe_allow_html=True)
 
 
 def _render_extension_tabs() -> None:
-    tab_11x, tab_12x, tab_boundary, tab_route_opening, tab_coming_soon = st.tabs(
+    tab_11x, tab_12x, tab_squares, tab_boundary, tab_route_opening, tab_coming_soon = st.tabs(
         [
             "11×",
             "12×",
+            "Squares",
             "Core / Extension Boundary",
             "Route Opening",
             "Coming Soon",
@@ -75,6 +83,9 @@ def _render_extension_tabs() -> None:
             subtitle="Teach 12× through derivation, clock structure, route opening, and extension-product awareness.",
             section_ids={"foundations_12x"},
         )
+
+    with tab_squares:
+        _render_squares_tab()
 
     with tab_boundary:
         _render_boundary_tab()
@@ -272,6 +283,106 @@ def _render_activity_card(activity: object) -> None:
     st.markdown("</div>", unsafe_allow_html=True)
 
 
+def _render_squares_tab() -> None:
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-small-label">Square Numbers Recap</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="tmk-note">Known products with a same-factor route.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="tmk-note" style="margin-top:0.45rem;">A square number is a product that can be made with the same factor twice.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-small-label">Key rule</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="tmk-note">A square number has a route of the form <strong>n × n</strong>.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="tmk-note"><strong>n × n = n²</strong></div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    core_examples = get_core_square_examples()
+    extension_examples = get_extension_square_examples()
+
+    left_col, right_col = st.columns((1.0, 1.0))
+
+    with left_col:
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">Core squares</div>', unsafe_allow_html=True)
+        for item in core_examples:
+            st.markdown(
+                f'<div class="tmk-note">- {escape(format_square_example(item))}</div>',
+                unsafe_allow_html=True,
+            )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with right_col:
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">Extension squares</div>', unsafe_allow_html=True)
+        for item in extension_examples:
+            st.markdown(
+                f'<div class="tmk-note">- {escape(format_square_example(item))}</div>',
+                unsafe_allow_html=True,
+            )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-small-label">Pattern bank</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="tmk-note">These first patterns keep square work tied to route structure and the core / extension boundary.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    patterns = get_square_patterns_for_section("square_numbers_recap")
+    for pattern in patterns:
+        with st.expander(pattern.title, expanded=False):
+            st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="tmk-small-label">{escape(pattern.title)}</div>',
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                f'<div class="tmk-note">{escape(pattern.summary)}</div>',
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                f'<div class="tmk-note" style="margin-top:0.45rem;"><strong>Teacher note:</strong> {escape(pattern.teacher_note)}</div>',
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                '<div class="tmk-small-label" style="margin-top:0.7rem;">Examples</div>',
+                unsafe_allow_html=True,
+            )
+            for example in pattern.examples:
+                st.markdown(
+                    f'<div class="tmk-note">- {escape(example)}</div>',
+                    unsafe_allow_html=True,
+                )
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-small-label">Activity</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="tmk-note">Find the square route.</div>',
+        unsafe_allow_html=True,
+    )
+    st.text_area(
+        "Copy-paste print text",
+        value=build_square_activity_print_text("find_the_square_route"),
+        height=260,
+        key="square_numbers_recap_print_text",
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
 def _render_boundary_tab() -> None:
     activities = get_extension_activities_for_group("boundary_resources")
 
@@ -428,7 +539,7 @@ def _render_coming_soon_tab() -> None:
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="tmk-note" style="margin-top:0.45rem;">Planned strands: square numbers, square roots, area and perimeter, and later extension resource families.</div>',
+        '<div class="tmk-note" style="margin-top:0.45rem;">Planned strands: square roots, area and perimeter, and later extension resource families.</div>',
         unsafe_allow_html=True,
     )
     st.markdown("</div>", unsafe_allow_html=True)
