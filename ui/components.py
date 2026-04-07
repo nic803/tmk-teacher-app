@@ -265,29 +265,53 @@ def render_html_resource(
 
     html = path.read_text(encoding="utf-8")
 
-    st.markdown(
-        f"""
+    escaped_srcdoc = html.replace("&", "&amp;").replace('"', "&quot;")
+
+    wrapper_html = f"""
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
         <style>
-            .{frame_class} {{
-                background: transparent;
-                padding-top: 0.25rem;
-            }}
+          html, body {{
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            overflow: hidden;
+          }}
 
-            .{frame_class} iframe {{
-                border-radius: 18px;
-            }}
+          .{frame_class} {{
+            background: transparent;
+            padding-top: 0.25rem;
+          }}
+
+          .{frame_class} iframe {{
+            width: 100%;
+            height: {height}px;
+            border: 0;
+            border-radius: 18px;
+            background: white;
+          }}
         </style>
-        """,
-        unsafe_allow_html=True,
-    )
+      </head>
+      <body>
+        <div class="{frame_class}">
+          <iframe
+            srcdoc="{escaped_srcdoc}"
+            {"scrolling='yes'" if scrolling else "scrolling='no'"}
+            sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+            allowfullscreen
+          ></iframe>
+        </div>
+      </body>
+    </html>
+    """
 
-    st.markdown(f'<div class="{frame_class}">', unsafe_allow_html=True)
     st.components.v1.html(
-        html,
-        height=height,
-        scrolling=scrolling,
+        wrapper_html,
+        height=height + 8,
+        scrolling=False,
     )
-    st.markdown("</div>", unsafe_allow_html=True)
     return True
 
 
