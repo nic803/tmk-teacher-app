@@ -509,9 +509,16 @@
 
         let active = false;
         if (id === 'multi') {
-            // Logic for finding composite nodes with more than one unique commutative pair path
-            // e.g., 24 has 8x3, 3x8, 6x4, 4x6
-            active = getFactorPairs(v).length > 2 || (getFactorPairs(v).length > 1 && r !== c);
+            // A product is "multi-route" if it appears more than once in the lower-triangular grid.
+            // We count pairs (i, j) where i*j=v and i>=j.
+            let triangleCount = 0;
+            for (let i = 1; i <= MAX; i++) {
+              if (v % i === 0) {
+                let j = v / i;
+                if (j <= MAX && i >= j) triangleCount++;
+              }
+            }
+            active = triangleCount > 1;
         } else if (id === 'squares') {
             active = (r === c);
         } else {
