@@ -98,6 +98,69 @@ CORE_RESOURCE_REGISTRY: dict[str, dict[str, Any]] = {
             "status": "In progress",
         },
     },
+    "tmk_matrix": {
+        "id": "tmk_matrix",
+        "title": "TMK Matrix",
+        "stage": "A–G Overview",
+        "theme": "Whiteboard Mode",
+        "pattern": "Stage-pattern explorer across the bounded 1×1 to 10×10 product field",
+        "purpose": (
+            "Show the full bounded TMK product matrix so teachers and pupils can inspect "
+            "stage patterns, square structure, multi-route products, and product routes "
+            "inside one visual field."
+        ),
+        "asset_path": "tmk_matrix.html",
+        "content_path": "tmk-matrix/whiteboard-mode",
+        "prompt": "Tap a product and explore its routes and stage pattern.",
+        "equations": {
+            "format": "a × b = product",
+            "examples": (
+                "6 × 6 = 36",
+                "4 × 6 = 24",
+                "8 × 9 = 72",
+            ),
+            "toggleable_for_prediction_mode": False,
+        },
+        "controls": (
+            "Reset board",
+            "Select stage pattern",
+            "Tap product",
+            "Show routes",
+            "Collapse stages",
+        ),
+        "teacher_panel": {
+            "msvwa": {
+                "marker": "The pupil notices that products can be grouped by structural pattern, not just read as isolated facts.",
+                "sequence": "The pupil scans the bounded matrix, selects a pattern or product, and then explains how the selected product sits inside the wider structure.",
+                "variation": "Products vary by stage pattern, route count, and square status while the bounded 1–10 domain stays fixed.",
+                "working_memory": "Hold the selected product, its factor routes, and the surrounding stage pattern together while interpreting the matrix.",
+                "attention": "Notice the selected product first, then the factor routes, then the wider pattern family shown in the matrix.",
+            },
+            "diagnostics": {
+                "look_for": "Whether the pupil can locate a product, identify at least one lawful route, and explain how it belongs to a visible pattern family or stage group.",
+                "secure_if": "The pupil can navigate the matrix confidently, identify routes into a selected product, and explain at least one structural pattern such as squares, doubling, or near-ten logic.",
+                "watch_for": "Treating the grid as a random list of answers, missing the bounded 1–10 structure, or failing to connect a selected product to its pattern family.",
+                "prompt_if_stuck": "Which product have you chosen? Which factors build it? Which coloured pattern or stage group does it belong to?",
+                "if_knowledge_is_missing": "Routes not secure → Rebuild one selected product from its factor pairs before returning to the full matrix view.",
+                "next_move": "Pattern not secure → Compare one highlighted product with another in the same family and name what stays the same and what changes.",
+            },
+        },
+        "tags": {
+            "access": (
+                "Whole class",
+                "Teacher-led modelling",
+                "EAL",
+                "SEND",
+            ),
+            "use_case": (
+                "Pattern noticing",
+                "Structural reasoning",
+                "Route exploration",
+                "Stage overview",
+            ),
+            "status": "In progress",
+        },
+    },
 }
 
 
