@@ -62,6 +62,16 @@
             animation: grow 0.3s ease-out forwards;
         }
 
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        .shake {
+            animation: shake 0.2s ease-in-out 0s 2;
+        }
+
         input[type=range]::-webkit-slider-thumb {
             background: #8dcfd7;
             border: 2px solid #5aa4ac;
@@ -71,7 +81,7 @@
         }
 
         .challenge-input {
-            width: 80px;
+            width: 120px;
             text-align: center;
             border-bottom: 3px solid #cbd5e1;
             outline: none;
@@ -82,10 +92,11 @@
         .challenge-input:focus {
             border-color: #8dcfd7;
             color: #5aa4ac;
+            border-bottom-width: 5px;
         }
 
-        .correct { border-color: #22c55e !important; color: #16a34a !important; }
-        .incorrect { border-color: #fe5653 !important; color: #fe5653 !important; }
+        .correct { border-color: #22c55e !important; color: #16a34a !important; background: #f0fdf4 !important; }
+        .incorrect { border-color: #fe5653 !important; color: #fe5653 !important; background: #fef2f2 !important; }
 
         /* Sizing for the Garden Items */
         .emoji-unit {
@@ -102,7 +113,7 @@
         }
 
         .rabbit-unit {
-            font-size: 3.5rem; /* A lot bigger as requested */
+            font-size: 3.5rem;
             width: 4rem;
             height: 4rem;
         }
@@ -122,8 +133,8 @@
 <body class="p-0 md:p-2 lg:p-4 min-h-screen flex items-center justify-center">
     <div id="app-container" class="w-full max-w-6xl bg-white rounded-2xl shadow-2xl overflow-hidden border-2 border-slate-200 transition-all duration-300 flex flex-col h-[95vh] md:h-auto md:max-h-[90vh]">
         
-        <!-- Header - Very Compact -->
-        <div class="px-4 py-2 text-white brand-blue border-b border-black/5 flex justify-between items-center">
+        <!-- Header -->
+        <div class="px-4 py-2 text-white brand-blue border-b border-black/5 flex justify-between items-center shrink-0">
             <h1 class="text-xl md:text-2xl font-black text-slate-800 leading-tight">11× Rabbit & Carrot Builder</h1>
             <div id="strategy-display" class="hidden sm:flex items-center gap-2 text-base md:text-lg font-bold text-slate-800 bg-white/30 px-3 py-0.5 rounded-full">
                 <span>11 × <span class="val-text">7</span></span>
@@ -181,29 +192,35 @@
                     <!-- Garden Display -->
                     <div class="lg:col-span-8 space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- 10x -->
+                            <!-- 10x Section -->
                             <div class="space-y-2">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-xs font-black text-slate-500 uppercase tracking-tight">10× Carrots 🥕</span>
+                                    <span class="text-xs font-black text-slate-500 uppercase tracking-tight">10× Carrots (Patches) 🥕</span>
                                     <span id="ten-result-pill" class="text-xs font-black brand-blue text-slate-800 px-2 py-0.5 rounded-full shadow-sm border border-black/5">70</span>
                                 </div>
-                                <div id="ten-grid" class="flex flex-wrap items-start gap-1 p-2 patch-bg rounded-xl min-h-[140px] max-h-[240px] overflow-y-auto"></div>
-                                <div id="ten-input-box" class="hidden p-2 bg-white border-2 border-[#8dcfd7] rounded-xl text-center">
-                                    <span class="font-bold text-xs text-slate-600">Carrots:</span>
-                                    <input type="number" id="input-ten" class="challenge-input text-lg font-bold" placeholder="?">
+                                <div id="ten-grid" class="flex flex-wrap items-start gap-1 p-2 patch-bg rounded-xl min-h-[140px] max-h-[300px] overflow-y-auto"></div>
+                                <div id="ten-input-box" class="hidden p-3 bg-white border-2 border-[#8dcfd7] rounded-xl text-center">
+                                    <span class="font-bold text-xs text-slate-600 block mb-1 uppercase tracking-tighter">Total Carrots?</span>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <span class="text-slate-400 text-sm font-bold">10 × <span class="val-text">7</span> =</span>
+                                        <input type="number" id="input-ten" class="challenge-input text-lg font-bold" placeholder="?">
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- 1x -->
+                            <!-- 1x Section -->
                             <div class="space-y-2">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-xs font-black text-slate-500 uppercase tracking-tight">1× Rabbits 🐇</span>
+                                    <span class="text-xs font-black text-slate-500 uppercase tracking-tight">1× Rabbits (Units) 🐇</span>
                                     <span id="one-result-pill" class="text-xs font-black bg-amber-500 text-white px-2 py-0.5 rounded-full shadow-sm border border-black/5">7</span>
                                 </div>
-                                <div id="one-grid" class="flex flex-wrap items-start gap-3 p-3 patch-bg rounded-xl min-h-[140px] max-h-[240px] overflow-y-auto"></div>
-                                <div id="one-input-box" class="hidden p-2 bg-white border-2 border-amber-200 rounded-xl text-center">
-                                    <span class="font-bold text-xs text-slate-600">Rabbits:</span>
-                                    <input type="number" id="input-one" class="challenge-input text-lg font-bold" placeholder="?">
+                                <div id="one-grid" class="flex flex-wrap items-start gap-3 p-3 patch-bg rounded-xl min-h-[140px] max-h-[300px] overflow-y-auto"></div>
+                                <div id="one-input-box" class="hidden p-3 bg-white border-2 border-amber-200 rounded-xl text-center">
+                                    <span class="font-bold text-xs text-slate-600 block mb-1 uppercase tracking-tighter">Total Rabbits?</span>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <span class="text-slate-400 text-sm font-bold">1 × <span class="val-text">7</span> =</span>
+                                        <input type="number" id="input-one" class="challenge-input text-lg font-bold" placeholder="?">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -211,8 +228,8 @@
 
                     <!-- Summary & Sum -->
                     <div class="lg:col-span-4 flex flex-col gap-3">
-                        <div class="bg-white rounded-2xl p-4 border-2 border-[#fe5653] shadow-md flex-grow flex flex-col items-center justify-center relative overflow-hidden">
-                            <div class="absolute top-2 left-2 text-[10px] font-bold text-slate-300 uppercase tracking-widest">Total Product</div>
+                        <div id="total-card" class="bg-white rounded-2xl p-6 border-2 border-[#fe5653] shadow-md flex-grow flex flex-col items-center justify-center relative overflow-hidden">
+                            <div class="absolute top-2 left-2 text-[10px] font-bold text-slate-300 uppercase tracking-widest">Grand Total</div>
                             
                             <!-- Learning View -->
                             <div id="total-view" class="text-center">
@@ -226,15 +243,18 @@
 
                             <!-- Challenge View -->
                             <div id="total-input-view" class="hidden w-full flex flex-col items-center gap-4">
-                                <div class="text-center">
-                                    <p class="text-xs font-bold text-slate-400 mb-1 uppercase tracking-tighter">Total Items in Garden</p>
-                                    <input type="number" id="input-total" class="challenge-input text-5xl w-full max-w-[150px] font-black text-[#fe5653]" placeholder="???">
+                                <div class="text-center w-full">
+                                    <p class="text-xs font-bold text-slate-400 mb-2 uppercase tracking-tighter">Final Product: 11 × <span class="val-text">7</span></p>
+                                    <div class="flex flex-col items-center gap-1">
+                                        <input type="number" id="input-total" class="challenge-input text-5xl w-full max-w-[180px] font-black text-[#fe5653] border-b-4 border-coral-200" placeholder="???">
+                                        <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">Sum of carrots + rabbits</p>
+                                    </div>
                                 </div>
-                                <button onclick="checkAnswers()" class="w-full py-3 brand-coral text-white font-bold rounded-xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all text-sm uppercase">Check Result</button>
+                                <button onclick="checkAnswers()" class="w-full py-4 brand-coral text-white font-black rounded-xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all text-sm uppercase">Check Result</button>
                             </div>
                         </div>
 
-                        <div id="feedback-area" class="h-12 flex items-center justify-center text-center px-2">
+                        <div id="feedback-area" class="h-20 flex items-center justify-center text-center px-4 bg-slate-50 rounded-xl border border-slate-100">
                             <p id="feedback-text" class="text-sm font-bold opacity-0 transition-opacity duration-300 leading-tight"></p>
                         </div>
                     </div>
@@ -243,7 +263,7 @@
         </div>
 
         <!-- Footer -->
-        <div class="bg-slate-50 px-4 py-2 text-[11px] text-slate-400 border-t border-slate-100 flex justify-between">
+        <div class="bg-slate-50 px-4 py-2 text-[11px] text-slate-400 border-t border-slate-100 flex justify-between shrink-0">
             <span>Strategy: Partition 11 into 10 + 1</span>
             <span class="italic font-medium">"10 groups of <span class="val-text">7</span> is <span id="footer-ten">70</span>, plus <span class="val-text">7</span> is <span id="footer-total">77</span>!"</span>
         </div>
@@ -253,8 +273,6 @@
         const input = document.getElementById('multiplier');
         const displayVal = document.getElementById('display-value');
         const valTexts = document.querySelectorAll('.val-text');
-        const tenResult = document.getElementById('ten-result');
-        const oneResult = document.getElementById('one-result');
         const tenGrid = document.getElementById('ten-grid');
         const oneGrid = document.getElementById('one-grid');
         const finalTen = document.getElementById('final-ten');
@@ -264,7 +282,6 @@
         const footerTotal = document.getElementById('footer-total');
 
         let isChallengeMode = false;
-        const modeToggle = document.getElementById('mode-toggle');
         const modeLabel = document.getElementById('mode-label');
         const modeEmoji = document.getElementById('mode-emoji');
         const learningControls = document.getElementById('learning-controls');
@@ -277,6 +294,7 @@
         const totalInputView = document.getElementById('total-input-view');
         const challengeTarget = document.getElementById('challenge-target');
         const feedbackText = document.getElementById('feedback-text');
+        const totalCard = document.getElementById('total-card');
 
         const inputTen = document.getElementById('input-ten');
         const inputOne = document.getElementById('input-one');
@@ -324,7 +342,7 @@
             challengeTarget.innerText = `11 × ${randomN}`;
             [inputTen, inputOne, inputTotal].forEach(el => {
                 el.value = '';
-                el.classList.remove('correct', 'incorrect');
+                el.classList.remove('correct', 'incorrect', 'shake');
             });
             feedbackText.classList.add('opacity-0');
             updateUI();
@@ -332,24 +350,44 @@
 
         function checkAnswers() {
             const n = parseInt(input.value);
-            const ans10 = parseInt(inputTen.value);
-            const ans1 = parseInt(inputOne.value);
-            const ansTotal = parseInt(inputTotal.value);
+            const ans10 = inputTen.value === "" ? null : Number(inputTen.value);
+            const ans1 = inputOne.value === "" ? null : Number(inputOne.value);
+            const ansTotal = inputTotal.value === "" ? null : Number(inputTotal.value);
 
             let correctCount = 0;
-            if (ans10 === n * 10) { inputTen.classList.add('correct'); correctCount++; }
-            else if(inputTen.value) { inputTen.classList.add('incorrect'); }
-            if (ans1 === n) { inputOne.classList.add('correct'); correctCount++; }
-            else if(inputOne.value) { inputOne.classList.add('incorrect'); }
-            if (ansTotal === n * 11) { inputTotal.classList.add('correct'); correctCount++; }
-            else if(inputTotal.value) { inputTotal.classList.add('incorrect'); }
+            const fields = [inputTen, inputOne, inputTotal];
+            fields.forEach(el => el.classList.remove('correct', 'incorrect', 'shake'));
+
+            let errors = [];
+            let emptyFields = [];
+
+            // Carrot Check
+            if (ans10 === null) emptyFields.push("carrots");
+            else if (ans10 === n * 10) { inputTen.classList.add('correct'); correctCount++; }
+            else { inputTen.classList.add('incorrect', 'shake'); errors.push("carrots"); }
+
+            // Rabbit Check
+            if (ans1 === null) emptyFields.push("rabbits");
+            else if (ans1 === n) { inputOne.classList.add('correct'); correctCount++; }
+            else { inputOne.classList.add('incorrect', 'shake'); errors.push("rabbits"); }
+
+            // Total Check
+            if (ansTotal === null) emptyFields.push("total product");
+            else if (ansTotal === n * 11) { inputTotal.classList.add('correct'); correctCount++; }
+            else { inputTotal.classList.add('incorrect', 'shake'); errors.push("total product"); }
 
             feedbackText.classList.remove('opacity-0');
+            
             if (correctCount === 3) {
-                feedbackText.innerText = "Perfect gardening! 🌟";
+                feedbackText.innerText = "Perfect gardening! 🌟 Every count is right!";
                 feedbackText.className = "text-sm font-bold text-green-600 transition-opacity duration-300";
+                totalCard.classList.add('animate-hop');
+                setTimeout(() => totalCard.classList.remove('animate-hop'), 1500);
+            } else if (emptyFields.length > 0) {
+                feedbackText.innerText = `You missed a box! Please fill in the ${emptyFields.join(" and ")}. ✍️`;
+                feedbackText.className = "text-sm font-bold text-amber-600 transition-opacity duration-300";
             } else {
-                feedbackText.innerText = "Check your counts again! 💡";
+                feedbackText.innerText = `Check your math for the ${errors.join(" and ")}! Remember: 10×${n} + 1×${n} = 11×${n}. 💡`;
                 feedbackText.className = "text-sm font-bold text-[#fe5653] transition-opacity duration-300";
             }
         }
@@ -387,17 +425,20 @@
 
             tenGrid.innerHTML = '';
             oneGrid.innerHTML = '';
+            
             for (let i = 0; i < n; i++) {
                 const patch = document.createElement('div');
-                patch.className = 'grid grid-cols-1 gap-0 bg-amber-900/5 p-0.5 rounded-full border border-amber-900/10';
+                patch.className = 'grid grid-cols-1 gap-0 bg-amber-900/5 p-0.5 rounded-full border border-amber-900/10 shrink-0';
                 for (let j = 0; j < 10; j++) patch.appendChild(createEmoji('ten'));
                 tenGrid.appendChild(patch);
             }
-            for (let i = 0; i < n; i++) oneGrid.appendChild(createEmoji('one'));
+            
+            for (let i = 0; i < n; i++) {
+                oneGrid.appendChild(createEmoji('one'));
+            }
         }
 
         window.onload = updateUI;
     </script>
 </body>
 </html>
-
