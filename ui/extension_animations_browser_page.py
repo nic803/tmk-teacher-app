@@ -29,7 +29,7 @@ def render_extension_animations_browser_page() -> None:
 
     page_header(
         "Extension Animations",
-        "Browse 11× and 12× extension animations separately from the core TMK resource library.",
+        "Browse playable 11× and 12× extension animations separately from the core TMK resource library.",
     )
 
     resources = list(EXTENSION_ANIMATIONS_REGISTRY.values())
@@ -46,7 +46,7 @@ def render_extension_animations_browser_page() -> None:
         _render_browser_cards(filtered_resources)
         return
 
-    back_col, _ = st.columns((0.2, 0.8))
+    back_col, info_col = st.columns((0.22, 0.78))
     with back_col:
         if st.button(
             "Back to animations",
@@ -55,6 +55,20 @@ def render_extension_animations_browser_page() -> None:
         ):
             st.session_state[_EXTENSION_ANIMATIONS_SELECTED_KEY] = None
             st.rerun()
+
+    with info_col:
+        st.markdown(
+            f"""
+            <div class="tmk-card" style="margin-bottom:1rem;border:1px solid #D9D4C8;">
+                <div class="tmk-small-label">Now showing</div>
+                <div class="tmk-section-title" style="margin-top:0.25rem;">{selected_resource.get("title", "")}</div>
+                <div class="tmk-note" style="margin-top:0.35rem;">
+                    Family: {selected_resource.get("family", "")} · Pattern: {selected_resource.get("pattern", "")}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     _render_selected_animation(selected_resource)
 
@@ -103,6 +117,11 @@ def _render_browser_cards(resources: list[dict[str, Any]]) -> None:
 
     for index, resource in enumerate(resources):
         with cols[index % 2]:
+            asset_name = str(resource.get("asset_path", "")).strip()
+            status_value = str(resource.get("tags", {}).get("status", "")).strip()
+            use_case_tags = tuple(resource.get("tags", {}).get("use_case", ()))
+            pattern = str(resource.get("pattern", "")).strip()
+
             st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
             st.markdown(
                 f'<div class="tmk-small-label">{resource.get("family", "")}</div>',
@@ -117,7 +136,6 @@ def _render_browser_cards(resources: list[dict[str, Any]]) -> None:
                 unsafe_allow_html=True,
             )
 
-            pattern = str(resource.get("pattern", "")).strip()
             if pattern:
                 st.markdown(
                     '<div class="tmk-small-label">Pattern</div>',
@@ -125,7 +143,12 @@ def _render_browser_cards(resources: list[dict[str, Any]]) -> None:
                 )
                 render_tag_pills((pattern,), accent=True)
 
-            use_case_tags = tuple(resource.get("tags", {}).get("use_case", ()))
+            if asset_name:
+                st.markdown(
+                    f'<div class="tmk-note" style="margin-top:0.75rem;"><strong>HTML asset:</strong> ui/static/{asset_name}</div>',
+                    unsafe_allow_html=True,
+                )
+
             if use_case_tags:
                 st.markdown(
                     '<div class="tmk-small-label" style="margin-top:0.65rem;">Use case</div>',
@@ -133,7 +156,6 @@ def _render_browser_cards(resources: list[dict[str, Any]]) -> None:
                 )
                 render_tag_pills(tuple(str(item) for item in use_case_tags[:4]))
 
-            status_value = str(resource.get("tags", {}).get("status", "")).strip()
             if status_value:
                 st.markdown(
                     f'<div class="tmk-note" style="margin-top:0.75rem;"><strong>Status:</strong> {status_value}</div>',
@@ -141,7 +163,7 @@ def _render_browser_cards(resources: list[dict[str, Any]]) -> None:
                 )
 
             if st.button(
-                "Open animation",
+                "Open playable animation",
                 key=f"extension_animation_open_{resource.get('id', index)}",
                 use_container_width=True,
             ):
@@ -170,6 +192,17 @@ def _render_selected_animation(resource: dict[str, Any]) -> None:
 
     if asset_name:
         html_path = Path(__file__).parent / "static" / asset_name
+
+        st.markdown(
+            f"""
+            <div class="tmk-card" style="margin-bottom:0.75rem;">
+                <div class="tmk-small-label">Playable asset</div>
+                <div class="tmk-note" style="margin-top:0.35rem;">ui/static/{asset_name}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
         resource_main_interaction_start()
         rendered = render_html_resource(
             html_path=html_path,
