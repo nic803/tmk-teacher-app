@@ -6,16 +6,16 @@ from typing import Any
 EXTENSION_ANIMATIONS_REGISTRY: dict[str, dict[str, Any]] = {
     "extension_11x_ten_plus_one_builder": {
         "id": "extension_11x_ten_plus_one_builder",
-        "title": "11× Ten-Plus-One Builder",
+        "title": "11× Rabbit and Carrot Builder",
         "family": "11x",
         "pattern": "ten-plus-one",
         "purpose": (
-            "Show 11× products as 10n + n so pupils can build extension products "
-            "from a secure ten-times benchmark."
+            "Show 11× products as 10n + n through a rabbit-and-carrot build so pupils "
+            "can see the ten-plus-one structure in one clear visual model."
         ),
-        "asset_path": "extension_11x_ten_plus_one_builder.html",
-        "content_path": "extension/animations/11x-ten-plus-one-builder",
-        "prompt": "Build it from ten lots and one more lot.",
+        "asset_path": "11x_rabbit_and _carrot_builder.html",
+        "content_path": "extension/animations/11x-rabbit-and-carrot-builder",
+        "prompt": "Build 11× from 10 groups of carrots and 1 group of rabbits.",
         "equations": {
             "format": "11 × n = 10 × n + 1 × n",
             "examples": (
