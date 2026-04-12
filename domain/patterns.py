@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Dict, Final, Tuple
 
-from domain.products import factor_families, stage_of, structural_role, ways_in
+from domain.products import ALL_PRODUCTS, product_record
 
 PatternId = str
 
@@ -110,7 +110,7 @@ PATTERNS: Final[Dict[PatternId, Pattern]] = {
         stage="D",
         examples=(18, 27, 36, 54, 63, 72, 81),
         child_text="Nine times builds with one less and make 9.",
-        teacher_note="Preferred constructive rule for the 9-family. Use this, not nine_minus_one.",
+        teacher_note="Preferred constructive rule for the 9-family.",
     ),
     "nine_digit_sum": Pattern(
         id="nine_digit_sum",
@@ -388,72 +388,11 @@ def pattern_ids_for_stage(stage: str) -> Tuple[PatternId, ...]:
 
 
 @lru_cache(maxsize=None)
-def _all_core_products() -> Tuple[int, ...]:
-    found = []
-
-    for product in range(1, 101):
-        try:
-            families = factor_families(product)
-        except Exception:
-            continue
-
-        if families:
-            found.append(product)
-
-    return tuple(found)
-
-
-@lru_cache(maxsize=None)
-def product_pattern_ids(product: int) -> Tuple[PatternId, ...]:
-    found = {
-        "product_hub",
-        "route_in_route_out",
-        "commutative_switch",
-        "boundary_belonging",
-        "same_product_different_routes",
-        "route_multiplicity",
-    }
-
-    families = factor_families(product)
-    entry_routes = ways_in(product)
-
-    if len(entry_routes) > 1:
-        found.add("same_product_different_routes")
-
-    if len(families) > 1:
-        found.add("product_family_overlap")
-
-    if any(a == b for a, b in families):
-        found.add("square_pattern")
-
-    stage = stage_of(product)
-
-    for pattern_id in STAGE_PATTERN_IDS.get(stage, ()):
-        found.add(pattern_id)
-
-    found.add("parity_structure")
-
-    if product % 2 == 0:
-        if any(a % 2 == 0 and b % 2 == 0 for a, b in families):
-            found.add("even_times_even_is_even")
-        if any((a % 2 == 0 and b % 2 == 1) or (a % 2 == 1 and b % 2 == 0) for a, b in families):
-            found.add("odd_times_even_is_even")
-    else:
-        found.add("odd_times_odd_is_odd")
-        found.add("odd_product_excludes_even_route")
-
-    if structural_role(product) == "closure_hub":
-        found.add("closure_with_7x7")
-
-    found.add("use_one_product_for_another")
-
-    ordered = [pattern_id for pattern_id in PATTERN_ORDER if pattern_id in found]
-    return tuple(ordered)
-
-
-@lru_cache(maxsize=None)
-def product_patterns(product: int) -> Tuple[Pattern, ...]:
-    return tuple(PATTERNS[pattern_id] for pattern_id in product_pattern_ids(product))
+def _stage_products(stage_id: str) -> Tuple[int, ...]:
+    return tuple(
+        product for product in ALL_PRODUCTS
+        if product_record(product).stage == stage_id
+    )
 
 
 @lru_cache(maxsize=None)
@@ -461,14 +400,20 @@ def pattern_products(pattern_id: PatternId) -> Tuple[int, ...]:
     if pattern_id not in PATTERNS:
         raise KeyError(f"Unknown pattern id: {pattern_id}")
 
-    return tuple(
-        product
-        for product in _all_core_products()
-        if pattern_id in product_pattern_ids(product)
-    )
+    pattern = PATTERNS[pattern_id]
+
+    if pattern.stage in STAGE_PATTERN_IDS and pattern.examples:
+        stage_values = set(_stage_products(pattern.stage))
+        example_values = tuple(value for value in pattern.examples if value in stage_values)
+        if example_values:
+            return example_values
+
+    if pattern.examples:
+        return pattern.examples
+
+    return ()
 
 
 @lru_cache(maxsize=None)
 def pattern_examples(pattern_id: PatternId) -> Tuple[int, ...]:
-    pattern = get_pattern(pattern_id)
-    return pattern.examples or pattern_products(pattern_id)
+    return get_pattern(pattern_id).examples
