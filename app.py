@@ -8,6 +8,11 @@ import streamlit as st
 # -----------------------------
 # DOMAIN IMPORTS
 # -----------------------------
+from domain.patterns import (
+    all_patterns,
+    pattern_products,
+)
+
 from domain.routes import (
     distinct_factor_routes,
     entry_routes,
@@ -64,59 +69,6 @@ from ui.instruction_planner_page import (
 from ui.resource_library_page import (
     render_resource_library_page,
 )
-
-APP_TITLE = "TMK Teacher App"
-SURFACES = (
-    "Structural Planner",
-    "Product Lab",
-    "Instruction Planner",
-    "Worksheet Studio",
-    "Extensions",
-    "Resource Library",
-)
-TIERS = ("Support", "Core", "Extension")
-WORKSHEET_FORMATS = ("one_product_10", "three_product_12")
-SELECTION_SCOPES = ("new_only", "available_mixed", "hybrid")
-PLANNER_LINK_MODES = ("Selected links", "Show selected atlas", "No links")
-PLANNER_ZOOM_MODES = ("Selected stage only", "Whole world")
-ROUTE_VIEW_MODES = ("Entry routes", "Exit routes")
-
-LIGHT_THEME = {
-    "bg": "#E8E1D5",
-    "surface": "#F7F4EE",
-    "surface_strong": "#FFFFFF",
-    "border": "#D9D4C8",
-    "text": "#2F3A3C",
-    "text_soft": "#6C7A7D",
-    "accent": "#497379",
-    "accent_soft": "#83B8BE",
-    "highlight": "#ECA159",
-    "danger": "#FF5E57",
-    "hover": "#A9CED2",
-    "sidebar_bg": "#91CBCA",
-    "sidebar_text": "#2F3A3C",
-    "sidebar_text_soft": "#4F6063",
-    "sidebar_border": "#6FAFAE",
-}
-
-DARK_THEME = {
-    "bg": "#2F3A3C",
-    "surface": "#344244",
-    "surface_strong": "#3E4D4F",
-    "border": "#6C7A7D",
-    "text": "#F7F4EE",
-    "text_soft": "#D9D4C8",
-    "accent": "#83B8BE",
-    "accent_soft": "#A9CED2",
-    "highlight": "#ECA159",
-    "danger": "#FF5E57",
-    "hover": "#497379",
-    "sidebar_bg": "#497379",
-    "sidebar_text": "#F7F4EE",
-    "sidebar_text_soft": "#E8E1D5",
-    "sidebar_border": "#6C7A7D",
-}
-
 st.set_page_config(
     page_title=APP_TITLE,
     page_icon="✳️",
