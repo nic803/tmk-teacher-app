@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Dict, Final, Tuple
 
-from products import factor_families, stage_of, structural_role, ways_in
+from domain.products import factor_families, stage_of, structural_role, ways_in
 
 PatternId = str
 
@@ -389,13 +389,6 @@ def pattern_ids_for_stage(stage: str) -> Tuple[PatternId, ...]:
 
 @lru_cache(maxsize=None)
 def _all_core_products() -> Tuple[int, ...]:
-    """
-    Resolve the bounded TMK core product set from domain truth.
-
-    This intentionally does not hardcode a second product list here.
-    A number belongs only if it has at least one lawful factor family
-    inside the bounded product world.
-    """
     found = []
 
     for product in range(1, 101):
@@ -465,11 +458,6 @@ def product_patterns(product: int) -> Tuple[Pattern, ...]:
 
 @lru_cache(maxsize=None)
 def pattern_products(pattern_id: PatternId) -> Tuple[int, ...]:
-    """
-    Return all cumulative TMK products that express the given pattern.
-    This gives the Structural Planner a pattern-first entry point
-    without moving structural logic into the UI layer.
-    """
     if pattern_id not in PATTERNS:
         raise KeyError(f"Unknown pattern id: {pattern_id}")
 
@@ -482,9 +470,5 @@ def pattern_products(pattern_id: PatternId) -> Tuple[int, ...]:
 
 @lru_cache(maxsize=None)
 def pattern_examples(pattern_id: PatternId) -> Tuple[int, ...]:
-    """
-    Return canonical examples for display.
-    Falls back to resolved pattern products if examples were ever empty.
-    """
     pattern = get_pattern(pattern_id)
     return pattern.examples or pattern_products(pattern_id)
