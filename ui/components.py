@@ -327,3 +327,96 @@ def render_tag_pills(values: Iterable[str], *, accent: bool = False) -> None:
         for item in items
     )
     st.markdown(f'<div class="tmk-soft-list">{pills}</div>', unsafe_allow_html=True)
+
+
+def render_pattern_view(
+    *,
+    patterns,
+    selected_pattern,
+    pattern_products,
+) -> None:
+    """
+    Render pattern-first view for Structural Planner.
+
+    UI only.
+    Receives precomputed pattern data from services/view models.
+    No TMK logic is computed here.
+    """
+    pattern_map = {pattern.id: pattern for pattern in patterns}
+    pattern = pattern_map.get(selected_pattern)
+
+    if not pattern:
+        st.warning("Pattern not found.")
+        return
+
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="tmk-section-title">{escape(pattern.name)}</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div class="tmk-section-subtitle">{escape(pattern.learner_label)}</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div class="tmk-small-label" style="margin-top:0.35rem;">Stage {escape(pattern.stage)}</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div class="tmk-note" style="margin-top:0.5rem;">{escape(pattern.teacher_note)}</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    left_col, right_col = st.columns(2)
+
+    with left_col:
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">Prompt</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="tmk-value">{escape(pattern.short_prompt)}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">Child text</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="tmk-note">{escape(pattern.child_text)}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with right_col:
+        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+        st.markdown('<div class="tmk-small-label">Canonical examples</div>', unsafe_allow_html=True)
+
+        if pattern.examples:
+            for value in pattern.examples:
+                st.markdown(
+                    f'<div class="tmk-answer-box">{escape(str(value))}</div>',
+                    unsafe_allow_html=True,
+                )
+        else:
+            st.markdown(
+                '<div class="tmk-note">No examples provided.</div>',
+                unsafe_allow_html=True,
+            )
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="tmk-small-label">Products showing this pattern</div>',
+        unsafe_allow_html=True,
+    )
+
+    if pattern_products:
+        render_tag_pills((str(product) for product in pattern_products), accent=True)
+    else:
+        st.markdown(
+            '<div class="tmk-note">No products mapped.</div>',
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("</div>", unsafe_allow_html=True)
