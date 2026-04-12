@@ -568,59 +568,77 @@ def _render_sidebar() -> None:
 # -----------------------------
 # STRUCTURAL PLANNER
 # -----------------------------
-def _render_structural_planner(product: int) -> None:
-    record = product_record(product)
-    current_stage_products = tuple(STAGES[record.stage].products)
-    new_stage_products = tuple(metadata_new_products(record.stage))
-    earlier_secured_products = tuple(
-        value for value in metadata_available_products(record.stage) if value not in current_stage_products
-    )
+from __future__ import annotations
 
-    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-section-title">Structural Planner</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="tmk-section-subtitle">Stage focus, products introduced at this stage, compact stage sequence, and cumulative support products.</div>',
-        unsafe_allow_html=True,
-    )
+from html import escape
+from typing import Any, Iterable
 
-    selected = st.selectbox(
-        "Selected product",
-        options=ALL_PRODUCTS,
-        index=ALL_PRODUCTS.index(st.session_state.selected_product),
-        format_func=_product_option_label,
-        key="planner_product_select_v20",
-    )
-    if selected != st.session_state.selected_product:
-        st.session_state.selected_product = selected
-        st.session_state.selected_stage = product_record(selected).stage
-        st.rerun()
+import streamlit as st
 
-    _metric_card_row(
-        [
-            ("Current stage", stage_label(record.stage)),
-            ("Selected product", str(record.product)),
-            ("Intro route", _format_route(record.intro_route)),
-            ("New here", str(len(new_stage_products))),
-        ]
-    )
+# -----------------------------
+# DOMAIN IMPORTS
+# -----------------------------
+from domain.patterns import (
+    all_patterns,
+    pattern_products,
+)
 
-    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-small-label">Stage focus</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="tmk-value">{escape(stage_label(record.stage))}</div>', unsafe_allow_html=True)
-    st.markdown(
-        f'<div class="tmk-note" style="margin-top:0.35rem;">Selected product: {record.product}. Intro route: {escape(_format_route(record.intro_route))}. Structural role: {escape(record.structural_role)}.</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        f'<div class="tmk-note" style="margin-top:0.5rem;">Products introduced in this stage: {escape(", ".join(str(value) for value in new_stage_products) if new_stage_products else "None")}</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        '<div class="tmk-note" style="margin-top:0.5rem;">Teacher warning: keep first exposure focused on current-stage products before opening cumulative support.</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
+from domain.routes import (
+    distinct_factor_routes,
+    entry_routes,
+    exit_route_labels,
+    inverse_labels,
+    shared_factors,
+)
 
+from domain.products import (
+    ALL_PRODUCTS,
+    STAGE_ORDER,
+    STAGES,
+    product_record,
+    stage_label,
+)
+
+from domain.product_metadata import (
+    available_products as metadata_available_products,
+    new_products as metadata_new_products,
+    product_metadata,
+)
+
+from domain.stage_vocabulary import (
+    get_stage_vocabulary,
+)
+
+# -----------------------------
+# WORKSHEET SYSTEM IMPORTS
+# -----------------------------
+from models.worksheet_models import (
+    ProductSelectionRequest,
+)
+
+from services.product_selection_engine import (
+    available_selection_modes,
+)
+
+from services.worksheet_generation_service import (
+    generate_worksheet_bundle,
+)
+
+from ui.extension_hub_page import (
+    render_extension_hub_page,
+)
+
+from ui.instruction_planner_builder import (
+    build_instruction_planner_view_model,
+)
+
+from ui.instruction_planner_page import (
+    render_instruction_planner_page,
+)
+
+from ui.resource_library_page import (
+    render_resource_library_page,
+)
     col_a, col_b = st.columns((1.35, 0.85))
 
     with col_a:
