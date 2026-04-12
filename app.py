@@ -69,6 +69,59 @@ from ui.instruction_planner_page import (
 from ui.resource_library_page import (
     render_resource_library_page,
 )
+
+APP_TITLE = "TMK Teacher App"
+SURFACES = (
+    "Structural Planner",
+    "Product Lab",
+    "Instruction Planner",
+    "Worksheet Studio",
+    "Extensions",
+    "Resource Library",
+)
+TIERS = ("Support", "Core", "Extension")
+WORKSHEET_FORMATS = ("one_product_10", "three_product_12")
+SELECTION_SCOPES = ("new_only", "available_mixed", "hybrid")
+PLANNER_LINK_MODES = ("Selected links", "Show selected atlas", "No links")
+PLANNER_ZOOM_MODES = ("Selected stage only", "Whole world")
+ROUTE_VIEW_MODES = ("Entry routes", "Exit routes")
+
+LIGHT_THEME = {
+    "bg": "#E8E1D5",
+    "surface": "#F7F4EE",
+    "surface_strong": "#FFFFFF",
+    "border": "#D9D4C8",
+    "text": "#2F3A3C",
+    "text_soft": "#6C7A7D",
+    "accent": "#497379",
+    "accent_soft": "#83B8BE",
+    "highlight": "#ECA159",
+    "danger": "#FF5E57",
+    "hover": "#A9CED2",
+    "sidebar_bg": "#91CBCA",
+    "sidebar_text": "#2F3A3C",
+    "sidebar_text_soft": "#4F6063",
+    "sidebar_border": "#6FAFAE",
+}
+
+DARK_THEME = {
+    "bg": "#2F3A3C",
+    "surface": "#344244",
+    "surface_strong": "#3E4D4F",
+    "border": "#6C7A7D",
+    "text": "#F7F4EE",
+    "text_soft": "#D9D4C8",
+    "accent": "#83B8BE",
+    "accent_soft": "#A9CED2",
+    "highlight": "#ECA159",
+    "danger": "#FF5E57",
+    "hover": "#497379",
+    "sidebar_bg": "#497379",
+    "sidebar_text": "#F7F4EE",
+    "sidebar_text_soft": "#E8E1D5",
+    "sidebar_border": "#6C7A7D",
+}
+
 st.set_page_config(
     page_title=APP_TITLE,
     page_icon="✳️",
@@ -568,77 +621,94 @@ def _render_sidebar() -> None:
 # -----------------------------
 # STRUCTURAL PLANNER
 # -----------------------------
-from __future__ import annotations
+def _render_structural_planner(product: int) -> None:
+    record = product_record(product)
 
-from html import escape
-from typing import Any, Iterable
+    current_stage_products = tuple(STAGES[record.stage].products)
+    new_stage_products = tuple(metadata_new_products(record.stage))
+    earlier_secured_products = tuple(
+        value for value in metadata_available_products(record.stage)
+        if value not in current_stage_products
+    )
 
-import streamlit as st
+    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-section-title">Structural Planner</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="tmk-section-subtitle">Choose a structural lens: stage sequence or pattern map.</div>',
+        unsafe_allow_html=True,
+    )
 
-# -----------------------------
-# DOMAIN IMPORTS
-# -----------------------------
-from domain.patterns import (
-    all_patterns,
-    pattern_products,
-)
+    view_mode = st.radio(
+        "Planner view",
+        options=("Stage", "Pattern"),
+        horizontal=True,
+        key="planner_view_mode_v1",
+    )
 
-from domain.routes import (
-    distinct_factor_routes,
-    entry_routes,
-    exit_route_labels,
-    inverse_labels,
-    shared_factors,
-)
+    if view_mode == "Pattern":
+        from ui.components import render_pattern_view
 
-from domain.products import (
-    ALL_PRODUCTS,
-    STAGE_ORDER,
-    STAGES,
-    product_record,
-    stage_label,
-)
+        patterns = all_patterns()
+        pattern_ids = [pattern.id for pattern in patterns]
 
-from domain.product_metadata import (
-    available_products as metadata_available_products,
-    new_products as metadata_new_products,
-    product_metadata,
-)
+        selected_pattern = st.selectbox(
+            "Select pattern",
+            options=pattern_ids,
+            key="planner_pattern_select_v1",
+            format_func=lambda pattern_id: next(
+                pattern.name for pattern in patterns if pattern.id == pattern_id
+            ),
+        )
 
-from domain.stage_vocabulary import (
-    get_stage_vocabulary,
-)
+        products = pattern_products(selected_pattern)
 
-# -----------------------------
-# WORKSHEET SYSTEM IMPORTS
-# -----------------------------
-from models.worksheet_models import (
-    ProductSelectionRequest,
-)
+        render_pattern_view(
+            patterns=patterns,
+            selected_pattern=selected_pattern,
+            pattern_products=products,
+        )
 
-from services.product_selection_engine import (
-    available_selection_modes,
-)
+        st.markdown("</div>", unsafe_allow_html=True)
+        return
 
-from services.worksheet_generation_service import (
-    generate_worksheet_bundle,
-)
+    selected = st.selectbox(
+        "Selected product",
+        options=ALL_PRODUCTS,
+        index=ALL_PRODUCTS.index(st.session_state.selected_product),
+        format_func=_product_option_label,
+        key="planner_product_select_v20",
+    )
+    if selected != st.session_state.selected_product:
+        st.session_state.selected_product = selected
+        st.session_state.selected_stage = product_record(selected).stage
+        st.rerun()
 
-from ui.extension_hub_page import (
-    render_extension_hub_page,
-)
+    _metric_card_row(
+        [
+            ("Current stage", stage_label(record.stage)),
+            ("Selected product", str(record.product)),
+            ("Intro route", _format_route(record.intro_route)),
+            ("New here", str(len(new_stage_products))),
+        ]
+    )
 
-from ui.instruction_planner_builder import (
-    build_instruction_planner_view_model,
-)
+    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
+    st.markdown('<div class="tmk-small-label">Stage focus</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="tmk-value">{escape(stage_label(record.stage))}</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="tmk-note" style="margin-top:0.35rem;">Selected product: {record.product}. Intro route: {escape(_format_route(record.intro_route))}. Structural role: {escape(record.structural_role)}.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div class="tmk-note" style="margin-top:0.5rem;">Products introduced in this stage: {escape(", ".join(str(value) for value in new_stage_products) if new_stage_products else "None")}</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="tmk-note" style="margin-top:0.5rem;">Teacher warning: keep first exposure focused on current-stage products before opening cumulative support.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
 
-from ui.instruction_planner_page import (
-    render_instruction_planner_page,
-)
-
-from ui.resource_library_page import (
-    render_resource_library_page,
-)
     col_a, col_b = st.columns((1.35, 0.85))
 
     with col_a:
@@ -1228,7 +1298,6 @@ def _build_route_overlap_activity(
     compare_product: int,
     compare_routes: tuple[tuple[int, int], ...],
 ) -> dict[str, Any]:
-    route_labels = [_format_route(route) for route in routes]
     intro_route_label = _format_route(intro_route)
 
     non_intro_routes = [route for route in routes if route != intro_route]
