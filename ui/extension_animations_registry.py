@@ -96,25 +96,26 @@ EXTENSION_ANIMATIONS_REGISTRY: dict[str, dict[str, Any]] = {
         "id": "extension_12x_double_six_compare",
         "title": "12× Time Builder",
         "family": "12x",
-        "pattern": "time-pattern",
+        "pattern": "double-five",
         "purpose": (
-            "Show the 12× time pattern by building 12 groups of 5 minutes into "
-            "60 minutes, then doubling the group size to connect 12 × 10 with 120 minutes."
+            "Show the 12× time pattern by building 12 groups of 5 minutes as 60 minutes, "
+            "then doubling the group size to connect 12 × 10 minutes with 120 minutes."
         ),
         "asset_path": "extension_12x_double_six_compare.html",
         "content_path": "extension/animations/12x-time-builder",
         "prompt": (
-            "Build 12 groups of 5 minutes, convert 60 minutes to 1 hour, then double "
-            "the group size to reach 120 minutes."
+            "Start with 12 groups of 5 minutes. That makes 60 minutes, or 1 hour. "
+            "Then double each group from 5 minutes to 10 minutes so the total doubles too."
         ),
         "equations": {
             "format": "12 × 5 minutes = 60 minutes = 1 hour",
             "examples": (
-                "12 × 5 minutes = 60 minutes",
+                "Start with 12 groups of 5 minutes.",
+                "12 × 5 = 60",
                 "60 minutes = 1 hour",
-                "12 × 10 minutes = 120 minutes",
+                "5 minutes doubles to 10 minutes.",
+                "12 × 10 = double 60 = 120",
                 "120 minutes = 2 hours",
-                "Double 5 minutes to 10 minutes, so the total doubles too.",
             ),
             "toggleable_for_prediction_mode": False,
         },
