@@ -94,37 +94,41 @@ EXTENSION_ANIMATIONS_REGISTRY: dict[str, dict[str, Any]] = {
     },
     "extension_12x_double_six_compare": {
         "id": "extension_12x_double_six_compare",
-        "title": "12× Double-Six Compare",
+        "title": "12× Time Builder",
         "family": "12x",
-        "pattern": "double-six",
+        "pattern": "time-pattern",
         "purpose": (
-            "Show that 12× can also be built as 2 × 6× so pupils compare lawful "
-            "extension builds for the same product."
+            "Show the 12× time pattern by building 12 groups of 5 minutes into "
+            "60 minutes, then doubling the group size to connect 12 × 10 with 120 minutes."
         ),
         "asset_path": "extension_12x_double_six_compare.html",
-        "content_path": "extension/animations/12x-double-six-compare",
-        "prompt": "Compare two lawful ways to build the same product.",
+        "content_path": "extension/animations/12x-time-builder",
+        "prompt": (
+            "Build 12 groups of 5 minutes, convert 60 minutes to 1 hour, then double "
+            "the group size to reach 120 minutes."
+        ),
         "equations": {
-            "format": "12 × n = 2 × (6 × n)",
+            "format": "12 × 5 minutes = 60 minutes = 1 hour",
             "examples": (
-                "12 × 4 = 2 × (6 × 4)",
-                "12 × 8 = 2 × (6 × 8)",
+                "12 × 5 minutes = 60 minutes",
+                "60 minutes = 1 hour",
+                "12 × 10 minutes = 120 minutes",
+                "120 minutes = 2 hours",
+                "Double 5 minutes to 10 minutes, so the total doubles too.",
             ),
             "toggleable_for_prediction_mode": False,
         },
         "controls": (
-            "Select product",
-            "Compare builds",
-            "Show equations",
-            "Show structure",
-            "Full screen",
-            "Reset",
+            "Check each step",
+            "Unlock next step",
+            "Show recap",
+            "Restart",
         ),
         "teacher_support_level": "reduced",
         "tags": {
             "status": "Draft",
             "use_case": (
-                "Compare forms",
+                "Time pattern",
                 "Structural reasoning",
                 "Teacher-led modelling",
             ),
