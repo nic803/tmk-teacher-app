@@ -15,12 +15,18 @@ EXTENSION_ANIMATIONS_REGISTRY: dict[str, dict[str, Any]] = {
         ),
         "asset_path": "11x_rabbit_and _carrot_builder.html",
         "content_path": "extension/animations/11x-rabbit-and-carrot-builder",
-        "prompt": "Build 11× from 10 groups of carrots and 1 group of rabbits.",
+        "prompt": (
+            "Build 11× by making 10 groups of carrots, then adding 1 group of rabbits. "
+            "Do 10 times, then add one more group."
+        ),
         "equations": {
             "format": "11 × n = 10 × n + 1 × n",
             "examples": (
-                "11 × 4 = 10 × 4 + 1 × 4",
-                "11 × 7 = 10 × 7 + 1 × 7",
+                "11 × n = ten groups of n + one group of n",
+                "11 × n = 10 × n + 1 × n",
+                "One group of n = n",
+                "Total = carrots + rabbits",
+                "The chosen value changes, but the structure stays 10 groups plus 1 group.",
             ),
             "toggleable_for_prediction_mode": True,
         },
