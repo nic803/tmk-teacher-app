@@ -15,12 +15,10 @@
             overflow: hidden;
         }
 
-
         /* Simulated Fullscreen Mode */
         body.simulated-fullscreen {
             overflow: hidden !important;
         }
-
 
         body.simulated-fullscreen #app-container {
             position: fixed;
@@ -35,41 +33,34 @@
             border: none;
         }
 
-
         /* Brand Colors */
         .brand-blue { background-color: #8dcfd7; }
         .brand-coral { background-color: #fe5653; }
         .text-brand-blue { color: #5aa4ac; }
         .text-brand-coral { color: #fe5653; }
 
-
         .patch-bg {
             background-color: #ffffff;
             border: 2px solid #e2e8f0;
         }
-
 
         @keyframes hop {
             0%, 100% { transform: translateY(0) scale(1); }
             50% { transform: translateY(-5px) scale(1.05); }
         }
 
-
         .animate-hop {
             animation: hop 1.5s infinite ease-in-out;
         }
-
 
         @keyframes grow {
             from { transform: scale(0); }
             to { transform: scale(1); }
         }
 
-
         .animate-grow {
             animation: grow 0.3s ease-out forwards;
         }
-
 
         input[type=range]::-webkit-slider-thumb {
             background: #8dcfd7;
@@ -78,7 +69,6 @@
             height: 32px;
             cursor: pointer;
         }
-
 
         .challenge-input {
             width: 80px;
@@ -89,16 +79,13 @@
             background: transparent;
         }
 
-
         .challenge-input:focus {
             border-color: #8dcfd7;
             color: #5aa4ac;
         }
 
-
         .correct { border-color: #22c55e !important; color: #16a34a !important; }
         .incorrect { border-color: #fe5653 !important; color: #fe5653 !important; }
-
 
         .emoji-unit {
             display: flex;
@@ -107,20 +94,17 @@
             transition: all 0.2s ease;
         }
 
-
         .carrot-unit {
             font-size: 1.2rem;
             width: 1.4rem;
             height: 1.4rem;
         }
 
-
         .rabbit-unit {
             font-size: 3.2rem;
             width: 3.5rem;
             height: 3.5rem;
         }
-
 
         .tool-btn {
             @apply flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all font-bold text-xs uppercase tracking-tighter;
@@ -149,7 +133,6 @@
             </div>
         </div>
 
-
         <div class="flex flex-grow overflow-hidden">
             <!-- SIDEBAR TOOLS -->
             <div class="w-24 md:w-32 bg-slate-100 border-r border-slate-200 p-2 flex flex-col gap-4 overflow-y-auto shrink-0">
@@ -165,7 +148,6 @@
                     </button>
                 </div>
 
-
                 <div id="learning-controls" class="space-y-1">
                     <p class="text-[10px] font-black text-slate-400 uppercase text-center mb-1">Groups</p>
                     <div class="flex flex-col items-center gap-2 bg-white rounded-xl p-2 border border-slate-200">
@@ -177,7 +159,6 @@
                         </div>
                     </div>
                 </div>
-
 
                 <div id="challenge-controls" class="hidden space-y-1">
                     <p class="text-[10px] font-black text-slate-400 uppercase text-center mb-1">Control</p>
@@ -191,7 +172,6 @@
                     </div>
                 </div>
             </div>
-
 
             <!-- MAIN WORKSPACE -->
             <div class="flex-grow p-4 overflow-y-auto">
@@ -213,7 +193,6 @@
                                 </div>
                             </div>
 
-
                             <!-- 2x Section (Rabbits) -->
                             <div class="space-y-2">
                                 <div class="flex items-center justify-between">
@@ -228,7 +207,6 @@
                             </div>
                         </div>
                     </div>
-
 
                     <!-- Summary & Sum -->
                     <div class="lg:col-span-4 flex flex-col gap-3">
@@ -245,7 +223,6 @@
                                 <div class="text-[#fe5653] text-7xl font-black animate-hop" id="final-total">84</div>
                             </div>
 
-
                             <!-- Challenge View -->
                             <div id="total-input-view" class="hidden w-full flex flex-col items-center gap-4">
                                 <div class="text-center">
@@ -256,7 +233,6 @@
                             </div>
                         </div>
 
-
                         <div id="feedback-area" class="h-12 flex items-center justify-center text-center px-2">
                             <p id="feedback-text" class="text-sm font-bold opacity-0 transition-opacity duration-300 leading-tight"></p>
                         </div>
@@ -265,14 +241,12 @@
             </div>
         </div>
 
-
         <!-- Footer -->
         <div class="bg-slate-50 px-4 py-2 text-[11px] text-slate-400 border-t border-slate-100 flex justify-between">
             <span>Strategy: Partition 12 into 10 + 2</span>
             <span class="italic font-medium">"10 groups of <span class="val-text">7</span> is <span id="footer-ten">70</span>, plus double <span class="val-text">7</span> is <span id="footer-total">84</span>!"</span>
         </div>
     </div>
-
 
     <script>
         const input = document.getElementById('multiplier');
@@ -288,7 +262,6 @@
         const footerTen = document.getElementById('footer-ten');
         const footerTotal = document.getElementById('footer-total');
 
-
         let isChallengeMode = false;
         const modeToggle = document.getElementById('mode-toggle');
         const modeLabel = document.getElementById('mode-label');
@@ -302,17 +275,14 @@
         const challengeTarget = document.getElementById('challenge-target');
         const feedbackText = document.getElementById('feedback-text');
 
-
         const inputTen = document.getElementById('input-ten');
         const inputOne = document.getElementById('input-one');
         const inputTotal = document.getElementById('input-total');
-
 
         function toggleFullscreen() {
             document.body.classList.toggle('simulated-fullscreen');
             document.getElementById('btn-fullscreen').classList.toggle('active');
         }
-
 
         function toggleChallenge() {
             isChallengeMode = !isChallengeMode;
@@ -345,7 +315,6 @@
             }
         }
 
-
         function randomizeChallenge() {
             const randomN = Math.floor(Math.random() * 12) + 1;
             input.value = randomN;
@@ -358,13 +327,11 @@
             updateUI();
         }
 
-
         function checkAnswers() {
             const n = parseInt(input.value);
             const ans10 = parseInt(inputTen.value);
             const ans2 = parseInt(inputOne.value);
             const ansTotal = parseInt(inputTotal.value);
-
 
             let correctCount = 0;
             if (ans10 === n * 10) { inputTen.classList.add('correct'); correctCount++; }
@@ -376,7 +343,6 @@
             if (ansTotal === n * 12) { inputTotal.classList.add('correct'); correctCount++; }
             else if(inputTotal.value) { inputTotal.classList.add('incorrect'); }
 
-
             feedbackText.classList.remove('opacity-0');
             if (correctCount === 3) {
                 feedbackText.innerText = "Double delight! Your counts are correct! 🥕🐇✨";
@@ -387,7 +353,6 @@
             }
         }
 
-
         function changeVal(delta) {
             let newVal = parseInt(input.value) + delta;
             if (newVal >= 1 && newVal <= 12) {
@@ -396,14 +361,12 @@
             }
         }
 
-
         function createEmoji(type) {
             const span = document.createElement('span');
             span.className = `emoji-unit animate-grow ${type === 'ten' ? 'carrot-unit' : 'rabbit-unit'}`;
             span.innerText = type === 'ten' ? '🥕' : '🐇';
             return span;
         }
-
 
         function updateUI() {
             const n = parseInt(input.value);
@@ -413,7 +376,6 @@
             const oRes = n * 2;
             const total = n * 12;
 
-
             tenResultPill.innerText = tRes;
             oneResultPill.innerText = oRes;
             finalTen.innerText = tRes;
@@ -421,7 +383,6 @@
             finalTotal.innerText = total;
             footerTen.innerText = tRes;
             footerTotal.innerText = total;
-
 
             tenGrid.innerHTML = '';
             oneGrid.innerHTML = '';
@@ -439,7 +400,6 @@
                 oneGrid.appendChild(createEmoji('one'));
             }
         }
-
 
         window.onload = updateUI;
     </script>
