@@ -62,7 +62,7 @@ EXTENSION_ANIMATIONS_REGISTRY: dict[str, dict[str, Any]] = {
             "examples": (
                 "12 × n = ten groups of n + two groups of n",
                 "12 × n = 10 × n + 2 × n",
-                "12 × n = 10 × n + double n",
+                "Two groups of n = double n",
                 "Total = carrots + rabbits",
                 "The chosen value changes, but the structure stays 10 groups plus 2 groups.",
             ),
