@@ -60,7 +60,9 @@ EXTENSION_ANIMATIONS_REGISTRY: dict[str, dict[str, Any]] = {
         "equations": {
             "format": "12 × n = 10 × n + 2 × n",
             "examples": (
-                "12 × n = ten groups of n + double n",
+                "12 × n = ten groups of n + two groups of n",
+                "12 × n = 10 × n + 2 × n",
+                "12 × n = 10 × n + double n",
                 "Total = carrots + rabbits",
                 "The chosen value changes, but the structure stays 10 groups plus 2 groups.",
             ),
