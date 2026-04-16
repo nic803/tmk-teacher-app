@@ -53,12 +53,16 @@ EXTENSION_ANIMATIONS_REGISTRY: dict[str, dict[str, Any]] = {
         ),
         "asset_path": "12x_rabbit_carrot_builder.html",
         "content_path": "extension/animations/12x-rabbit-carrot-builder",
-        "prompt": "Build 12× from 10 groups of carrots and 2 groups of rabbits.",
+        "prompt": (
+            "Build 12× by making 10 groups of carrots, then adding 2 groups of rabbits. "
+            "Do 10 times, then add double."
+        ),
         "equations": {
             "format": "12 × n = 10 × n + 2 × n",
             "examples": (
-                "12 × 4 = 10 × 4 + 2 × 4",
-                "12 × 6 = 10 × 6 + 2 × 6",
+                "12 × n = ten groups of n + double n",
+                "Total = carrots + rabbits",
+                "The chosen value changes, but the structure stays 10 groups plus 2 groups.",
             ),
             "toggleable_for_prediction_mode": True,
         },
