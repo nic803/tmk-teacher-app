@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>12× Time Builder | Interactive Math</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #fbd38d;
+            animation: fall 3s linear forwards;
+            pointer-events: none;
+        }
+        @keyframes fall {
+            to { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+        .step-locked { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
+
+    <div id="app" class="max-w-xl w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
+        <div class="bg-indigo-600 p-8 text-white text-center">
+            <div class="flex justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h1 class="text-3xl font-bold mb-2">12× Time Builder</h1>
+            <p class="text-indigo-100">Pattern: 12 groups of 5 minutes make 60 minutes.</p>
+        </div>
+
+        <div class="h-2 bg-slate-100 w-full">
+            <div id="progressBar" class="h-full bg-emerald-500 transition-all duration-500 w-0"></div>
+        </div>
+
+        <div class="p-6 md:p-8 space-y-8">
+            <div id="card1" class="transition-all duration-300">
+                <div class="flex items-start gap-4">
+                    <span class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">1</span>
+                    <div class="flex-grow">
+                        <label class="block text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Build 12 groups of 5 minutes</label>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <span class="text-xl font-medium text-slate-700">12 × 5 minutes =</span>
+                            <input type="number" id="twelveTimesFive" class="w-24 px-4 py-2 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none text-xl font-bold transition-colors" placeholder="?">
+                            <button onclick="checkTwelveTimesFive()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-xl font-semibold shadow-md transition-all active:scale-95">Check</button>
+                        </div>
+                        <p id="twelveFiveFeedback" class="mt-2 text-sm hidden font-semibold"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="card2" class="step-locked transition-all duration-300">
+                <div class="flex items-start gap-4">
+                    <span class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">2</span>
+                    <div class="flex-grow">
+                        <label class="block text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Convert to Hours</label>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <span class="text-xl font-medium text-slate-700">60 minutes =</span>
+                            <input type="number" id="oneHour" class="w-24 px-4 py-2 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none text-xl font-bold transition-colors" placeholder="?">
+                            <span class="text-xl font-medium text-slate-700">hour</span>
+                            <button onclick="checkOneHour()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-xl font-semibold shadow-md transition-all active:scale-95">Check</button>
+                        </div>
+                        <p id="hourFeedback" class="mt-2 text-sm hidden font-semibold"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="card3" class="step-locked transition-all duration-300">
+                <div class="flex items-start gap-4">
+                    <span class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">3</span>
+                    <div class="flex-grow">
+                        <label class="block text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Double the group size</label>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <span class="text-xl font-medium text-slate-700">12 × 10 minutes =</span>
+                            <input type="number" id="twelveTimesTen" class="w-24 px-4 py-2 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none text-xl font-bold transition-colors" placeholder="?">
+                            <button onclick="checkTwelveTimesTen()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-xl font-semibold shadow-md transition-all active:scale-95">Check</button>
+                        </div>
+                        <p id="twelveTenFeedback" class="mt-2 text-sm hidden font-semibold"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="card4" class="step-locked transition-all duration-300">
+                <div class="flex items-start gap-4">
+                    <span class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">4</span>
+                    <div class="flex-grow">
+                        <label class="block text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Final Conversion</label>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <span class="text-xl font-medium text-slate-700">120 minutes =</span>
+                            <input type="number" id="twoHours" class="w-24 px-4 py-2 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none text-xl font-bold transition-colors" placeholder="?">
+                            <span class="text-xl font-medium text-slate-700">hours</span>
+                            <button onclick="checkTwoHours()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-xl font-semibold shadow-md transition-all active:scale-95">Check</button>
+                        </div>
+                        <p id="twoHourFeedback" class="mt-2 text-sm hidden font-semibold"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="recap" class="hidden mt-8 p-6 bg-emerald-50 border-2 border-emerald-100 rounded-2xl">
+                <h3 class="text-emerald-800 font-bold mb-3 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                    Mastery Achievement: 12× Time Pattern
+                </h3>
+                <div class="space-y-2 text-emerald-700 font-medium">
+                    <p>✓ 12 × 5 minutes = 60 minutes = 1 hour.</p>
+                    <p>✓ 12 × 10 minutes = 120 minutes = 2 hours.</p>
+                    <p class="text-sm text-emerald-600 italic">Double 5 minutes to 10 minutes, so the total doubles too.</p>
+                </div>
+                <button onclick="location.reload()" class="mt-4 text-emerald-600 font-bold hover:underline text-sm uppercase tracking-widest">Restart Training</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateUI(stepNum, isCorrect, feedbackEl, inputEl) {
+            if (isCorrect) {
+                feedbackEl.classList.remove('hidden', 'text-rose-500');
+                feedbackEl.classList.add('text-emerald-600');
+                inputEl.classList.add('border-emerald-500', 'bg-emerald-50');
+                inputEl.disabled = true;
+                document.getElementById('progressBar').style.width = (stepNum * 25) + '%';
+                
+                if (stepNum < 4) {
+                    const nextCard = document.getElementById('card' + (stepNum + 1));
+                    nextCard.classList.remove('step-locked');
+                    nextCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    document.getElementById('recap').classList.remove('hidden');
+                    createConfetti();
+                }
+            } else {
+                feedbackEl.classList.remove('hidden', 'text-emerald-600');
+                feedbackEl.classList.add('text-rose-500');
+                inputEl.classList.add('border-rose-500', 'bg-rose-50');
+                setTimeout(() => {
+                    inputEl.classList.remove('border-rose-500', 'bg-rose-50');
+                }, 1000);
+            }
+        }
+
+        function checkTwelveTimesFive() {
+            const input = document.getElementById("twelveTimesFive");
+            const answer = Number(input.value);
+            const feedback = document.getElementById("twelveFiveFeedback");
+
+            if (answer === 60) {
+                feedback.textContent = "Correct. 12 × 5 minutes = 60 minutes.";
+                updateUI(1, true, feedback, input);
+            } else {
+                feedback.textContent = "Try again. Think: 12 groups of 5 minutes.";
+                updateUI(1, false, feedback, input);
+            }
+        }
+
+        function checkOneHour() {
+            const input = document.getElementById("oneHour");
+            const answer = Number(input.value);
+            const feedback = document.getElementById("hourFeedback");
+
+            if (answer === 1) {
+                feedback.textContent = "Correct. 60 minutes = 1 hour.";
+                updateUI(2, true, feedback, input);
+            } else {
+                feedback.textContent = "Try again. 60 minutes makes 1 full hour.";
+                updateUI(2, false, feedback, input);
+            }
+        }
+
+        function checkTwelveTimesTen() {
+            const input = document.getElementById("twelveTimesTen");
+            const answer = Number(input.value);
+            const feedback = document.getElementById("twelveTenFeedback");
+
+            if (answer === 120) {
+                feedback.textContent = "Correct. 12 × 10 minutes = 120 minutes.";
+                updateUI(3, true, feedback, input);
+            } else {
+                feedback.textContent = "Try again. 12 groups of 10 minutes makes 120 minutes.";
+                updateUI(3, false, feedback, input);
+            }
+        }
+
+        function checkTwoHours() {
+            const input = document.getElementById("twoHours");
+            const answer = Number(input.value);
+            const feedback = document.getElementById("twoHourFeedback");
+
+            if (answer === 2) {
+                feedback.textContent = "Correct. 120 minutes = 2 hours.";
+                updateUI(4, true, feedback, input);
+            } else {
+                feedback.textContent = "Try again. 60 minutes is 1 hour, so 120 minutes is 2 hours.";
+                updateUI(4, false, feedback, input);
+            }
+        }
+
+        function createConfetti() {
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 60%)`;
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 5000);
+            }
+        }
+    </script>
+</body>
+</html>
