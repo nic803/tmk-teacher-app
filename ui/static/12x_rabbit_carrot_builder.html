@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>12x Rabbit & Carrot Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f1f5f9;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+
+        /* Simulated Fullscreen Mode */
+        body.simulated-fullscreen {
+            overflow: hidden !important;
+        }
+
+
+        body.simulated-fullscreen #app-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            max-width: none !important;
+            z-index: 9999;
+            border-radius: 0;
+            margin: 0;
+            border: none;
+        }
+
+
+        /* Brand Colors */
+        .brand-blue { background-color: #8dcfd7; }
+        .brand-coral { background-color: #fe5653; }
+        .text-brand-blue { color: #5aa4ac; }
+        .text-brand-coral { color: #fe5653; }
+
+
+        .patch-bg {
+            background-color: #ffffff;
+            border: 2px solid #e2e8f0;
+        }
+
+
+        @keyframes hop {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-5px) scale(1.05); }
+        }
+
+
+        .animate-hop {
+            animation: hop 1.5s infinite ease-in-out;
+        }
+
+
+        @keyframes grow {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+
+        .animate-grow {
+            animation: grow 0.3s ease-out forwards;
+        }
+
+
+        input[type=range]::-webkit-slider-thumb {
+            background: #8dcfd7;
+            border: 2px solid #5aa4ac;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+        }
+
+
+        .challenge-input {
+            width: 80px;
+            text-align: center;
+            border-bottom: 3px solid #cbd5e1;
+            outline: none;
+            transition: all 0.2s;
+            background: transparent;
+        }
+
+
+        .challenge-input:focus {
+            border-color: #8dcfd7;
+            color: #5aa4ac;
+        }
+
+
+        .correct { border-color: #22c55e !important; color: #16a34a !important; }
+        .incorrect { border-color: #fe5653 !important; color: #fe5653 !important; }
+
+
+        .emoji-unit {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+
+        .carrot-unit {
+            font-size: 1.2rem;
+            width: 1.4rem;
+            height: 1.4rem;
+        }
+
+
+        .rabbit-unit {
+            font-size: 3.2rem;
+            width: 3.5rem;
+            height: 3.5rem;
+        }
+
+
+        .tool-btn {
+            @apply flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all font-bold text-xs uppercase tracking-tighter;
+            background: rgba(255,255,255,0.8);
+            border: 1px solid rgba(0,0,0,0.05);
+            width: 100%;
+        }
+        
+        .tool-btn:hover { background: #fff; transform: translateY(-1px); }
+        .tool-btn.active { background: #fff; @apply shadow-inner border-slate-300; }
+        .tool-btn.primary { background: #1e293b; color: white; }
+    </style>
+</head>
+<body class="p-0 md:p-2 lg:p-4 min-h-screen flex items-center justify-center">
+    <div id="app-container" class="w-full max-w-6xl bg-white rounded-2xl shadow-2xl overflow-hidden border-2 border-slate-200 transition-all duration-300 flex flex-col h-[95vh] md:h-auto md:max-h-[90vh]">
+        
+        <!-- Header -->
+        <div class="px-4 py-2 text-white brand-blue border-b border-black/5 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-black text-slate-800 leading-tight">12× Rabbit & Carrot Builder</h1>
+            <div id="strategy-display" class="hidden sm:flex items-center gap-2 text-base md:text-lg font-bold text-slate-800 bg-white/30 px-3 py-0.5 rounded-full">
+                <span>12 × <span class="val-text">7</span></span>
+                <span class="text-slate-500">=</span>
+                <span class="text-brand-blue">(10×<span class="val-text">7</span> 🥕)</span>
+                <span class="text-slate-500">+</span>
+                <span class="text-amber-600">(2×<span class="val-text">7</span> 🐇)</span>
+            </div>
+        </div>
+
+
+        <div class="flex flex-grow overflow-hidden">
+            <!-- SIDEBAR TOOLS -->
+            <div class="w-24 md:w-32 bg-slate-100 border-r border-slate-200 p-2 flex flex-col gap-4 overflow-y-auto shrink-0">
+                <div class="space-y-1">
+                    <p class="text-[10px] font-black text-slate-400 uppercase text-center mb-1">Modes</p>
+                    <button id="mode-toggle" onclick="toggleChallenge()" class="tool-btn primary">
+                        <span id="mode-emoji">🏆</span>
+                        <span id="mode-label">Challenge</span>
+                    </button>
+                    <button id="btn-fullscreen" onclick="toggleFullscreen()" class="tool-btn mt-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-800"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                        <span>Fullscr</span>
+                    </button>
+                </div>
+
+
+                <div id="learning-controls" class="space-y-1">
+                    <p class="text-[10px] font-black text-slate-400 uppercase text-center mb-1">Groups</p>
+                    <div class="flex flex-col items-center gap-2 bg-white rounded-xl p-2 border border-slate-200">
+                        <button onclick="changeVal(1)" class="w-10 h-10 rounded-lg bg-[#8dcfd7]/30 text-slate-800 font-black text-xl flex items-center justify-center hover:bg-[#8dcfd7]/50">+</button>
+                        <div id="display-value" class="text-3xl font-black text-slate-800">7</div>
+                        <button onclick="changeVal(-1)" class="w-10 h-10 rounded-lg bg-[#8dcfd7]/30 text-slate-800 font-black text-xl flex items-center justify-center hover:bg-[#8dcfd7]/50">-</button>
+                        <div class="h-24 py-2 flex items-center justify-center">
+                            <input type="range" id="multiplier" min="1" max="12" value="7" class="h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#8dcfd7]" style="transform: rotate(-90deg); width: 80px;" oninput="updateUI()">
+                        </div>
+                    </div>
+                </div>
+
+
+                <div id="challenge-controls" class="hidden space-y-1">
+                    <p class="text-[10px] font-black text-slate-400 uppercase text-center mb-1">Control</p>
+                    <button onclick="randomizeChallenge()" class="tool-btn primary py-4">
+                        <span class="text-2xl">🎲</span>
+                        <span>New</span>
+                    </button>
+                    <div id="challenge-target-box" class="mt-2 text-center p-2 bg-white rounded-xl border-2 border-slate-800 font-black text-lg leading-tight">
+                        <span class="text-xs text-slate-400 block uppercase">Goal</span>
+                        <div id="challenge-target">12 × 7</div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- MAIN WORKSPACE -->
+            <div class="flex-grow p-4 overflow-y-auto">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full">
+                    
+                    <!-- Garden Display -->
+                    <div class="lg:col-span-8 space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- 10x Section -->
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-black text-slate-500 uppercase tracking-tight">10× Carrots 🥕</span>
+                                    <span id="ten-result-pill" class="text-xs font-black brand-blue text-slate-800 px-2 py-0.5 rounded-full shadow-sm border border-black/5">70</span>
+                                </div>
+                                <div id="ten-grid" class="flex flex-wrap items-start gap-1 p-2 patch-bg rounded-xl min-h-[140px] max-h-[260px] overflow-y-auto"></div>
+                                <div id="ten-input-box" class="hidden p-2 bg-white border-2 border-[#8dcfd7] rounded-xl text-center">
+                                    <span class="font-bold text-xs text-slate-600">Carrots:</span>
+                                    <input type="number" id="input-ten" class="challenge-input text-lg font-bold" placeholder="?">
+                                </div>
+                            </div>
+
+
+                            <!-- 2x Section (Rabbits) -->
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-black text-slate-500 uppercase tracking-tight">2× Rabbits 🐇</span>
+                                    <span id="one-result-pill" class="text-xs font-black bg-amber-500 text-white px-2 py-0.5 rounded-full shadow-sm border border-black/5">14</span>
+                                </div>
+                                <div id="one-grid" class="flex flex-wrap items-start gap-2 p-3 patch-bg rounded-xl min-h-[140px] max-h-[260px] overflow-y-auto"></div>
+                                <div id="one-input-box" class="hidden p-2 bg-white border-2 border-amber-200 rounded-xl text-center">
+                                    <span class="font-bold text-xs text-slate-600">Rabbits:</span>
+                                    <input type="number" id="input-one" class="challenge-input text-lg font-bold" placeholder="?">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Summary & Sum -->
+                    <div class="lg:col-span-4 flex flex-col gap-3">
+                        <div class="bg-white rounded-2xl p-4 border-2 border-[#fe5653] shadow-md flex-grow flex flex-col items-center justify-center relative overflow-hidden">
+                            <div class="absolute top-2 left-2 text-[10px] font-bold text-slate-300 uppercase tracking-widest">Total Product</div>
+                            
+                            <!-- Learning View -->
+                            <div id="total-view" class="text-center">
+                                <div class="flex flex-wrap items-center justify-center gap-2 text-2xl font-black mb-1">
+                                    <span class="text-brand-blue" id="final-ten">70</span>
+                                    <span class="text-slate-200">+</span>
+                                    <span class="text-amber-500" id="final-one">14</span>
+                                </div>
+                                <div class="text-[#fe5653] text-7xl font-black animate-hop" id="final-total">84</div>
+                            </div>
+
+
+                            <!-- Challenge View -->
+                            <div id="total-input-view" class="hidden w-full flex flex-col items-center gap-4">
+                                <div class="text-center">
+                                    <p class="text-xs font-bold text-slate-400 mb-1 uppercase tracking-tighter">Total Items in Garden</p>
+                                    <input type="number" id="input-total" class="challenge-input text-5xl w-full max-w-[150px] font-black text-[#fe5653]" placeholder="???">
+                                </div>
+                                <button onclick="checkAnswers()" class="w-full py-3 brand-coral text-white font-bold rounded-xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all text-sm uppercase">Check Result</button>
+                            </div>
+                        </div>
+
+
+                        <div id="feedback-area" class="h-12 flex items-center justify-center text-center px-2">
+                            <p id="feedback-text" class="text-sm font-bold opacity-0 transition-opacity duration-300 leading-tight"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Footer -->
+        <div class="bg-slate-50 px-4 py-2 text-[11px] text-slate-400 border-t border-slate-100 flex justify-between">
+            <span>Strategy: Partition 12 into 10 + 2</span>
+            <span class="italic font-medium">"10 groups of <span class="val-text">7</span> is <span id="footer-ten">70</span>, plus double <span class="val-text">7</span> is <span id="footer-total">84</span>!"</span>
+        </div>
+    </div>
+
+
+    <script>
+        const input = document.getElementById('multiplier');
+        const displayVal = document.getElementById('display-value');
+        const valTexts = document.querySelectorAll('.val-text');
+        const tenResultPill = document.getElementById('ten-result-pill');
+        const oneResultPill = document.getElementById('one-result-pill');
+        const tenGrid = document.getElementById('ten-grid');
+        const oneGrid = document.getElementById('one-grid');
+        const finalTen = document.getElementById('final-ten');
+        const finalOne = document.getElementById('final-one');
+        const finalTotal = document.getElementById('final-total');
+        const footerTen = document.getElementById('footer-ten');
+        const footerTotal = document.getElementById('footer-total');
+
+
+        let isChallengeMode = false;
+        const modeToggle = document.getElementById('mode-toggle');
+        const modeLabel = document.getElementById('mode-label');
+        const modeEmoji = document.getElementById('mode-emoji');
+        const learningControls = document.getElementById('learning-controls');
+        const challengeControls = document.getElementById('challenge-controls');
+        const totalView = document.getElementById('total-view');
+        const tenInputBox = document.getElementById('ten-input-box');
+        const oneInputBox = document.getElementById('one-input-box');
+        const totalInputView = document.getElementById('total-input-view');
+        const challengeTarget = document.getElementById('challenge-target');
+        const feedbackText = document.getElementById('feedback-text');
+
+
+        const inputTen = document.getElementById('input-ten');
+        const inputOne = document.getElementById('input-one');
+        const inputTotal = document.getElementById('input-total');
+
+
+        function toggleFullscreen() {
+            document.body.classList.toggle('simulated-fullscreen');
+            document.getElementById('btn-fullscreen').classList.toggle('active');
+        }
+
+
+        function toggleChallenge() {
+            isChallengeMode = !isChallengeMode;
+            
+            if (isChallengeMode) {
+                modeLabel.innerText = "Learning";
+                modeEmoji.innerText = "📖";
+                learningControls.classList.add('hidden');
+                challengeControls.classList.remove('hidden');
+                tenResultPill.classList.add('invisible');
+                oneResultPill.classList.add('invisible');
+                totalView.classList.add('hidden');
+                tenInputBox.classList.remove('hidden');
+                oneInputBox.classList.remove('hidden');
+                totalInputView.classList.remove('hidden');
+                randomizeChallenge();
+            } else {
+                modeLabel.innerText = "Challenge";
+                modeEmoji.innerText = "🏆";
+                learningControls.classList.remove('hidden');
+                challengeControls.classList.add('hidden');
+                tenResultPill.classList.remove('invisible');
+                oneResultPill.classList.remove('invisible');
+                totalView.classList.remove('hidden');
+                tenInputBox.classList.add('hidden');
+                oneInputBox.classList.add('hidden');
+                totalInputView.classList.add('hidden');
+                feedbackText.classList.add('opacity-0');
+                updateUI();
+            }
+        }
+
+
+        function randomizeChallenge() {
+            const randomN = Math.floor(Math.random() * 12) + 1;
+            input.value = randomN;
+            challengeTarget.innerText = `12 × ${randomN}`;
+            [inputTen, inputOne, inputTotal].forEach(el => {
+                el.value = '';
+                el.classList.remove('correct', 'incorrect');
+            });
+            feedbackText.classList.add('opacity-0');
+            updateUI();
+        }
+
+
+        function checkAnswers() {
+            const n = parseInt(input.value);
+            const ans10 = parseInt(inputTen.value);
+            const ans2 = parseInt(inputOne.value);
+            const ansTotal = parseInt(inputTotal.value);
+
+
+            let correctCount = 0;
+            if (ans10 === n * 10) { inputTen.classList.add('correct'); correctCount++; }
+            else if(inputTen.value) { inputTen.classList.add('incorrect'); }
+            
+            if (ans2 === n * 2) { inputOne.classList.add('correct'); correctCount++; }
+            else if(inputOne.value) { inputOne.classList.add('incorrect'); }
+            
+            if (ansTotal === n * 12) { inputTotal.classList.add('correct'); correctCount++; }
+            else if(inputTotal.value) { inputTotal.classList.add('incorrect'); }
+
+
+            feedbackText.classList.remove('opacity-0');
+            if (correctCount === 3) {
+                feedbackText.innerText = "Double delight! Your counts are correct! 🥕🐇✨";
+                feedbackText.className = "text-sm font-bold text-green-600 transition-opacity duration-300";
+            } else {
+                feedbackText.innerText = "Nearly there! Double the rabbits and add to the carrots. 💡";
+                feedbackText.className = "text-sm font-bold text-[#fe5653] transition-opacity duration-300";
+            }
+        }
+
+
+        function changeVal(delta) {
+            let newVal = parseInt(input.value) + delta;
+            if (newVal >= 1 && newVal <= 12) {
+                input.value = newVal;
+                updateUI();
+            }
+        }
+
+
+        function createEmoji(type) {
+            const span = document.createElement('span');
+            span.className = `emoji-unit animate-grow ${type === 'ten' ? 'carrot-unit' : 'rabbit-unit'}`;
+            span.innerText = type === 'ten' ? '🥕' : '🐇';
+            return span;
+        }
+
+
+        function updateUI() {
+            const n = parseInt(input.value);
+            displayVal.innerText = n;
+            valTexts.forEach(el => el.innerText = n);
+            const tRes = n * 10;
+            const oRes = n * 2;
+            const total = n * 12;
+
+
+            tenResultPill.innerText = tRes;
+            oneResultPill.innerText = oRes;
+            finalTen.innerText = tRes;
+            finalOne.innerText = oRes;
+            finalTotal.innerText = total;
+            footerTen.innerText = tRes;
+            footerTotal.innerText = total;
+
+
+            tenGrid.innerHTML = '';
+            oneGrid.innerHTML = '';
+            
+            // Build 10s stalks
+            for (let i = 0; i < n; i++) {
+                const patch = document.createElement('div');
+                patch.className = 'grid grid-cols-1 gap-0 bg-amber-900/5 p-0.5 rounded-full border border-amber-900/10';
+                for (let j = 0; j < 10; j++) patch.appendChild(createEmoji('ten'));
+                tenGrid.appendChild(patch);
+            }
+            
+            // Build Rabbits (Doubling extension: 2 rabbits per n)
+            for (let i = 0; i < n * 2; i++) {
+                oneGrid.appendChild(createEmoji('one'));
+            }
+        }
+
+
+        window.onload = updateUI;
+    </script>
+</body>
+</html>
