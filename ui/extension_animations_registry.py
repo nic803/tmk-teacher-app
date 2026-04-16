@@ -44,16 +44,16 @@ EXTENSION_ANIMATIONS_REGISTRY: dict[str, dict[str, Any]] = {
     },
     "extension_12x_ten_plus_two_builder": {
         "id": "extension_12x_ten_plus_two_builder",
-        "title": "12× Ten-Plus-Two Builder",
+        "title": "12× Rabbit & Carrot Builder",
         "family": "12x",
         "pattern": "ten-plus-two",
         "purpose": (
-            "Show 12× products as 10n + 2n so pupils can connect extension facts "
-            "to benchmark structure and doubling."
+            "Show 12× products as 10n + 2n through a rabbit-and-carrot build so pupils "
+            "can connect extension facts to benchmark structure and doubling."
         ),
-        "asset_path": "extension_12x_ten_plus_two_builder.html",
-        "content_path": "extension/animations/12x-ten-plus-two-builder",
-        "prompt": "Build it from ten lots and two more lots.",
+        "asset_path": "12x_rabbit_carrot_builder.html",
+        "content_path": "extension/animations/12x-rabbit-carrot-builder",
+        "prompt": "Build 12× from 10 groups of carrots and 2 groups of rabbits.",
         "equations": {
             "format": "12 × n = 10 × n + 2 × n",
             "examples": (
