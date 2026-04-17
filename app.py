@@ -759,103 +759,18 @@ def _render_stage_cards(current_stage: str) -> None:
 # PRODUCT LAB
 # -----------------------------
 def _render_product_lab(product: int) -> None:
-    record = product_record(product)
-    compare = product_record(st.session_state.compare_product)
-    selected_routes = tuple(distinct_factor_routes(record.product))
-    compare_routes = tuple(distinct_factor_routes(compare.product))
-    inverse_family = tuple(inverse_labels(record.product))
-    shared = tuple(shared_factors(record.product, compare.product))
 
-    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-section-title">Product Lab</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="tmk-section-subtitle">A single hub view with routes in and out.</div>',
-        unsafe_allow_html=True,
+    from services.product_lab_service import get_product_lab_view
+    from ui.product_page import render_product_lab_page
+
+    compare_product = st.session_state.get("compare_product")
+
+    view_model = get_product_lab_view(
+        selected_product=product,
+        compare_product=compare_product,
     )
 
-    control_col1, control_col2, control_col3 = st.columns(3)
-
-    with control_col1:
-        selected = st.selectbox(
-            "Selected product",
-            options=ALL_PRODUCTS,
-            index=ALL_PRODUCTS.index(st.session_state.selected_product),
-            format_func=_product_option_label,
-            key="lab_product_select_v20",
-        )
-        if selected != st.session_state.selected_product:
-            st.session_state.selected_product = selected
-            st.session_state.selected_stage = product_record(selected).stage
-            if st.session_state.compare_product == selected and len(ALL_PRODUCTS) > 1:
-                st.session_state.compare_product = next(item for item in ALL_PRODUCTS if item != selected)
-            st.session_state.selected_route_index = 0
-            st.rerun()
-
-    compare_options = [item for item in ALL_PRODUCTS if item != st.session_state.selected_product]
-    if st.session_state.compare_product not in compare_options:
-        st.session_state.compare_product = compare_options[0]
-        compare = product_record(st.session_state.compare_product)
-        compare_routes = tuple(distinct_factor_routes(compare.product))
-        shared = tuple(shared_factors(record.product, compare.product))
-
-    with control_col2:
-        compare_value = st.selectbox(
-            "Compare with",
-            options=compare_options,
-            index=compare_options.index(st.session_state.compare_product),
-            format_func=_product_option_label,
-            key="lab_compare_select_v20",
-        )
-        if compare_value != st.session_state.compare_product:
-            st.session_state.compare_product = compare_value
-            st.rerun()
-
-    with control_col3:
-        mode = st.radio(
-            "Route view",
-            options=ROUTE_VIEW_MODES,
-            index=ROUTE_VIEW_MODES.index(st.session_state.route_view_mode),
-            horizontal=True,
-            key="lab_route_view_mode_v20",
-        )
-        if mode != st.session_state.route_view_mode:
-            st.session_state.route_view_mode = mode
-            st.session_state.selected_route_index = 0
-            st.rerun()
-
-    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-small-label">Selected product</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="tmk-value" style="font-size:1.8rem;">{record.product}</div>', unsafe_allow_html=True)
-    st.markdown(
-        f'<div class="tmk-note" style="margin-top:0.35rem;">Intro route: {escape(_format_route(record.intro_route))}</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        f'<div class="tmk-note">Structural role: {escape(record.structural_role)}</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        f'<div class="tmk-note">Stage introduced: {escape(stage_label(record.stage))}</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        '<div class="tmk-note" style="margin-top:0.5rem;">Do not lead with route counts. Lead with the product and its intro route.</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown(
-        """
-        <div class="tmk-card tmk-hub-banner">
-            <div>
-                <div class="tmk-value">Product hub</div>
-            </div>
-            <div class="tmk-note">Routes in and out</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
+    render_product_lab_page(view_model)
     _render_product_hub_visual(record.product, selected_routes)
 
     upper_left, upper_right = st.columns((1.3, 0.7))
