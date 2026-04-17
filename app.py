@@ -634,7 +634,7 @@ def _render_structural_planner(product: int) -> None:
     st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-section-title">Structural Planner</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="tmk-section-subtitle">Choose a structural lens: stage sequence or pattern map.</div>',
+        '<div class="tmk-section-subtitle">Focus on the current stage first. Use pattern view only when you need a wider structural lens.</div>',
         unsafe_allow_html=True,
     )
 
@@ -683,28 +683,19 @@ def _render_structural_planner(product: int) -> None:
         st.session_state.selected_stage = product_record(selected).stage
         st.rerun()
 
-    _metric_card_row(
-        [
-            ("Current stage", stage_label(record.stage)),
-            ("Selected product", str(record.product)),
-            ("Intro route", _format_route(record.intro_route)),
-            ("New here", str(len(new_stage_products))),
-        ]
-    )
-
     st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
     st.markdown('<div class="tmk-small-label">Stage focus</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="tmk-value">{escape(stage_label(record.stage))}</div>', unsafe_allow_html=True)
     st.markdown(
-        f'<div class="tmk-note" style="margin-top:0.35rem;">Selected product: {record.product}. Intro route: {escape(_format_route(record.intro_route))}. Structural role: {escape(record.structural_role)}.</div>',
+        f'<div class="tmk-note" style="margin-top:0.35rem;">Selected product {record.product} enters through {escape(_format_route(record.intro_route))} and sits in the current stage structure.</div>',
         unsafe_allow_html=True,
     )
     st.markdown(
-        f'<div class="tmk-note" style="margin-top:0.5rem;">Products introduced in this stage: {escape(", ".join(str(value) for value in new_stage_products) if new_stage_products else "None")}</div>',
+        f'<div class="tmk-note" style="margin-top:0.45rem;">Current-stage products available here: {len(current_stage_products)}.</div>',
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="tmk-note" style="margin-top:0.5rem;">Teacher warning: keep first exposure focused on current-stage products before opening cumulative support.</div>',
+        '<div class="tmk-note" style="margin-top:0.45rem;">Teacher warning: keep first exposure focused on current-stage products before opening cumulative support.</div>',
         unsafe_allow_html=True,
     )
     st.markdown("</div>", unsafe_allow_html=True)
@@ -714,7 +705,10 @@ def _render_structural_planner(product: int) -> None:
     with col_a:
         st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
         st.markdown('<div class="tmk-small-label">Products introduced in this stage</div>', unsafe_allow_html=True)
-        _render_pill_list(current_stage_products, selected=record.product)
+        if new_stage_products:
+            _render_pill_list(new_stage_products, selected=record.product)
+        else:
+            st.markdown('<div class="tmk-note">No new products introduced in this stage.</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col_b:
