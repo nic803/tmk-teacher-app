@@ -1,3 +1,5 @@
+# File: ui/product_page.py
+
 from __future__ import annotations
 
 from html import escape
@@ -83,70 +85,9 @@ def _route_text(route: Any) -> str:
         factors = route.get("factors")
         product = route.get("product")
         if isinstance(factors, (list, tuple)) and len(factors) == 2 and product is not None:
-            return f"{factors[0]} × {factors[1]} = {product}"
+            return f"{factors[0]} × {factors[1]}"
 
     return str(route)
-
-
-def _render_route_column(title: str, routes: list[Any], empty_text: str) -> None:
-    st.markdown(
-        f"""
-        <div class="tmk-card" style="height:100%;">
-            <div class="tmk-small-label">{escape(title)}</div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    if routes:
-        for route in routes:
-            st.markdown(
-                f'<div class="tmk-answer-box">{escape(_route_text(route))}</div>',
-                unsafe_allow_html=True,
-            )
-    else:
-        st.markdown(
-            f'<div class="tmk-note">{escape(empty_text)}</div>',
-            unsafe_allow_html=True,
-        )
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
-def _render_product_hub(
-    *,
-    product_label: Any,
-    entry_routes: list[Any],
-    exit_routes: list[Any],
-) -> None:
-    st.markdown("### Hub view")
-    st.caption("Entry routes move inward to the product. Exit routes move outward from it.")
-
-    left_col, middle_col, right_col = st.columns([1.35, 0.8, 1.35])
-
-    with left_col:
-        _render_route_column(
-            "Entry routes",
-            entry_routes,
-            "No entry routes provided.",
-        )
-
-    with middle_col:
-        st.markdown(
-            f"""
-            <div class="tmk-card" style="text-align:center;height:100%;display:flex;flex-direction:column;justify-content:center;">
-                <div class="tmk-small-label">Product hub</div>
-                <div class="tmk-section-title" style="margin-top:0.35rem;">{escape(str(product_label))}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with right_col:
-        _render_route_column(
-            "Exit routes",
-            exit_routes,
-            "No exit routes provided.",
-        )
 
 
 def _render_compare_bar(compare_meta: Mapping[str, Any]) -> None:
@@ -171,6 +112,130 @@ def _render_compare_bar(compare_meta: Mapping[str, Any]) -> None:
     )
 
 
+def _render_hub_visual(
+    *,
+    product_label: Any,
+    entry_routes: list[Any],
+    exit_routes: list[Any],
+) -> None:
+    top_items = [_route_text(route) for route in entry_routes]
+    bottom_items = [_route_text(route) for route in exit_routes]
+
+    if not top_items:
+        top_items = ["No entry routes"]
+    if not bottom_items:
+        bottom_items = ["No exit routes"]
+
+    top_html = "".join(
+        f'<span class="tmk-hub-chip">{escape(item)}</span>'
+        for item in top_items
+    )
+    bottom_html = "".join(
+        f'<span class="tmk-hub-chip">{escape(item)}</span>'
+        for item in bottom_items
+    )
+
+    arrow_count = max(len(top_items), len(bottom_items), 3)
+    arrows_html = "".join("<span>↓</span>" for _ in range(min(arrow_count, 6)))
+
+    st.markdown("### Hub view")
+    st.caption("Entry routes move inward to the product. Exit routes move outward from it.")
+
+    st.markdown(
+        f"""
+        <div class="tmk-hub-visual">
+            <div class="tmk-hub-top">{top_html}</div>
+            <div class="tmk-hub-arrows">{arrows_html}</div>
+            <div class="tmk-hub-center-wrap">
+                <div class="tmk-hub-center">{escape(str(product_label))}</div>
+            </div>
+            <div class="tmk-hub-arrows">{arrows_html}</div>
+            <div class="tmk-hub-bottom">{bottom_html}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _apply_product_hub_styles() -> None:
+    st.markdown(
+        """
+        <style>
+            .tmk-hub-visual {
+                background: linear-gradient(180deg, #232A54 0%, #22284E 100%);
+                border: 1px solid rgba(255,255,255,0.08);
+                border-radius: 24px;
+                padding: 1.1rem 1rem 1rem 1rem;
+                margin-bottom: 1rem;
+                color: #FFFFFF;
+                box-shadow: 0 10px 26px rgba(34, 40, 78, 0.18);
+                min-height: 360px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+
+            .tmk-hub-top,
+            .tmk-hub-bottom {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                margin-top: 0.4rem;
+                margin-bottom: 0.4rem;
+            }
+
+            .tmk-hub-chip {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 64px;
+                padding: 0.48rem 0.78rem;
+                border-radius: 12px;
+                background: rgba(255,255,255,0.96);
+                color: #232A54;
+                font-weight: 800;
+                font-size: 0.92rem;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+            }
+
+            .tmk-hub-arrows {
+                display: flex;
+                justify-content: center;
+                gap: 0.7rem;
+                margin: 0.45rem 0 0.2rem 0;
+                color: rgba(255,255,255,0.92);
+                font-size: 1.15rem;
+                letter-spacing: 0.12em;
+            }
+
+            .tmk-hub-center-wrap {
+                display: flex;
+                justify-content: center;
+                margin: 0.25rem 0 0.35rem 0;
+            }
+
+            .tmk-hub-center {
+                width: 132px;
+                height: 132px;
+                border-radius: 999px;
+                border: 6px solid rgba(255,255,255,0.92);
+                background: linear-gradient(180deg, #7390B0 0%, #6B87A6 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #FFFFFF;
+                font-size: 2.1rem;
+                font-weight: 800;
+                box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def render_product_page(view_model: ViewModel) -> None:
     if not view_model:
         _render_empty_state()
@@ -188,9 +253,11 @@ def render_product_page(view_model: ViewModel) -> None:
         _render_empty_state()
         return
 
+    _apply_product_hub_styles()
+
     page_header(title, subtitle)
     _render_product_identity(product_meta)
-    _render_product_hub(
+    _render_hub_visual(
         product_label=product_meta["product"],
         entry_routes=entry_routes,
         exit_routes=exit_routes,
