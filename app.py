@@ -1,3 +1,5 @@
+# File: app.py
+
 from __future__ import annotations
 
 from html import escape
@@ -13,14 +15,6 @@ from domain.patterns import (
     pattern_products,
 )
 
-from domain.routes import (
-    distinct_factor_routes,
-    entry_routes,
-    exit_route_labels,
-    inverse_labels,
-    shared_factors,
-)
-
 from domain.products import (
     ALL_PRODUCTS,
     STAGE_ORDER,
@@ -32,11 +26,6 @@ from domain.products import (
 from domain.product_metadata import (
     available_products as metadata_available_products,
     new_products as metadata_new_products,
-    product_metadata,
-)
-
-from domain.stage_vocabulary import (
-    get_stage_vocabulary,
 )
 
 # -----------------------------
@@ -82,9 +71,6 @@ SURFACES = (
 TIERS = ("Support", "Core", "Extension")
 WORKSHEET_FORMATS = ("one_product_10", "three_product_12")
 SELECTION_SCOPES = ("new_only", "available_mixed", "hybrid")
-PLANNER_LINK_MODES = ("Selected links", "Show selected atlas", "No links")
-PLANNER_ZOOM_MODES = ("Selected stage only", "Whole world")
-ROUTE_VIEW_MODES = ("Entry routes", "Exit routes")
 
 LIGHT_THEME = {
     "bg": "#E8E1D5",
@@ -175,18 +161,6 @@ def _ensure_state() -> None:
         if fallback == st.session_state.selected_product and len(ALL_PRODUCTS) > 1:
             fallback = ALL_PRODUCTS[1]
         st.session_state.compare_product = fallback
-
-    if "planner_link_mode" not in st.session_state:
-        st.session_state.planner_link_mode = "Selected links"
-
-    if "planner_zoom_mode" not in st.session_state:
-        st.session_state.planner_zoom_mode = "Selected stage only"
-
-    if "route_view_mode" not in st.session_state:
-        st.session_state.route_view_mode = "Entry routes"
-
-    if "selected_route_index" not in st.session_state:
-        st.session_state.selected_route_index = 0
 
     if "selected_stage" not in st.session_state:
         st.session_state.selected_stage = product_record(st.session_state.selected_product).stage
@@ -376,90 +350,6 @@ def _apply_styles() -> None:
                 box-shadow: 0 6px 18px rgba(47, 58, 60, 0.04);
             }}
 
-            .tmk-hub-banner {{
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 1rem;
-            }}
-
-            .tmk-hub-visual {{
-                background: linear-gradient(180deg, #232A54 0%, #22284E 100%);
-                border: 1px solid rgba(255,255,255,0.08);
-                border-radius: 24px;
-                padding: 1rem 1rem 0.85rem 1rem;
-                margin-bottom: 1rem;
-                color: #FFFFFF;
-                box-shadow: 0 10px 26px rgba(34, 40, 78, 0.18);
-            }}
-
-            .tmk-hub-visual h3 {{
-                margin: 0;
-                color: #FFFFFF;
-                font-size: 1.45rem;
-                line-height: 1.2;
-            }}
-
-            .tmk-hub-visual p {{
-                margin: 0.35rem 0 0 0;
-                color: rgba(255,255,255,0.82);
-                line-height: 1.45;
-            }}
-
-            .tmk-hub-top,
-            .tmk-hub-bottom {{
-                display: flex;
-                justify-content: center;
-                flex-wrap: wrap;
-                gap: 0.5rem;
-                margin-top: 0.9rem;
-            }}
-
-            .tmk-hub-chip {{
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                min-width: 64px;
-                padding: 0.48rem 0.75rem;
-                border-radius: 12px;
-                background: rgba(255,255,255,0.96);
-                color: #232A54;
-                font-weight: 800;
-                font-size: 0.92rem;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-            }}
-
-            .tmk-hub-arrows {{
-                display: flex;
-                justify-content: center;
-                gap: 0.7rem;
-                margin: 0.45rem 0 0.2rem 0;
-                color: rgba(255,255,255,0.9);
-                font-size: 1.1rem;
-                letter-spacing: 0.12em;
-            }}
-
-            .tmk-hub-center-wrap {{
-                display: flex;
-                justify-content: center;
-                margin: 0.25rem 0 0.35rem 0;
-            }}
-
-            .tmk-hub-center {{
-                width: 128px;
-                height: 128px;
-                border-radius: 999px;
-                border: 6px solid rgba(255,255,255,0.92);
-                background: linear-gradient(180deg, #7390B0 0%, #6B87A6 100%);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: #FFFFFF;
-                font-size: 2.1rem;
-                font-weight: 800;
-                box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
-            }}
-
             section[data-testid="stSidebar"] {{
                 background: var(--tmk-sidebar-bg);
                 border-right: 1px solid var(--tmk-sidebar-border);
@@ -594,7 +484,6 @@ def _render_sidebar() -> None:
         elif st.session_state.surface == "Product Lab":
             compare = product_record(st.session_state.compare_product)
             st.write(f"**Compare with:** {compare.product}")
-            st.write(f"**Route view:** {st.session_state.route_view_mode}")
         elif st.session_state.surface == "Instruction Planner":
             st.write("**Focus:** explanation and vocabulary")
             st.write(f"**Current stage:** {stage_label(record.stage)}")
@@ -759,7 +648,6 @@ def _render_stage_cards(current_stage: str) -> None:
 # PRODUCT LAB
 # -----------------------------
 def _render_product_lab(product: int) -> None:
-
     from services.product_lab_service import get_product_lab_view
     from ui.product_page import render_product_lab_page
 
@@ -771,258 +659,11 @@ def _render_product_lab(product: int) -> None:
     )
 
     render_product_lab_page(view_model)
-    _render_product_hub_visual(record.product, selected_routes)
-
-    upper_left, upper_right = st.columns((1.3, 0.7))
-
-    with upper_left:
-        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Radial hub</div>', unsafe_allow_html=True)
-        _render_route_inspector(record.product)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with upper_right:
-        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Inverse family</div>', unsafe_allow_html=True)
-        if inverse_family:
-            for label in inverse_family:
-                st.markdown(f'<div class="tmk-answer-box">{escape(_stringify(label))}</div>', unsafe_allow_html=True)
-        else:
-            st.markdown('<div class="tmk-note">No inverse family available.</div>', unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    _render_structure_explorer(record.product, compare.product)
-
-    lower_left, lower_right = st.columns((1.0, 1.0))
-
-    with lower_left:
-        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Connected products</div>', unsafe_allow_html=True)
-        st.markdown(
-            f'<div class="tmk-note">Shared factors with {compare.product}: {escape(", ".join(str(value) for value in shared) if shared else "None")}</div>',
-            unsafe_allow_html=True,
-        )
-
-        connected_products = _connected_products_for(record.product, compare.product)
-        if connected_products:
-            _render_pill_list(connected_products, selected=record.product)
-        else:
-            st.markdown('<div class="tmk-note">No connected products available.</div>', unsafe_allow_html=True)
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with lower_right:
-        with st.expander("Additional lawful forms", expanded=False):
-            st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-            st.markdown('<div class="tmk-small-label">Additional lawful forms</div>', unsafe_allow_html=True)
-
-            commutative = _commutative_form(record.intro_route)
-            st.markdown(
-                f'<div class="tmk-note"><strong>Commutative form:</strong> {escape(commutative)}</div>',
-                unsafe_allow_html=True,
-            )
-
-            comparison_route = _comparison_route_text(compare_routes)
-            st.markdown(
-                f'<div class="tmk-note" style="margin-top:0.35rem;"><strong>Later comparison route:</strong> {escape(comparison_route)}</div>',
-                unsafe_allow_html=True,
-            )
-
-            if inverse_family:
-                st.markdown('<div class="tmk-note" style="margin-top:0.35rem;"><strong>Inverse family:</strong></div>', unsafe_allow_html=True)
-                for label in inverse_family:
-                    st.markdown(f'<div class="tmk-answer-box">{escape(_stringify(label))}</div>', unsafe_allow_html=True)
-
-            st.markdown("</div>", unsafe_allow_html=True)
-
-    with st.expander("Selected product routes", expanded=False):
-        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Selected product routes</div>', unsafe_allow_html=True)
-        for route in selected_routes:
-            st.markdown(
-                f'<div class="tmk-answer-box">{escape(_format_route(route))}</div>',
-                unsafe_allow_html=True,
-            )
-        if not selected_routes:
-            st.markdown('<div class="tmk-note">No routes available.</div>', unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with st.expander("Compare product routes", expanded=False):
-        st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Compare product routes</div>', unsafe_allow_html=True)
-        for route in compare_routes:
-            st.markdown(
-                f'<div class="tmk-answer-box">{escape(_format_route(route))}</div>',
-                unsafe_allow_html=True,
-            )
-        if not compare_routes:
-            st.markdown('<div class="tmk-note">No routes available.</div>', unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    _render_route_overlap_activity_builder(
-        product=record.product,
-        stage_id=record.stage,
-        stage_label_text=stage_label(record.stage),
-        intro_route=record.intro_route,
-        routes=selected_routes,
-        compare_product=compare.product,
-        compare_routes=compare_routes,
-    )
-
-    st.markdown("</div>", unsafe_allow_html=True)
 
 
-def _render_product_hub_visual(product: int, routes: tuple[tuple[int, int], ...]) -> None:
-    display_routes = _expand_commutative_routes(routes)
-
-    top_items = [_format_route(route) for route in display_routes]
-    bottom_items = [f"{product} ÷ {route[0]} = {route[1]}" for route in display_routes]
-
-    if not top_items:
-        top_items = ["No lawful forms"]
-    if not bottom_items:
-        bottom_items = ["No inverse forms"]
-
-    top_html = "".join(f'<span class="tmk-hub-chip">{escape(item)}</span>' for item in top_items)
-    bottom_html = "".join(f'<span class="tmk-hub-chip">{escape(item)}</span>' for item in bottom_items)
-
-    st.markdown(
-        f"""
-        <div class="tmk-hub-visual">
-            <h3>Hub view</h3>
-            <p>Entry routes move inward to the product. Exit routes move outward from it.</p>
-            <div class="tmk-hub-top">{top_html}</div>
-            <div class="tmk-hub-arrows"><span>↓</span><span>↓</span><span>↓</span></div>
-            <div class="tmk-hub-center-wrap">
-                <div class="tmk-hub-center">{escape(str(product))}</div>
-            </div>
-            <div class="tmk-hub-arrows"><span>↓</span><span>↓</span><span>↓</span></div>
-            <div class="tmk-hub-bottom">{bottom_html}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-def _expand_commutative_routes(routes: tuple[tuple[int, int], ...]) -> tuple[tuple[int, int], ...]:
-    expanded: list[tuple[int, int]] = []
-    seen: set[tuple[int, int]] = set()
-
-    for left, right in routes:
-        pair = (left, right)
-        if pair not in seen:
-            seen.add(pair)
-            expanded.append(pair)
-
-        reverse_pair = (right, left)
-        if reverse_pair not in seen:
-            seen.add(reverse_pair)
-            expanded.append(reverse_pair)
-
-    return tuple(expanded)
-
-
-def _render_route_inspector(product: int) -> None:
-    items = _route_items_for_product(product, st.session_state.route_view_mode)
-    if not items:
-        st.markdown('<div class="tmk-note">No routes available.</div>', unsafe_allow_html=True)
-        return
-
-    if st.session_state.selected_route_index >= len(items):
-        st.session_state.selected_route_index = 0
-
-    button_cols = st.columns(min(4, len(items)))
-    for index, item in enumerate(items):
-        col = button_cols[index % len(button_cols)]
-        button_type = "primary" if index == st.session_state.selected_route_index else "secondary"
-        if col.button(
-            item["label"],
-            key=f"route_inspector_button_{st.session_state.route_view_mode}_{index}",
-            use_container_width=True,
-            type=button_type,
-        ):
-            st.session_state.selected_route_index = index
-            st.rerun()
-
-    selected_item = items[st.session_state.selected_route_index]
-
-    title = st.session_state.route_view_mode[:-1] if st.session_state.route_view_mode.endswith("s") else st.session_state.route_view_mode
-    st.markdown(f'<div class="tmk-small-label">{escape(title)}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="tmk-value">{escape(selected_item["headline"])}</div>', unsafe_allow_html=True)
-    st.markdown(
-        f'<div class="tmk-note" style="margin-top:0.55rem;">{escape(selected_item["explanation"])}</div>',
-        unsafe_allow_html=True,
-    )
-
-
-def _route_items_for_product(product: int, mode: str) -> list[dict[str, str]]:
-    if mode == "Entry routes":
-        items: list[dict[str, str]] = []
-        for route in entry_routes(product):
-            label = _format_route(route)
-            items.append(
-                {
-                    "label": label,
-                    "headline": label,
-                    "explanation": f"Multiplication route into {product}.",
-                }
-            )
-        return items
-
-    items = []
-    for label in exit_route_labels(product):
-        items.append(
-            {
-                "label": _stringify(label),
-                "headline": _stringify(label),
-                "explanation": f"Division route out from {product}.",
-            }
-        )
-    return items
-
-
-def _render_structure_explorer(selected_product: int, compare_product: int) -> None:
-    selected_record = product_record(selected_product)
-    compare_record = product_record(compare_product)
-
-    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-small-label">Structure explorer</div>', unsafe_allow_html=True)
-    st.markdown(
-        f'<div class="tmk-note">Selected product {selected_product} sits in {escape(stage_label(selected_record.stage))}. Comparison product {compare_product} sits in {escape(stage_label(compare_record.stage))}.</div>',
-        unsafe_allow_html=True,
-    )
-
-    for stage in [stage for stage in STAGE_ORDER if stage in STAGES]:
-        marker = ""
-        if stage == selected_record.stage and stage == compare_record.stage:
-            marker = "Selected and compare stage"
-        elif stage == selected_record.stage:
-            marker = "Selected product stage"
-        elif stage == compare_record.stage:
-            marker = "Compare product stage"
-
-        st.markdown('<div class="tmk-answer-box">', unsafe_allow_html=True)
-        st.markdown(f'<div class="tmk-value">{escape(STAGES[stage].label)}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="tmk-note" style="margin-top:0.2rem;">{escape(stage_label(stage))}</div>', unsafe_allow_html=True)
-
-        if marker:
-            st.markdown(f'<div class="tmk-note" style="margin-top:0.2rem;">{escape(marker)}</div>', unsafe_allow_html=True)
-
-        st.markdown('<div style="margin-top:0.45rem;">', unsafe_allow_html=True)
-        _render_pill_list(STAGES[stage].products, selected=selected_product)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        if compare_product in STAGES[stage].products and compare_product != selected_product:
-            st.markdown(
-                f'<div class="tmk-note" style="margin-top:0.35rem;">Compare product highlighted by stage context: {compare_product}</div>',
-                unsafe_allow_html=True,
-            )
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
+# -----------------------------
+# INSTRUCTION PLANNER
+# -----------------------------
 def _render_instruction_planner(product: int) -> None:
     render_instruction_planner_page(
         build_instruction_planner_view_model(
@@ -1034,268 +675,11 @@ def _render_instruction_planner(product: int) -> None:
     )
 
 
-def _render_extensions_placeholder() -> None:
-    st.markdown('<div class="tmk-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-section-title">Extensions</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="tmk-section-subtitle">Extension mathematics and advanced activity tools, kept separate from the core TMK structure.</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-small-label">Planned extension areas</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="tmk-note">This placeholder holds the new extension section while the extension tools are added in safe passes.</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        '<div class="tmk-note" style="margin-top:0.5rem;">Planned content: square numbers, area and perimeter, 11×, 12×, and advanced multi-route activity work such as 36.</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-small-label">Current status</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="tmk-note">Navigation is now in place. Content tools should be added here one safe step at a time.</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
 def _on_instruction_product_change() -> None:
     selected = st.session_state.get("instruction_product_select_v20")
     if selected in ALL_PRODUCTS and selected != st.session_state.selected_product:
         st.session_state.selected_product = selected
         st.session_state.selected_stage = product_record(selected).stage
-
-
-def _connected_products_for(selected_product: int, compare_product: int) -> tuple[int, ...]:
-    connected: list[int] = []
-    selected_factors = set(shared_factors(selected_product, selected_product))
-    compare_shared = set(shared_factors(selected_product, compare_product))
-
-    for product in ALL_PRODUCTS:
-        if product == selected_product:
-            continue
-        product_shared = set(shared_factors(selected_product, product))
-        if product_shared & (selected_factors | compare_shared):
-            connected.append(product)
-
-    deduped = []
-    seen = set()
-    for product in connected:
-        if product not in seen:
-            seen.add(product)
-            deduped.append(product)
-
-    return tuple(deduped[:12])
-
-
-def _commutative_form(route: tuple[int, int]) -> str:
-    return f"{route[1]} × {route[0]}"
-
-
-def _comparison_route_text(compare_routes: tuple[tuple[int, int], ...]) -> str:
-    if not compare_routes:
-        return "No comparison route available."
-    return _format_route(compare_routes[0])
-
-
-def _render_route_overlap_activity_builder(
-    *,
-    product: int,
-    stage_id: str,
-    stage_label_text: str,
-    intro_route: tuple[int, int],
-    routes: tuple[tuple[int, int], ...],
-    compare_product: int,
-    compare_routes: tuple[tuple[int, int], ...],
-) -> None:
-    if len(routes) < 2:
-        return
-
-    activity = _build_route_overlap_activity(
-        product=product,
-        stage_id=stage_id,
-        stage_label_text=stage_label_text,
-        intro_route=intro_route,
-        routes=routes,
-        compare_product=compare_product,
-        compare_routes=compare_routes,
-    )
-
-    st.markdown('<div class="tmk-card">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-small-label">Route overlap activity</div>', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-value">Route Overlap Activity Builder</div>', unsafe_allow_html=True)
-    st.markdown(
-        f'<div class="tmk-note" style="margin-top:0.35rem;">Available because {product} has more than one lawful route.</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown('<div class="tmk-small-label" style="margin-top:0.8rem;">Core routes into this product</div>', unsafe_allow_html=True)
-    _render_pill_list(tuple(_format_route(route) for route in routes))
-
-    info_left, info_right = st.columns((1.0, 1.0))
-
-    with info_left:
-        st.markdown('<div class="tmk-answer-box">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Activity title</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="tmk-value">{escape(activity["activity_title"])}</div>', unsafe_allow_html=True)
-        st.markdown(
-            f'<div class="tmk-note" style="margin-top:0.35rem;"><strong>Goal:</strong> {escape(activity["activity_goal"])}</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f'<div class="tmk-note" style="margin-top:0.35rem;"><strong>Teacher move:</strong> {escape(activity["teacher_move"])}</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with info_right:
-        st.markdown('<div class="tmk-answer-box">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Teacher prompt</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="tmk-note">{escape(activity["teacher_prompt"])}</div>', unsafe_allow_html=True)
-        st.markdown(
-            f'<div class="tmk-note" style="margin-top:0.45rem;"><strong>Teaching note:</strong> {escape(activity["teaching_note"])}</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    task_col, question_col = st.columns((1.0, 1.0))
-
-    with task_col:
-        st.markdown('<div class="tmk-answer-box">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Pupil tasks</div>', unsafe_allow_html=True)
-        for task in activity["pupil_tasks"]:
-            st.markdown(f"- {escape(task)}")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with question_col:
-        st.markdown('<div class="tmk-answer-box">', unsafe_allow_html=True)
-        st.markdown('<div class="tmk-small-label">Example questions</div>', unsafe_allow_html=True)
-        for question in activity["example_questions"]:
-            st.markdown(f"- {escape(question)}")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="tmk-answer-box">', unsafe_allow_html=True)
-    st.markdown('<div class="tmk-small-label">Key noticing</div>', unsafe_allow_html=True)
-    for noticing in activity["key_noticing"]:
-        st.markdown(f"- {escape(noticing)}")
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="tmk-small-label">Copy for website form</div>', unsafe_allow_html=True)
-    st.text_area(
-        "Copy for website form",
-        value=activity["print_text"],
-        height=320,
-        key=f"route_overlap_print_text_{product}",
-    )
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
-def _build_route_overlap_activity(
-    *,
-    product: int,
-    stage_id: str,
-    stage_label_text: str,
-    intro_route: tuple[int, int],
-    routes: tuple[tuple[int, int], ...],
-    compare_product: int,
-    compare_routes: tuple[tuple[int, int], ...],
-) -> dict[str, Any]:
-    intro_route_label = _format_route(intro_route)
-
-    non_intro_routes = [route for route in routes if route != intro_route]
-    reveal_route = non_intro_routes[0] if non_intro_routes else routes[1]
-    reveal_route_label = _format_route(reveal_route)
-
-    activity_title = "One product, two routes" if len(routes) == 2 else "One product, multiple routes"
-    activity_goal = "Learners see that one product can have more than one true multiplication route."
-    teacher_move = (
-        f"Start with the intro route {intro_route_label}, then reveal {reveal_route_label} "
-        f"as another true route into the same product."
-    )
-    teacher_prompt = (
-        f"{product} can be made in more than one true way. What stays the same, and what changes?"
-    )
-
-    pupil_tasks = [
-        f"Read the routes into {product}.",
-        "Say what is the same in both facts.",
-        "Say what is different in both facts.",
-        "Match the multiplication routes to the same product.",
-    ]
-
-    example_questions = [
-        f"Which routes make {product}?",
-        f"What product does {intro_route_label} make?",
-        f"What product does {reveal_route_label} make?",
-        f"Which route was used to introduce {product} first?",
-    ]
-
-    key_noticing = [
-        "The product stays the same.",
-        "The factors change.",
-        "A product can have more than one lawful route.",
-    ]
-
-    teaching_note = (
-        "Lead with the intro route first. Reveal the second route only after learners are secure with the product."
-    )
-
-    teacher_explanation = (
-        f"{product} can be built in more than one true way. In TMK, we introduce {product} through "
-        f"{intro_route_label}, but {reveal_route_label} is also a true route into the same product."
-    )
-
-    print_text = "\n".join(
-        [
-            f"Title: {activity_title}",
-            "",
-            f"Focus product: {product}",
-            "",
-            "Teacher explanation:",
-            teacher_explanation,
-            "",
-            "Teacher prompt:",
-            teacher_prompt,
-            "",
-            "Pupil tasks:",
-            *[f"- {task}" for task in pupil_tasks],
-            "",
-            "Example questions:",
-            *[f"- {question}" for question in example_questions],
-            "",
-            "Key noticing:",
-            "The product stays the same, the factors change, and one product can have more than one true route.",
-            "",
-            "Teaching note:",
-            teaching_note,
-        ]
-    )
-
-    return {
-        "product": product,
-        "stage_id": stage_id,
-        "stage_label": stage_label_text,
-        "intro_route": intro_route,
-        "routes": list(routes),
-        "compare_product": compare_product,
-        "compare_routes": list(compare_routes),
-        "activity_title": activity_title,
-        "activity_goal": activity_goal,
-        "teacher_move": teacher_move,
-        "teacher_prompt": teacher_prompt,
-        "pupil_tasks": pupil_tasks,
-        "example_questions": example_questions,
-        "key_noticing": key_noticing,
-        "teaching_note": teaching_note,
-        "print_text": print_text,
-    }
 
 
 # -----------------------------
@@ -1470,7 +854,6 @@ def _render_worksheet_studio() -> None:
 
             st.session_state.last_bundle = new_bundle
             st.session_state.last_request_signature = new_request_signature
-
             st.session_state.worksheet_rotation_index += 1
 
             if previous_products and not found_different:
