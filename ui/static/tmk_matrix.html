@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  />
   <title>TMK Pattern Explorer – Whiteboard Mode</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -14,12 +17,10 @@
   <style>
     :root {
       --tmk-bg: #fdfdfc;
-      --tmk-accent: #6366f1;
       --tmk-text: #1e293b;
       --tmk-grid-gap: 6px;
       --tmk-header-size: 50px;
-      
-      /* Refined Whiteboard Palette */
+
       --color-rose: #ef4444;
       --color-teal: #14b8a6;
       --color-amber: #f59e0b;
@@ -66,14 +67,13 @@
       position: relative;
     }
 
-    /* Sidebars */
     .sidebar-left {
       width: 340px;
       background: #ffffff;
       border-right: 1px solid #f1f5f9;
       padding: 24px;
       overflow-y: auto;
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.35s ease;
       flex-shrink: 0;
       position: relative;
     }
@@ -94,7 +94,6 @@
       flex-shrink: 0;
     }
 
-    /* Grid Layout */
     .grid-wrap {
       flex: 1;
       display: flex;
@@ -104,7 +103,7 @@
       padding: 20px;
       overflow: hidden;
       background: #f8fafc;
-      transition: all 0.4s ease;
+      transition: all 0.35s ease;
     }
 
     .grid-container {
@@ -114,15 +113,17 @@
       gap: var(--tmk-grid-gap);
       width: 100%;
       max-width: 800px;
-      aspect-ratio: 1/1;
+      aspect-ratio: 1 / 1;
       padding: 12px;
       background: #e2e8f0;
       border-radius: 16px;
       box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.1);
     }
 
-    /* Cell Styling */
-    .cell, .header-cell, .corner-cell, .empty-cell {
+    .cell,
+    .header-cell,
+    .corner-cell,
+    .empty-cell {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -137,6 +138,7 @@
       cursor: pointer;
       font-size: 1.1rem;
       color: #334155;
+      position: relative;
     }
 
     .cell:hover {
@@ -155,7 +157,7 @@
     .header-cell.active-factor {
       background: #1e293b;
       color: white;
-      transform: scale(1.1);
+      transform: scale(1.08);
     }
 
     .corner-cell {
@@ -170,16 +172,14 @@
       font-size: 0.5rem;
     }
 
-    /* Interactive States */
     .is-highlighted {
       background: #1e293b !important;
       color: white !important;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
       transform: scale(1.1);
       z-index: 30;
     }
 
-    /* Pattern Classes mapping to stages A-I */
     .p-identity { background: var(--color-indigo) !important; color: white !important; }
     .p-scaling { background: var(--color-emerald) !important; color: white !important; }
     .p-midpoints { background: var(--color-amber) !important; color: white !important; }
@@ -190,11 +190,21 @@
     .p-squares { background: var(--color-cyan) !important; color: white !important; }
     .p-multi { background: var(--color-slate) !important; color: white !important; }
 
-    /* Special highlight for Stage Context (24) */
-    .p-context { outline: 4px solid #1e293b; outline-offset: -4px; position: relative; }
-    .p-context::after { content: '★'; position: absolute; top: -2px; right: 2px; font-size: 10px; color: gold; }
+    .p-context {
+      outline: 4px solid #1e293b;
+      outline-offset: -4px;
+      position: relative;
+    }
 
-    /* UI Components */
+    .p-context::after {
+      content: "★";
+      position: absolute;
+      top: -2px;
+      right: 2px;
+      font-size: 10px;
+      color: gold;
+    }
+
     .pattern-btn {
       width: 100%;
       text-align: left;
@@ -215,12 +225,12 @@
       background: #1e293b;
       color: white;
       border-color: #1e293b;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
     .eq-card {
       padding: 16px;
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       font-weight: 800;
       text-align: center;
       background: #f8fafc;
@@ -228,6 +238,27 @@
       border-radius: 12px;
       margin-bottom: 10px;
       color: #334155;
+    }
+
+    .meta-card {
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 10px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      color: #334155;
+      font-size: 0.75rem;
+      font-weight: 800;
+      margin-right: 6px;
+      margin-bottom: 6px;
     }
 
     .sidebar-toggle {
@@ -256,35 +287,50 @@
   </style>
 </head>
 <body>
-
   <header class="header">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white">
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m2 9 3 3 3-3"/><path d="m13 2 3 3 3-3"/><path d="m2 9 6 6"/><path d="m13 2 6 6"/><path d="m2 22 10-10"/><path d="m13 13 1 1"/><path d="m17 17 3 3"/><path d="m2 2 1 1"/><path d="m5 5 1 1"/><path d="m9 9 1 1"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m2 9 3 3 3-3"/><path d="m13 2 3 3 3-3"/><path d="m2 9 6 6"/><path d="m13 2 6 6"/>
+          <path d="m2 22 10-10"/><path d="m13 13 1 1"/><path d="m17 17 3 3"/><path d="m2 2 1 1"/>
+          <path d="m5 5 1 1"/><path d="m9 9 1 1"/>
+        </svg>
       </div>
       <div>
         <h1 class="text-lg font-bold leading-tight">TMK Pattern Explorer</h1>
-        <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Educational Sequence Mode</p>
+        <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
+          Structural Family Mode
+        </p>
       </div>
     </div>
+
     <div class="flex items-center gap-2">
-      <button onclick="initGrid()" class="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">Reset Board</button>
+      <button
+        onclick="initGrid()"
+        class="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+      >
+        Reset Board
+      </button>
     </div>
   </header>
 
   <main class="main">
     <aside id="sidebarLeft" class="sidebar-left">
-      <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">Learning Stages</h3>
+      <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">
+        Structural Families
+      </h3>
       <div id="patternContainer"></div>
     </aside>
 
     <div class="sidebar-toggle" onclick="expandSidebar()">
-      <div style="writing-mode: vertical-rl; text-orientation: mixed; font-size: 10px; font-weight: 900; letter-spacing: 2px;">SHOW STAGES</div>
+      <div style="writing-mode: vertical-rl; text-orientation: mixed; font-size: 10px; font-weight: 900; letter-spacing: 2px;">
+        SHOW FAMILIES
+      </div>
     </div>
 
     <section class="grid-wrap">
       <div id="grid" class="grid-container"></div>
-      
+
       <div id="patternExplanation" class="mt-8 max-w-lg text-center opacity-0 transition-opacity duration-500">
         <h4 id="patternTitle" class="text-sm font-bold text-slate-800 uppercase mb-1">Pattern Title</h4>
         <p id="patternText" class="text-sm text-slate-500 leading-relaxed">Explanation goes here.</p>
@@ -295,11 +341,14 @@
       <div class="mb-8">
         <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Discovery Key</h3>
         <div id="productValue" class="text-6xl font-black text-slate-900 mb-2">--</div>
-        <p class="text-sm text-slate-400 mb-6">Explore the routes to this product.</p>
-        
+        <p class="text-sm text-slate-400 mb-6">Explore the product, its routes, and its family membership.</p>
+
         <div id="equationList">
           <div class="flex flex-col items-center justify-center py-20 opacity-20">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="mb-4"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 3v18"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="mb-4">
+              <rect width="18" height="18" x="3" y="3" rx="2"/>
+              <path d="M3 9h18"/><path d="M9 3v18"/>
+            </svg>
             <p class="text-sm font-bold">Tap a cell to analyze</p>
           </div>
         </div>
@@ -315,66 +364,135 @@
     const sidebarLeft = document.getElementById("sidebarLeft");
     const explanationEl = document.getElementById("patternExplanation");
 
+    function uniqueSorted(values) {
+      return [...new Set(values)].sort((a, b) => a - b);
+    }
+
+    function familyProductsForFactors(factors) {
+      const values = [];
+      for (const factor of factors) {
+        for (let n = 1; n <= MAX; n++) {
+          const v = factor * n;
+          if (v <= MAX * MAX) {
+            values.push(v);
+          }
+        }
+      }
+      return uniqueSorted(values);
+    }
+
+    function allLowerTriangleProducts() {
+      const values = [];
+      for (let r = 1; r <= MAX; r++) {
+        for (let c = 1; c <= r; c++) {
+          values.push(r * c);
+        }
+      }
+      return uniqueSorted(values);
+    }
+
+    const STAGE_NEW_PRODUCTS = {
+      A: uniqueSorted([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
+      B: uniqueSorted([20, 30, 40, 50, 60, 70, 80, 90, 100]),
+      C: uniqueSorted([15, 25, 35, 45]),
+      D: uniqueSorted([18, 27, 36, 54, 63, 72, 81]),
+      E: uniqueSorted([12, 14, 16, 24, 28, 32, 48, 56, 64]),
+      F: uniqueSorted([21, 42]),
+      G: uniqueSorted([49]),
+    };
+
     const PATTERNS = [
-      { 
-        id: 'none', label: 'Overview', color: '', 
-        desc: 'The lower-triangular grid shows unique product combinations without duplicates.',
+      {
+        id: "none",
+        label: "Overview",
+        color: "",
+        desc: "The lower-triangular grid shows the 42 unique products in the bounded 1–10 TMK world.",
         nums: []
       },
-      { 
-        id: 'identity', label: 'A — Identity & Anchors', color: 'p-identity', 
-        desc: 'The foundation: 1 through 10. These represent the initial identity and base-10 anchors.',
-        nums: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] 
+      {
+        id: "identity",
+        label: "A — Identity & Base-10 Anchors",
+        color: "p-identity",
+        desc: "Shows the full anchor family in the bounded system, not only new-stage introductions.",
+        nums: uniqueSorted([1,2,3,4,5,6,7,8,9,10])
       },
-      { 
-        id: 'scaling', label: 'B — Pure Scaling (10×)', color: 'p-scaling', 
-        desc: 'The base-10 boundaries. Scaling by ten reveals the predictable nature of our number system.',
-        nums: [20, 30, 40, 50, 60, 70, 80, 90, 100] 
+      {
+        id: "scaling",
+        label: "B — Pure Scaling (10× family)",
+        color: "p-scaling",
+        desc: "Shows the full 10× family across the bounded grid: 10, 20, 30 … 100.",
+        nums: familyProductsForFactors([10])
       },
-      { 
-        id: 'midpoints', label: 'C — Midpoints & Halves (5×)', color: 'p-midpoints', 
-        desc: 'Odd midpoints (15, 25, 35, 45). These provide essential reference points between the 10x anchors.',
-        nums: [15, 25, 35, 45] 
+      {
+        id: "midpoints",
+        label: "C — Midpoints & Halves (5× family)",
+        color: "p-midpoints",
+        desc: "Shows the full 5× family across the bounded grid: 5, 10, 15 … 50.",
+        nums: familyProductsForFactors([5])
       },
-      { 
-        id: 'near-ten', label: 'D — Near-Ten Logic (9×)', color: 'p-near-ten', 
-        desc: 'Complement patterns. 9x products follow a sequence where digits sum to nine (18, 27, 36...).',
-        nums: [18, 27, 36, 54, 63, 72, 81] 
+      {
+        id: "near-ten",
+        label: "D — Near-Ten Logic (9× family)",
+        color: "p-near-ten",
+        desc: "Shows the full 9× family across the bounded grid: 9, 18, 27 … 90.",
+        nums: familyProductsForFactors([9])
       },
-      { 
-        id: 'doubling', label: 'E — Doubling Chain (2/4/8×)', color: 'p-doubling', 
-        desc: 'Exponential growth chain. Note 24 as a critical stage context product in this progression.',
-        nums: [12, 14, 16, 24, 28, 32, 48, 56, 64] 
+      {
+        id: "doubling",
+        label: "E — Doubling Chain (2× / 4× / 8× families)",
+        color: "p-doubling",
+        desc: "Shows the whole doubling structure in the bounded grid. This is a family view, not a stage-only new-product view.",
+        nums: uniqueSorted([
+          ...familyProductsForFactors([2]),
+          ...familyProductsForFactors([4]),
+          ...familyProductsForFactors([8])
+        ])
       },
-      { 
-        id: 'interleaving', label: 'F — Interleaving (3× / 6×)', color: 'p-interleaving', 
-        desc: 'Connecting the primes. These products (21, 42) bridge complex factor chains.',
-        nums: [21, 42] 
+      {
+        id: "interleaving",
+        label: "F — Interleaving (3× / 6× families)",
+        color: "p-interleaving",
+        desc: "Shows the whole 3× / 6× interleaving structure across the bounded grid, not only the new Stage F products.",
+        nums: uniqueSorted([
+          ...familyProductsForFactors([3]),
+          ...familyProductsForFactors([6])
+        ])
       },
-      { 
-        id: 'closure', label: 'G — Closure / Final Key (7×)', color: 'p-closure', 
-        desc: 'The final cell. 49 is the ultimate anchor that completes the 1-10 product journey.',
-        nums: [49] 
+      {
+        id: "closure",
+        label: "G — 7× Structure / Closure",
+        color: "p-closure",
+        desc: "Shows the full 7× family across the bounded grid, with 49 as the closure product.",
+        nums: familyProductsForFactors([7])
       },
-      { 
-        id: 'squares', label: 'H — Square Numbers (n²)', color: 'p-squares', 
-        desc: 'The mathematical spine. These products occur when a factor is multiplied by itself.',
-        nums: [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+      {
+        id: "squares",
+        label: "Square Numbers (n²)",
+        color: "p-squares",
+        desc: "Shows the bounded square ladder across the grid.",
+        nums: uniqueSorted([1,4,9,16,25,36,49,64,81,100])
       },
-      { 
-        id: 'multi', label: 'I — Multi-Route Products', color: 'p-multi', 
-        desc: 'Composite nodes. These numbers can be reached through multiple distinct factor paths.',
-        nums: [] 
+      {
+        id: "multi",
+        label: "Multi-Route Products",
+        color: "p-multi",
+        desc: "Shows products with more than one lawful factor route within the bounded 1–10 world.",
+        nums: []
       }
     ];
 
-    let currentPatternId = 'none';
+    let currentPatternId = "none";
 
     function initGrid() {
       grid.innerHTML = "";
+
       const corner = document.createElement("div");
       corner.className = "corner-cell";
-      corner.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+      corner.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+        </svg>
+      `;
       grid.appendChild(corner);
 
       for (let i = 1; i <= MAX; i++) {
@@ -404,131 +522,177 @@
           const val = r * c;
           const cell = document.createElement("div");
           cell.className = "cell";
-          cell.dataset.r = r;
-          cell.dataset.c = c;
-          cell.dataset.val = val;
-          cell.innerText = val;
-          
+          cell.dataset.r = String(r);
+          cell.dataset.c = String(c);
+          cell.dataset.val = String(val);
+          cell.innerText = String(val);
+
           cell.addEventListener("mouseenter", () => highlightAxis(r, c));
           cell.addEventListener("mouseleave", clearAxis);
           cell.addEventListener("click", () => selectProduct(cell));
           grid.appendChild(cell);
         }
       }
+
       renderPatternButtons();
-      setPattern('none');
+      setPattern("none");
     }
 
     function renderPatternButtons() {
       const container = document.getElementById("patternContainer");
       container.innerHTML = "";
-      PATTERNS.forEach(p => {
+
+      PATTERNS.forEach((pattern) => {
         const btn = document.createElement("button");
-        btn.className = `pattern-btn ${currentPatternId === p.id ? 'active' : ''}`;
+        btn.className = `pattern-btn ${currentPatternId === pattern.id ? "active" : ""}`;
         btn.innerHTML = `
           <div class="flex items-center gap-3">
-            <div class="w-3 h-3 rounded-full ${p.color || 'bg-slate-200'}"></div>
-            <span class="font-bold text-sm">${p.label}</span>
+            <div class="w-3 h-3 rounded-full ${pattern.color || "bg-slate-200"}"></div>
+            <span class="font-bold text-sm">${pattern.label}</span>
           </div>
         `;
-        btn.onclick = () => setPattern(p.id);
+        btn.onclick = () => setPattern(pattern.id);
         container.appendChild(btn);
       });
     }
 
     function highlightAxis(r, c) {
-      document.querySelectorAll('.header-cell').forEach(h => {
-        if ((h.classList.contains('row-header') && h.dataset.idx == r) || 
-            (h.classList.contains('col-header') && h.dataset.idx == c)) {
-          h.classList.add('active-factor');
+      document.querySelectorAll(".header-cell").forEach((h) => {
+        const isRow = h.classList.contains("row-header") && Number(h.dataset.idx) === r;
+        const isCol = h.classList.contains("col-header") && Number(h.dataset.idx) === c;
+
+        if (isRow || isCol) {
+          h.classList.add("active-factor");
         } else {
-          h.classList.remove('active-factor');
+          h.classList.remove("active-factor");
         }
       });
     }
 
     function clearAxis() {
-      document.querySelectorAll('.header-cell').forEach(h => h.classList.remove('active-factor'));
-    }
-
-    function selectProduct(cell) {
-      document.querySelectorAll(".cell").forEach(c => c.classList.remove("is-highlighted"));
-      cell.classList.add("is-highlighted");
-      const val = parseInt(cell.dataset.val);
-      valDisplay.innerText = val;
-      
-      const pairs = getFactorPairs(val);
-      eqList.innerHTML = "";
-      pairs.forEach(([a, b]) => {
-        const card = document.createElement("div");
-        card.className = "eq-card";
-        card.innerText = `${a} × ${b}`;
-        eqList.appendChild(card);
+      document.querySelectorAll(".header-cell").forEach((h) => {
+        h.classList.remove("active-factor");
       });
     }
 
     function getFactorPairs(val) {
       const pairs = [];
-      for(let i=1; i<=MAX; i++) {
-        if(val % i === 0) {
-          let j = val / i;
-          // Factors must be within the 1-10 (MAX) boundary
-          if(j <= MAX) {
-            pairs.push([i, j]);
-          }
+      for (let i = 1; i <= MAX; i++) {
+        if (val % i !== 0) continue;
+        const j = val / i;
+        if (j >= 1 && j <= MAX) {
+          pairs.push([i, j]);
         }
       }
-      // Sort primarily by the first factor descending to keep list organized
-      pairs.sort((a,b) => b[0] - a[0]);
+
+      pairs.sort((a, b) => {
+        if (b[0] !== a[0]) return b[0] - a[0];
+        return b[1] - a[1];
+      });
+
       return pairs;
+    }
+
+    function getPatternMembership(val) {
+      return PATTERNS
+        .filter((pattern) => {
+          if (["none", "multi", "squares"].includes(pattern.id)) return false;
+          return pattern.nums.includes(val);
+        })
+        .map((pattern) => pattern.label);
+    }
+
+    function getStageIntro(val) {
+      for (const [stage, values] of Object.entries(STAGE_NEW_PRODUCTS)) {
+        if (values.includes(val)) return stage;
+      }
+      return "—";
+    }
+
+    function selectProduct(cell) {
+      document.querySelectorAll(".cell").forEach((c) => c.classList.remove("is-highlighted"));
+      cell.classList.add("is-highlighted");
+
+      const val = Number(cell.dataset.val);
+      valDisplay.innerText = String(val);
+
+      const pairs = getFactorPairs(val);
+      const familyMembership = getPatternMembership(val);
+      const stageIntro = getStageIntro(val);
+
+      eqList.innerHTML = "";
+
+      const meta = document.createElement("div");
+      meta.className = "meta-card";
+      meta.innerHTML = `
+        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3">Product Metadata</div>
+        <div class="text-sm text-slate-600 mb-2"><strong>Introduced in stage:</strong> ${stageIntro}</div>
+        <div class="text-sm text-slate-600 mb-2"><strong>Lawful factor routes:</strong> ${pairs.length}</div>
+        <div class="text-sm text-slate-600"><strong>Structural families:</strong></div>
+        <div class="mt-2">
+          ${
+            familyMembership.length
+              ? familyMembership.map((name) => `<span class="chip">${name}</span>`).join("")
+              : `<span class="chip">No selected family match</span>`
+          }
+        </div>
+      `;
+      eqList.appendChild(meta);
+
+      pairs.forEach(([a, b]) => {
+        const card = document.createElement("div");
+        card.className = "eq-card";
+        card.innerText = `${a} × ${b} = ${val}`;
+        eqList.appendChild(card);
+      });
+    }
+
+    function isMultiRouteProduct(val) {
+      return getFactorPairs(val).length > 1;
     }
 
     function setPattern(id) {
       currentPatternId = id;
       renderPatternButtons();
-      const pattern = PATTERNS.find(p => p.id === id);
-      
-      if (id === 'none') {
-        explanationEl.classList.add('opacity-0');
+
+      const pattern = PATTERNS.find((p) => p.id === id);
+      if (!pattern) return;
+
+      if (id === "none") {
+        explanationEl.classList.add("opacity-0");
       } else {
-        explanationEl.classList.remove('opacity-0');
+        explanationEl.classList.remove("opacity-0");
         document.getElementById("patternTitle").innerText = pattern.label;
         document.getElementById("patternText").innerText = pattern.desc;
         collapseSidebar();
       }
 
-      document.querySelectorAll(".cell").forEach(cell => {
-        const v = parseInt(cell.dataset.val);
-        const r = parseInt(cell.dataset.r);
-        const c = parseInt(cell.dataset.c);
+      document.querySelectorAll(".cell").forEach((cell) => {
+        const v = Number(cell.dataset.val);
+        const r = Number(cell.dataset.r);
+        const c = Number(cell.dataset.c);
 
-        PATTERNS.forEach(p => { if (p.color) cell.classList.remove(p.color); });
-        cell.classList.remove('p-context');
+        PATTERNS.forEach((p) => {
+          if (p.color) cell.classList.remove(p.color);
+        });
+        cell.classList.remove("p-context");
 
-        if (id === 'none') return;
+        if (id === "none") return;
 
         let active = false;
-        if (id === 'multi') {
-            // A product is "multi-route" if it appears more than once in the lower-triangular grid.
-            // We count pairs (i, j) where i*j=v and i>=j.
-            let triangleCount = 0;
-            for (let i = 1; i <= MAX; i++) {
-              if (v % i === 0) {
-                let j = v / i;
-                if (j <= MAX && i >= j) triangleCount++;
-              }
-            }
-            active = triangleCount > 1;
-        } else if (id === 'squares') {
-            active = (r === c);
+
+        if (id === "multi") {
+          active = isMultiRouteProduct(v);
+        } else if (id === "squares") {
+          active = r === c;
         } else {
-            active = pattern.nums.includes(v);
+          active = pattern.nums.includes(v);
         }
 
         if (active) {
           cell.classList.add(pattern.color);
-          if (id === 'doubling' && v === 24) {
-            cell.classList.add('p-context');
+          if (id === "doubling" && v === 24) {
+            cell.classList.add("p-context");
           }
         }
       });
